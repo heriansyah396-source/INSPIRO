@@ -61,7 +61,12 @@ import {
 export default function App() {
   // Navigation & View State
   const [currentTab, setCurrentTab] = useState<NavTab>('dashboard');
-  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(() => {
+    if (typeof window !== 'undefined') {
+      return window.innerWidth >= 1024;
+    }
+    return true;
+  });
 
   // Data State from Local Storage
   const [teachers, setTeachers] = useState<Teacher[]>([]);
@@ -449,26 +454,32 @@ export default function App() {
         showToast={showToast}
       />
 
-      {/* Left Sidebar (Desktop fixed, Mobile drawer) */}
+      {/* Left Sidebar (Desktop collapsible, Mobile drawer) */}
       <Sidebar
         currentTab={currentTab}
         onSelectTab={(tab) => {
           setCurrentTab(tab);
           setPrintSupervisionId(null);
         }}
-        isOpenMobile={isMobileSidebarOpen}
-        onCloseMobile={() => setIsMobileSidebarOpen(false)}
+        isOpen={isSidebarOpen}
+        onClose={() => setIsSidebarOpen(false)}
         teacherCount={teachers.length}
         supervisionCount={supervisions.length}
         pmReportCount={pmReports.length}
       />
 
       {/* Main Workspace */}
-      <div className="flex-1 flex flex-col min-w-0 lg:pl-64">
+      <div
+        className={`flex-1 flex flex-col min-w-0 transition-all duration-300 ease-in-out ${
+          isSidebarOpen ? 'lg:pl-64' : 'lg:pl-0'
+        }`}
+      >
         {/* Top Navbar */}
         <Navbar
           currentTab={currentTab}
-          onOpenMobileSidebar={() => setIsMobileSidebarOpen(true)}
+          isSidebarOpen={isSidebarOpen}
+          onToggleSidebar={() => setIsSidebarOpen((prev) => !prev)}
+          onOpenMobileSidebar={() => setIsSidebarOpen(true)}
           onStartNewSupervision={() => handleStartNewSupervision()}
           onOpenProfileModal={() => setIsProfileModalOpen(true)}
           onOpenAuthModal={() => setIsAuthModalOpen(true)}

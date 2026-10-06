@@ -23,8 +23,10 @@ export type NavTab = 'dashboard' | 'teachers' | 'supervision' | 'results' | 'rep
 interface SidebarProps {
   currentTab: NavTab;
   onSelectTab: (tab: NavTab) => void;
-  isOpenMobile: boolean;
-  onCloseMobile: () => void;
+  isOpen?: boolean;
+  onClose?: () => void;
+  isOpenMobile?: boolean;
+  onCloseMobile?: () => void;
   teacherCount: number;
   supervisionCount: number;
   pmReportCount?: number;
@@ -33,12 +35,17 @@ interface SidebarProps {
 export const Sidebar: React.FC<SidebarProps> = ({
   currentTab,
   onSelectTab,
+  isOpen,
+  onClose,
   isOpenMobile,
   onCloseMobile,
   teacherCount,
   supervisionCount,
   pmReportCount = 0
 }) => {
+  const isSidebarVisible = isOpen !== undefined ? isOpen : (isOpenMobile ?? true);
+  const handleClose = onClose || onCloseMobile;
+
   const menuItems = [
     {
       id: 'dashboard' as NavTab,
@@ -86,27 +93,29 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   const handleNavClick = (tab: NavTab) => {
     onSelectTab(tab);
-    onCloseMobile();
+    if (typeof window !== 'undefined' && window.innerWidth < 1024) {
+      handleClose?.();
+    }
   };
 
   return (
     <>
       {/* Mobile Backdrop */}
-      {isOpenMobile && (
+      {isSidebarVisible && (
         <div
-          onClick={onCloseMobile}
+          onClick={handleClose}
           className="fixed inset-0 bg-slate-900/50 z-40 lg:hidden backdrop-blur-xs transition-opacity"
         />
       )}
 
       {/* Sidebar container */}
       <aside
-        className={`fixed top-0 bottom-0 left-0 z-40 w-64 bg-gradient-to-b from-[#091124] via-[#0f1c3f] to-[#0a1024] text-slate-200 border-r border-indigo-950/60 shadow-2xl flex flex-col transition-transform duration-200 ease-in-out lg:translate-x-0 ${
-          isOpenMobile ? 'translate-x-0' : '-translate-x-full'
+        className={`fixed top-0 bottom-0 left-0 z-40 w-64 bg-gradient-to-b from-[#091124] via-[#0f1c3f] to-[#0a1024] text-slate-200 border-r border-indigo-950/60 shadow-2xl flex flex-col transition-all duration-300 ease-in-out ${
+          isSidebarVisible ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
         {/* Brand Header */}
-        <div className="h-16 px-5 border-b border-indigo-900/40 flex items-center justify-between bg-black/10">
+        <div className="h-16 px-4 sm:px-5 border-b border-indigo-900/40 flex items-center justify-between bg-black/10 shrink-0">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-blue-500 via-indigo-500 to-cyan-400 flex items-center justify-center text-white font-bold shadow-md shadow-blue-500/25 ring-2 ring-white/10">
               <GraduationCap className="w-5 h-5" />
@@ -118,16 +127,20 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   Merdeka
                 </span>
               </div>
-              <p className="text-[11px] text-blue-200/70 font-medium truncate max-w-[150px]">
+              <p className="text-[11px] text-blue-200/70 font-medium truncate max-w-[140px]">
                 Supervisi Akademik
               </p>
             </div>
           </div>
+
+          {/* Close 'X' Button - Visible and accessible on laptop/desktop and mobile */}
           <button
-            onClick={onCloseMobile}
-            className="lg:hidden p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition-colors"
+            onClick={handleClose}
+            className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800/80 transition-colors cursor-pointer group"
+            title="Tutup Sidebar (Tampilan Layar Penuh)"
+            aria-label="Tutup menu navigasi sidebar"
           >
-            <X className="w-5 h-5" />
+            <X className="w-5 h-5 group-hover:scale-110 transition-transform" />
           </button>
         </div>
 
