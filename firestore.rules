@@ -46,5 +46,11 @@ service cloud.firestore {
       allow read: if isSignedIn();
       allow write: if isSignedIn() && isValidId(supervisionId);
     }
+
+    // PM Management Reports (Praktik Pedagogis)
+    match /pm_reports/{reportId} {
+      allow read: if isSignedIn();
+      allow write: if isSignedIn() && isValidId(reportId);
+    }
   }
 }

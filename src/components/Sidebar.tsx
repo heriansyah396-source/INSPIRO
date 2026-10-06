@@ -14,10 +14,11 @@ import {
   X,
   GraduationCap,
   Sparkles,
-  ChevronRight
+  ChevronRight,
+  BookOpenCheck
 } from 'lucide-react';
 
-export type NavTab = 'dashboard' | 'teachers' | 'supervision' | 'results' | 'reports' | 'settings';
+export type NavTab = 'dashboard' | 'teachers' | 'supervision' | 'results' | 'reports' | 'pm-reports' | 'settings';
 
 interface SidebarProps {
   currentTab: NavTab;
@@ -26,6 +27,7 @@ interface SidebarProps {
   onCloseMobile: () => void;
   teacherCount: number;
   supervisionCount: number;
+  pmReportCount?: number;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -34,7 +36,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
   isOpenMobile,
   onCloseMobile,
   teacherCount,
-  supervisionCount
+  supervisionCount,
+  pmReportCount = 0
 }) => {
   const menuItems = [
     {
@@ -63,9 +66,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
     },
     {
       id: 'reports' as NavTab,
-      label: 'Laporan',
+      label: 'Laporan Supervisi',
       icon: FileText,
       badge: supervisionCount > 0 ? supervisionCount : undefined
+    },
+    {
+      id: 'pm-reports' as NavTab,
+      label: 'Pengelolaan PM',
+      icon: BookOpenCheck,
+      badge: pmReportCount > 0 ? pmReportCount : 'Praktik Pedagogis'
     },
     {
       id: 'settings' as NavTab,

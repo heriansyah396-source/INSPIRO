@@ -14,7 +14,8 @@ import {
   Trash2,
   CheckCircle2,
   Clock,
-  Plus
+  Plus,
+  School
 } from 'lucide-react';
 import { SupervisionRecord } from '../types/inspiro';
 
@@ -38,21 +39,36 @@ export const ReportList: React.FC<ReportListProps> = ({
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'selesai' | 'draft'>('all');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
+  const [schoolFilter, setSchoolFilter] = useState<string>('all');
+
+  const availableSchools = useMemo(() => {
+    const set = new Set<string>();
+    supervisions.forEach((s) => {
+      if (s.identity.satuanPendidikan) {
+        set.add(s.identity.satuanPendidikan);
+      }
+    });
+    return Array.from(set);
+  }, [supervisions]);
 
   const filteredSupervisions = useMemo(() => {
     return supervisions.filter((item) => {
       const matchSearch =
         item.identity.namaGuru.toLowerCase().includes(searchTerm.toLowerCase()) ||
         item.identity.mapel.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (item.identity.satuanPendidikan && item.identity.satuanPendidikan.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (item.identity.namaSupervisor && item.identity.namaSupervisor.toLowerCase().includes(searchTerm.toLowerCase())) ||
         (item.identity.nipGuru && item.identity.nipGuru.includes(searchTerm));
 
       const matchStatus = statusFilter === 'all' || item.status === statusFilter;
       const matchCategory =
         categoryFilter === 'all' || item.category === categoryFilter;
+      const matchSchool =
+        schoolFilter === 'all' || item.identity.satuanPendidikan === schoolFilter;
 
-      return matchSearch && matchStatus && matchCategory;
+      return matchSearch && matchStatus && matchCategory && matchSchool;
     });
-  }, [supervisions, searchTerm, statusFilter, categoryFilter]);
+  }, [supervisions, searchTerm, statusFilter, categoryFilter, schoolFilter]);
 
   return (
     <div className="space-y-5">
@@ -79,22 +95,22 @@ export const ReportList: React.FC<ReportListProps> = ({
 
         {/* Filters */}
         <div className="grid grid-cols-1 sm:grid-cols-12 gap-2.5 pt-2 border-t border-slate-100">
-          <div className="relative sm:col-span-6">
+          <div className="relative sm:col-span-5">
             <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
             <input
               type="text"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Cari nama guru, NIP, atau mata pelajaran..."
-              className="w-full pl-9 pr-3.5 py-2 text-xs rounded-lg border border-slate-200 bg-slate-50/50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="Cari guru, NIP, sekolah, atau mapel..."
+              className="w-full pl-9 pr-3.5 py-2 text-xs rounded-lg border border-slate-200 bg-slate-50/50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 font-medium"
             />
           </div>
 
-          <div className="sm:col-span-3">
+          <div className="sm:col-span-2">
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value as any)}
-              className="w-full px-3 py-2 text-xs rounded-lg border border-slate-200 bg-slate-50/50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
+              className="w-full px-3 py-2 text-xs rounded-lg border border-slate-200 bg-slate-50/50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer font-medium"
             >
               <option value="all">Semua Status</option>
               <option value="selesai">Selesai (Siap Cetak)</option>
@@ -102,17 +118,32 @@ export const ReportList: React.FC<ReportListProps> = ({
             </select>
           </div>
 
-          <div className="sm:col-span-3">
+          <div className="sm:col-span-2">
             <select
               value={categoryFilter}
               onChange={(e) => setCategoryFilter(e.target.value)}
-              className="w-full px-3 py-2 text-xs rounded-lg border border-slate-200 bg-slate-50/50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
+              className="w-full px-3 py-2 text-xs rounded-lg border border-slate-200 bg-slate-50/50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer font-medium"
             >
               <option value="all">Semua Kategori</option>
               <option value="Amat Baik (SB)">Amat Baik (SB)</option>
               <option value="Baik (B)">Baik (B)</option>
               <option value="Cukup (C)">Cukup (C)</option>
               <option value="Kurang (K)">Kurang (K)</option>
+            </select>
+          </div>
+
+          <div className="sm:col-span-3">
+            <select
+              value={schoolFilter}
+              onChange={(e) => setSchoolFilter(e.target.value)}
+              className="w-full px-3 py-2 text-xs rounded-lg border border-slate-200 bg-slate-50/50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer font-medium"
+            >
+              <option value="all">Semua Sekolah Binaan</option>
+              {availableSchools.map((sch) => (
+                <option key={sch} value={sch}>
+                  {sch}
+                </option>
+              ))}
             </select>
           </div>
         </div>
@@ -154,6 +185,17 @@ export const ReportList: React.FC<ReportListProps> = ({
                         <div className="text-[11px] text-slate-500 font-mono">
                           NIP: {item.identity.nipGuru || '-'}
                         </div>
+                        {item.identity.satuanPendidikan && (
+                          <div className="text-[10px] text-blue-700 font-semibold flex items-center gap-1 mt-0.5">
+                            <School className="w-3 h-3 text-blue-500 shrink-0" />
+                            <span className="truncate max-w-[200px]">{item.identity.satuanPendidikan}</span>
+                          </div>
+                        )}
+                        {item.identity.namaSupervisor && (
+                          <div className="text-[10px] text-slate-400 mt-0.5 truncate max-w-[200px]">
+                            Penilai: {item.identity.namaSupervisor} ({item.identity.jabatanSupervisor || 'Supervisor'})
+                          </div>
+                        )}
                       </td>
                       <td className="py-3.5 px-4">
                         <span className="font-medium text-slate-800">{item.identity.mapel}</span>

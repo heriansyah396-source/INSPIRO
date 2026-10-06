@@ -20,10 +20,12 @@ import { ToastContainer, ToastMessage } from './components/Toast';
 import { ConfirmModal } from './components/ConfirmModal';
 import { LoginView } from './components/LoginView';
 import { ManagePrincipalsModal } from './components/ManagePrincipalsModal';
+import { PMManagementView } from './components/PMManagementView';
 import {
   AppSettings,
   SupervisionRecord,
-  Teacher
+  Teacher,
+  PMReport
 } from './types/inspiro';
 import {
   addTeacher,
@@ -36,7 +38,10 @@ import {
   resetToDemoData,
   saveSettings,
   saveSupervisionRecord,
-  updateTeacher
+  updateTeacher,
+  getPMReports,
+  savePMReport,
+  deletePMReport
 } from './utils/storage';
 import {
   auth,
@@ -47,6 +52,9 @@ import {
   syncTeacherToCloud,
   fetchCloudSupervisions,
   fetchCloudTeachers,
+  syncPMReportToCloud,
+  fetchCloudPMReports,
+  deletePMReportFromCloud,
   UserRoleProfile
 } from './services/firebase';
 
@@ -58,6 +66,7 @@ export default function App() {
   // Data State from Local Storage
   const [teachers, setTeachers] = useState<Teacher[]>([]);
   const [supervisions, setSupervisions] = useState<SupervisionRecord[]>([]);
+  const [pmReports, setPmReports] = useState<PMReport[]>([]);
   const [settings, setSettings] = useState<AppSettings>(getSettings());
 
   // Active item contexts
@@ -98,6 +107,7 @@ export default function App() {
   const refreshData = useCallback(() => {
     setTeachers(getTeachers());
     setSupervisions(getSupervisions());
+    setPmReports(getPMReports());
     setSettings(getSettings());
   }, []);
 
@@ -134,6 +144,15 @@ export default function App() {
               const map = new Map<string, Teacher>();
               prev.forEach((t) => map.set(t.id, t));
               cloudTeachers.forEach((t) => map.set(t.id, t));
+              return Array.from(map.values());
+            });
+          }
+          const cloudPM = await fetchCloudPMReports();
+          if (cloudPM.length > 0) {
+            setPmReports((prev) => {
+              const map = new Map<string, PMReport>();
+              prev.forEach((r) => map.set(r.id, r));
+              cloudPM.forEach((r) => map.set(r.id, r));
               return Array.from(map.values());
             });
           }
@@ -319,6 +338,23 @@ export default function App() {
     });
   };
 
+  // Handlers: PM Reports (Praktik Pedagogis)
+  const handleSavePMReport = (report: PMReport) => {
+    savePMReport(report);
+    if (currentUser) {
+      syncPMReportToCloud(report).catch((err) => console.warn('Cloud sync PM report:', err));
+    }
+    refreshData();
+  };
+
+  const handleDeletePMReport = (id: string) => {
+    deletePMReport(id);
+    if (currentUser) {
+      deletePMReportFromCloud(id).catch((err) => console.warn('Cloud delete PM report:', err));
+    }
+    refreshData();
+  };
+
   // Active Record for detail view
   const activeRecord =
     supervisions.find((s) => s.id === selectedSupervisionId) || supervisions[0];
@@ -428,6 +464,7 @@ export default function App() {
         onCloseMobile={() => setIsMobileSidebarOpen(false)}
         teacherCount={teachers.length}
         supervisionCount={supervisions.length}
+        pmReportCount={pmReports.length}
       />
 
       {/* Main Workspace */}
@@ -466,6 +503,7 @@ export default function App() {
                   onPrintReport={handlePrintReport}
                   onNavigateToTeachers={() => setCurrentTab('teachers')}
                   onNavigateToReports={() => setCurrentTab('reports')}
+                  onNavigateToPM={() => setCurrentTab('pm-reports')}
                 />
               )}
 
@@ -521,7 +559,7 @@ export default function App() {
                 )
               )}
 
-              {/* Tab 5: Laporan */}
+              {/* Tab 5: Laporan Supervisi */}
               {currentTab === 'reports' && (
                 <ReportList
                   supervisions={supervisions}
@@ -533,7 +571,20 @@ export default function App() {
                 />
               )}
 
-              {/* Tab 6: Pengaturan */}
+              {/* Tab 6: Laporan Pengelolaan PM di Sekolah (Praktik Pedagogis) */}
+              {currentTab === 'pm-reports' && (
+                <PMManagementView
+                  pmReports={pmReports}
+                  supervisions={supervisions}
+                  settings={settings}
+                  currentUser={currentUser}
+                  onSavePMReport={handleSavePMReport}
+                  onDeletePMReport={handleDeletePMReport}
+                  showToast={showToast}
+                />
+              )}
+
+              {/* Tab 7: Pengaturan */}
               {currentTab === 'settings' && (
                 <SettingsView
                   settings={settings}

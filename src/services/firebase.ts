@@ -30,7 +30,7 @@ import {
 import firebaseConfig from '@/firebase-applet-config.json';
 
 export { onAuthStateChanged };
-import { SupervisionRecord, Teacher, AppSettings } from '../types/inspiro';
+import { SupervisionRecord, Teacher, AppSettings, PMReport } from '../types/inspiro';
 
 // Initialize Firebase App
 export const app = initializeApp(firebaseConfig);
@@ -106,10 +106,10 @@ export interface UserRoleProfile {
 
 // 1. Auth Services
 export async function signInWithGoogle(): Promise<UserRoleProfile> {
-  try {
-    const res = await signInWithPopup(auth, googleProvider);
-    const user = res.user;
+  const res = await signInWithPopup(auth, googleProvider);
+  const user = res.user;
 
+  try {
     // Check or create profile in Firestore
     const userDocRef = doc(db, 'users', user.uid);
     const snap = await getDoc(userDocRef);
@@ -132,14 +132,17 @@ export async function signInWithGoogle(): Promise<UserRoleProfile> {
     await setDoc(userDocRef, defaultProfile);
     return defaultProfile;
   } catch (error) {
-    handleFirestoreError(error, OperationType.WRITE, 'users');
+    handleFirestoreError(error, OperationType.WRITE, `users/${user.uid}`);
     throw error;
   }
 }
 
 export async function loginWithEmail(email: string, pass: string): Promise<UserRoleProfile> {
+  // 1. Authenticate with Firebase Auth
+  const res = await signInWithEmailAndPassword(auth, email, pass);
+
+  // 2. Query user profile from Firestore
   try {
-    const res = await signInWithEmailAndPassword(auth, email, pass);
     const snap = await getDoc(doc(db, 'users', res.user.uid));
     if (snap.exists()) {
       return snap.data() as UserRoleProfile;
@@ -156,9 +159,9 @@ export async function loginWithEmail(email: string, pass: string): Promise<UserR
     };
     await setDoc(doc(db, 'users', res.user.uid), profile);
     return profile;
-  } catch (error) {
-    handleFirestoreError(error, OperationType.GET, 'users');
-    throw error;
+  } catch (dbErr) {
+    handleFirestoreError(dbErr, OperationType.GET, `users/${res.user.uid}`);
+    throw dbErr;
   }
 }
 
@@ -174,8 +177,11 @@ export async function registerWithEmail(
     throw new Error('Pendaftaran akun mandiri HANYA diizinkan untuk Pengawas Sekolah.');
   }
 
+  // 1. Create account with Firebase Auth
+  const res = await createUserWithEmailAndPassword(auth, email, pass);
+
+  // 2. Write profile to Firestore
   try {
-    const res = await createUserWithEmailAndPassword(auth, email, pass);
     const profile: UserRoleProfile = {
       uid: res.user.uid,
       email: res.user.email || email,
@@ -187,9 +193,9 @@ export async function registerWithEmail(
     };
     await setDoc(doc(db, 'users', res.user.uid), profile);
     return profile;
-  } catch (error) {
-    handleFirestoreError(error, OperationType.WRITE, 'users');
-    throw error;
+  } catch (dbErr) {
+    handleFirestoreError(dbErr, OperationType.WRITE, `users/${res.user.uid}`);
+    throw dbErr;
   }
 }
 
@@ -247,3 +253,38 @@ export async function fetchCloudTeachers(): Promise<Teacher[]> {
     return [];
   }
 }
+
+// 3. Cloud Firestore PM Reports Synchronization (Praktik Pedagogis)
+export async function syncPMReportToCloud(report: PMReport): Promise<void> {
+  const path = `pm_reports/${report.id}`;
+  try {
+    await setDoc(doc(db, 'pm_reports', report.id), report);
+  } catch (error) {
+    handleFirestoreError(error, OperationType.WRITE, path);
+  }
+}
+
+export async function fetchCloudPMReports(): Promise<PMReport[]> {
+  const path = 'pm_reports';
+  try {
+    const snap = await getDocs(collection(db, 'pm_reports'));
+    const list: PMReport[] = [];
+    snap.forEach((d) => {
+      list.push(d.data() as PMReport);
+    });
+    return list;
+  } catch (error) {
+    handleFirestoreError(error, OperationType.LIST, path);
+    return [];
+  }
+}
+
+export async function deletePMReportFromCloud(id: string): Promise<void> {
+  const path = `pm_reports/${id}`;
+  try {
+    await deleteDoc(doc(db, 'pm_reports', id));
+  } catch (error) {
+    handleFirestoreError(error, OperationType.DELETE, path);
+  }
+}
+

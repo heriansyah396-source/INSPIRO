@@ -22,6 +22,7 @@ import {
   signInWithGoogle,
   UserRoleProfile
 } from '../services/firebase';
+import { authenticateUser } from '../utils/storage';
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -81,6 +82,23 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       setErrorMsg('');
 
       if (mode === 'login') {
+        const local = authenticateUser(email, password);
+        if (local) {
+          const profile: UserRoleProfile = {
+            uid: local.id,
+            email: local.email,
+            name: local.name,
+            role: local.role,
+            nip: local.nip,
+            schoolName: local.schoolName,
+            createdAt: local.createdAt
+          };
+          onSuccess(profile);
+          showToast('Login Berhasil', `Masuk sebagai ${profile.name}`, 'success');
+          onClose();
+          return;
+        }
+
         const profile = await loginWithEmail(email, password);
         onSuccess(profile);
         showToast('Login Berhasil', `Masuk sebagai ${profile.name}`, 'success');

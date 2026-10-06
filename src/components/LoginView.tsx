@@ -92,28 +92,33 @@ export const LoginView: React.FC<LoginViewProps> = ({
 
     try {
       let profile: UserRoleProfile | null = null;
-      try {
-        profile = await loginWithEmail(loginEmail.trim(), loginPassword);
-      } catch (fbErr: any) {
-        console.warn('Firebase login fallback to local database:', fbErr);
-        const localAuth = authenticateUser(loginEmail.trim(), loginPassword);
-        if (localAuth) {
-          profile = {
-            uid: localAuth.id,
-            email: localAuth.email,
-            name: localAuth.name,
-            role: localAuth.role,
-            nip: localAuth.nip,
-            schoolName: localAuth.schoolName,
-            createdAt: localAuth.createdAt
-          };
-        } else {
+
+      // 1. Prioritize pre-configured and managed accounts (Demo / Kepsek Binaan / Pengawas)
+      const localAuth = authenticateUser(loginEmail.trim(), loginPassword);
+      if (localAuth) {
+        profile = {
+          uid: localAuth.id,
+          email: localAuth.email,
+          name: localAuth.name,
+          role: localAuth.role,
+          nip: localAuth.nip,
+          schoolName: localAuth.schoolName,
+          createdAt: localAuth.createdAt
+        };
+      } else if (loginEmail.includes('@')) {
+        // 2. Fallback to Firebase Cloud Authentication if an email address was entered
+        try {
+          profile = await loginWithEmail(loginEmail.trim(), loginPassword);
+        } catch (fbErr: any) {
+          const fbMsg = fbErr?.message || '';
           if (
-            fbErr?.message?.includes('auth/invalid-credential') ||
-            fbErr?.message?.includes('user-not-found') ||
-            fbErr?.message?.includes('wrong-password')
+            fbMsg.includes('auth/invalid-credential') ||
+            fbMsg.includes('user-not-found') ||
+            fbMsg.includes('wrong-password')
           ) {
             throw new Error('Email atau kata sandi tidak sesuai.');
+          } else if (fbMsg.includes('auth/operation-not-allowed')) {
+            throw new Error('Autentikasi Email/Password Firebase belum diaktifkan di Google Console. Silakan gunakan Akun Cepat Demo atau Masuk dengan Google.');
           } else {
             throw new Error(
               userRole === 'kepala_sekolah'
@@ -122,6 +127,12 @@ export const LoginView: React.FC<LoginViewProps> = ({
             );
           }
         }
+      } else {
+        throw new Error(
+          userRole === 'kepala_sekolah'
+            ? 'Akun Kepala Sekolah tidak ditemukan atau kata sandi salah. Gunakan username dan password yang telah diberikan oleh Pengawas Sekolah.'
+            : 'Akun Pengawas tidak ditemukan atau kata sandi salah. Silakan periksa kembali atau pilih tab "Daftar Akun Pengawas" bila belum mendaftar.'
+        );
       }
 
       if (profile) {

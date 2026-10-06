@@ -42,6 +42,10 @@ const TAB_TITLES: Record<NavTab, { title: string; subtitle: string }> = {
     title: 'Laporan & Dokumen Resmi',
     subtitle: 'Daftar hasil supervisi lengkap dan cetak format kedinasan'
   },
+  'pm-reports': {
+    title: 'Laporan Pengelolaan PM di Sekolah',
+    subtitle: 'Audit evaluasi mutu 4 dimensi praktik pedagogis di sekolah binaan'
+  },
   settings: {
     title: 'Pengaturan Sistem',
     subtitle: 'Identitas sekolah, data pengawas, dan backup / restore database'

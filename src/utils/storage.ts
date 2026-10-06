@@ -11,7 +11,8 @@ import {
   RuleBasedAnalysis,
   SupervisionCategory,
   SupervisionRecord,
-  Teacher
+  Teacher,
+  PMReport
 } from '../types/inspiro';
 
 const TEACHERS_KEY = 'inspiro_teachers';
@@ -539,3 +540,143 @@ export function authenticateUser(emailOrUsername: string, pass: string): Managed
   }
   return null;
 }
+
+// ========================================================================
+// 8. PM Management Reports (Praktik Pedagogis) Storage
+// ========================================================================
+const PM_REPORTS_KEY = 'inspiro_pm_reports';
+
+export const DEFAULT_PM_REPORTS: PMReport[] = [
+  {
+    id: 'pm-rep-01',
+    schoolName: 'SMP Negeri 1 Merdeka Nusantara',
+    semester: 'Ganjil',
+    academicYear: '2026/2027',
+    assessorName: 'Heriansyah., S.Si., S.Pd., M.Pd',
+    assessorRole: 'Pengawas Sekolah',
+    assessorNip: '19820415 200801 1 007',
+    headmasterName: 'Dra. Hj. Nurhasanah, M.Pd.',
+    headmasterNip: '19720815 199802 2 003',
+    evalDate: '2026-09-28',
+    dimension1: {
+      score: 25,
+      level: 'sangat_baik',
+      notes: 'Laporan mencakup seluruh tahapan (pra-observasi, observasi kelas 12 indikator, dan pasca/refleksi) secara lengkap, runtut, dan konsisten.',
+      evidenceNotes: 'Terdokumentasi 8 sesi pra-observasi, lembar skor observasi 12 indikator tervalidasi, dan catatan wawancara pasca-observasi lengkap.'
+    },
+    dimension2: {
+      score: 25,
+      level: 'sangat_baik',
+      notes: 'Data sangat lengkap, objektif, berbasis indikator PM (Praktik Pedagogis), dan menunjukkan praktik nyata di kelas.',
+      evidenceNotes: 'Disertai catatan perilaku murid konkrit, rubrik diferensiasi konten & proses, dan deskripsi keterlibatan murid.'
+    },
+    dimension3: {
+      score: 25,
+      level: 'sangat_baik',
+      notes: 'Umpan balik berbasis data, konstruktif, mendorong refleksi guru, dan berorientasi perbaikan.',
+      evidenceNotes: 'Wawancara pasca-observasi berlangsung dua arah dengan teknik coaching GROW, mendorong guru menemukan solusi mandiri.'
+    },
+    dimension4: {
+      score: 25,
+      level: 'sangat_baik',
+      notes: 'Tindak lanjut jelas, spesifik, berkelanjutan (coaching, PLC, perbaikan pembelajaran), dan terukur.',
+      evidenceNotes: 'Jadwal tindak lanjut terjadwal dalam Komunitas Belajar (Kombel) sekolah dengan target penilaian modul ajar revisi dalam 3 pekan.'
+    },
+    totalScore: 100,
+    predicate: 'Amat Baik (A)',
+    generalNotes: 'Pengelolaan Praktik Pedagogis (PM) di SMP Negeri 1 Merdeka Nusantara telah berjalan sangat efektif dan menjadi rujukan praktik baik bagi sekolah binaan lainnya.',
+    recommendation: 'Pertahankan budaya coaching reflektif antar guru sejawat dan perluas desiminasi modul ajar berdiferensiasi ke jejaring MGMP sub-rayon.',
+    interventionPlan: 'Pendampingan keberlanjutan Komunitas Praktisi (PLC) untuk inovasi asesmen formatif berbasis digital.',
+    status: 'final',
+    createdAt: '2026-09-28T10:00:00Z',
+    updatedAt: '2026-09-28T14:30:00Z'
+  },
+  {
+    id: 'pm-rep-02',
+    schoolName: 'SMP Negeri 2 Merdeka Nusantara',
+    semester: 'Ganjil',
+    academicYear: '2026/2027',
+    assessorName: 'Heriansyah., S.Si., S.Pd., M.Pd',
+    assessorRole: 'Pengawas Sekolah',
+    assessorNip: '19820415 200801 1 007',
+    headmasterName: 'Drs. Bambang Irawan, M.Pd.',
+    headmasterNip: '19690312 199512 1 001',
+    evalDate: '2026-09-30',
+    dimension1: {
+      score: 25,
+      level: 'sangat_baik',
+      notes: 'Laporan mencakup seluruh tahapan secara lengkap dan runtut.',
+      evidenceNotes: 'Seluruh tahap pra, observasi, dan pasca telah diinput oleh Kepala Sekolah ke dalam sistem.'
+    },
+    dimension2: {
+      score: 18.75,
+      level: 'baik',
+      notes: 'Data lengkap dan objektif berbasis indikator PM, namun bukti catatan deskriptif perilaku murid masih perlu diperdalam.',
+      evidenceNotes: 'Skor 12 indikator terisi lengkap, deskripsi kualitatif fokus perilaku beberapa guru masih bersifat garis besar.'
+    },
+    dimension3: {
+      score: 18.75,
+      level: 'baik',
+      notes: 'Umpan balik konstruktif dan terarah, proses refleksi guru perlu lebih mandiri.',
+      evidenceNotes: 'Guru merespon umpan balik dengan baik, perlu pendampingan agar guru lebih kritis menemukan akar tantangan kelas.'
+    },
+    dimension4: {
+      score: 18.75,
+      level: 'baik',
+      notes: 'Tindak lanjut spesifik, rencana coaching dan forum PLC perlu dipastikan jadwal eksekusinya.',
+      evidenceNotes: 'RTL telah memuat target waktu 1 bulan, pendampingan lanjutan di Komunitas Belajar masih dalam tahap penjadwalan.'
+    },
+    totalScore: 81.25,
+    predicate: 'Baik (B)',
+    generalNotes: 'Pengelolaan PM menunjukkan komitmen tinggi dalam siklus supervisi Kurikulum Merdeka. Perlu penguatan pada dokumentasi bukti perilaku otentik di kelas.',
+    recommendation: 'Tingkatkan keterampilan Kepala Sekolah dalam teknik observasi berbasis bukti perilaku (evidence-based observation).',
+    interventionPlan: 'Workshop mini teknik coaching observasi kelas dan penguatan Komunitas Belajar sekolah.',
+    status: 'final',
+    createdAt: '2026-09-30T09:15:00Z',
+    updatedAt: '2026-09-30T13:45:00Z'
+  }
+];
+
+export function getPMReports(): PMReport[] {
+  const list = safeParse<PMReport[]>(PM_REPORTS_KEY, []);
+  if (list.length === 0) {
+    savePMReports(DEFAULT_PM_REPORTS);
+    return DEFAULT_PM_REPORTS;
+  }
+  return list;
+}
+
+export function savePMReports(reports: PMReport[]): void {
+  try {
+    localStorage.setItem(PM_REPORTS_KEY, JSON.stringify(reports));
+  } catch (e) {
+    console.error('Error saving PM reports:', e);
+  }
+}
+
+export function savePMReport(report: PMReport): void {
+  const current = getPMReports();
+  const index = current.findIndex((r) => r.id === report.id);
+  let updated: PMReport[];
+  if (index >= 0) {
+    updated = [...current];
+    updated[index] = { ...report, updatedAt: new Date().toISOString() };
+  } else {
+    updated = [{ ...report, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }, ...current];
+  }
+  savePMReports(updated);
+}
+
+export function deletePMReport(id: string): boolean {
+  const current = getPMReports();
+  const filtered = current.filter((r) => r.id !== id);
+  if (filtered.length === current.length) return false;
+  savePMReports(filtered);
+  return true;
+}
+
+export function getPMReportById(id: string): PMReport | null {
+  const current = getPMReports();
+  return current.find((r) => r.id === id) || null;
+}
+

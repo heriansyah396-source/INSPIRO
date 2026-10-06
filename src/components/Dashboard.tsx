@@ -14,7 +14,8 @@ import {
   TrendingUp,
   FileText,
   Printer,
-  Plus
+  Plus,
+  BookOpenCheck
 } from 'lucide-react';
 import { SupervisionRecord, Teacher } from '../types/inspiro';
 
@@ -26,6 +27,7 @@ interface DashboardProps {
   onPrintReport: (supervisionId: string) => void;
   onNavigateToTeachers: () => void;
   onNavigateToReports: () => void;
+  onNavigateToPM?: () => void;
 }
 
 export const Dashboard: React.FC<DashboardProps> = ({
@@ -35,7 +37,8 @@ export const Dashboard: React.FC<DashboardProps> = ({
   onViewResult,
   onPrintReport,
   onNavigateToTeachers,
-  onNavigateToReports
+  onNavigateToReports,
+  onNavigateToPM
 }) => {
   // Calculations
   const totalSupervisi = supervisions.length;
@@ -121,6 +124,15 @@ export const Dashboard: React.FC<DashboardProps> = ({
             <Users className="w-4 h-4 text-cyan-300" />
             <span>Kelola Guru</span>
           </button>
+          {onNavigateToPM && (
+            <button
+              onClick={onNavigateToPM}
+              className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-emerald-400 to-teal-400 hover:from-emerald-300 hover:to-teal-300 text-slate-950 font-bold text-xs rounded-xl transition-all shadow-md shadow-emerald-500/20 cursor-pointer hover:scale-[1.02] active:scale-[0.98]"
+            >
+              <BookOpenCheck className="w-4 h-4 text-slate-950 stroke-[2.5]" />
+              <span>Pengelolaan PM</span>
+            </button>
+          )}
         </div>
       </div>
 

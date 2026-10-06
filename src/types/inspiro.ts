@@ -406,3 +406,162 @@ export const POST_OBSERVATION_QUESTIONS = [
     placeholder: 'Contoh: Mempelajari modul pengelolaan waktu di PMM dan menyiapkan variasi exit ticket digital yang lebih efisien.'
   }
 ];
+
+// ========================================================================
+// PENGELOLAAN PM DI SEKOLAH (PRAKTIK PEDAGOGIS) RUBRIC & REPORTING
+// ========================================================================
+
+export type PMLevel = 'sangat_baik' | 'baik' | 'cukup' | 'kurang';
+
+export interface PMDimensionRubric {
+  id: string;
+  number: number;
+  title: string;
+  maxPoints: number; // 25 pts
+  description: string;
+  criteria: {
+    sangat_baik: { points: number; text: string };
+    baik: { points: number; text: string };
+    cukup: { points: number; text: string };
+    kurang: { points: number; text: string };
+  };
+}
+
+export interface PMDimensionScore {
+  score: number; // 0 to 25
+  level: PMLevel;
+  notes: string;
+  evidenceNotes: string;
+}
+
+export interface PMReport {
+  id: string;
+  schoolName: string;
+  semester: string;
+  academicYear: string;
+  assessorName: string; // Pengawas or Kepala Sekolah
+  assessorRole: string; // 'Pengawas Sekolah' | 'Kepala Sekolah'
+  assessorNip: string;
+  headmasterName: string;
+  headmasterNip: string;
+  evalDate: string;
+
+  // 4 Dimensions (Total 100 pts, 25 pts each):
+  dimension1: PMDimensionScore; // Kelengkapan Tahapan Supervisi (25 pts)
+  dimension2: PMDimensionScore; // Kualitas Data dan Bukti Observasi (25 pts)
+  dimension3: PMDimensionScore; // Kualitas Umpan Balik dan Refleksi (25 pts)
+  dimension4: PMDimensionScore; // Tindak Lanjut Supervisi (25 pts)
+
+  totalScore: number; // 0 - 100
+  predicate: 'Amat Baik (A)' | 'Baik (B)' | 'Cukup (C)' | 'Kurang (K)';
+  generalNotes: string; // Analisis & Kekuatan Praktik Pedagogis
+  recommendation: string; // Rekomendasi Peningkatan Mutu
+  interventionPlan: string; // Rencana Intervensi / Coaching / PLC
+  status: 'draft' | 'final';
+  createdAt: string;
+  updatedAt: string;
+}
+
+export const PM_RUBRICS: PMDimensionRubric[] = [
+  {
+    id: 'dim1',
+    number: 1,
+    title: 'Kelengkapan Tahapan Supervisi',
+    maxPoints: 25,
+    description: 'Laporan mencakup seluruh tahapan (pra, observasi, pasca) secara lengkap, runtut, dan konsisten.',
+    criteria: {
+      sangat_baik: {
+        points: 25,
+        text: 'Laporan mencakup seluruh tahapan (pra-observasi, observasi kelas 12 indikator, dan pasca/refleksi) secara lengkap, runtut, dan konsisten.'
+      },
+      baik: {
+        points: 18.75,
+        text: 'Laporan mencakup 3 tahapan supervisi, namun alur dokumentasi ada yang belum runtut atau terdapat bagian refleksi yang kurang konsisten.'
+      },
+      cukup: {
+        points: 12.5,
+        text: 'Hanya mencakup 2 tahapan supervisi (misal hanya observasi kelas dan pasca, tanpa tahapan pra-observasi).'
+      },
+      kurang: {
+        points: 6.25,
+        text: 'Hanya mencakup 1 tahapan supervisi atau dokumentasi tidak lengkap dan terputus-putus.'
+      }
+    }
+  },
+  {
+    id: 'dim2',
+    number: 2,
+    title: 'Kualitas Data dan Bukti Observasi',
+    maxPoints: 25,
+    description: 'Data sangat lengkap, objektif, berbasis indikator PM, dan menunjukkan praktik nyata di kelas.',
+    criteria: {
+      sangat_baik: {
+        points: 25,
+        text: 'Data sangat lengkap, objektif, berbasis indikator PM (Praktik Pedagogis), dan menunjukkan bukti konkret perilaku nyata murid & guru di kelas.'
+      },
+      baik: {
+        points: 18.75,
+        text: 'Data lengkap dan objektif berbasis indikator PM, namun bukti catatan deskriptif perilaku masih bersifat umum.'
+      },
+      cukup: {
+        points: 12.5,
+        text: 'Data berbasis indikator tetapi kurang objektif atau bukti observasi kelas belum menggambarkan situasi riil secara utuh.'
+      },
+      kurang: {
+        points: 6.25,
+        text: 'Data minim, subjektif, tidak berbasis rubrik indikator PM, dan tanpa bukti catatan perilaku kelas.'
+      }
+    }
+  },
+  {
+    id: 'dim3',
+    number: 3,
+    title: 'Kualitas Umpan Balik dan Refleksi',
+    maxPoints: 25,
+    description: 'Umpan balik berbasis data, konstruktif, mendorong refleksi guru, dan berorientasi perbaikan.',
+    criteria: {
+      sangat_baik: {
+        points: 25,
+        text: 'Umpan balik berbasis data nyata observasi, konstruktif, dialogis, mendorong refleksi kritis mendalam guru, dan berorientasi perbaikan berkelanjutan.'
+      },
+      baik: {
+        points: 18.75,
+        text: 'Umpan balik berbasis data dan konstruktif, namun proses refleksi masih dominan dipandu supervisor (kurang kemandirian guru).'
+      },
+      cukup: {
+        points: 12.5,
+        text: 'Umpan balik bersifat satu arah (instruktif), refleksi guru dangkal dan belum menyentuh akar tantangan pembelajaran.'
+      },
+      kurang: {
+        points: 6.25,
+        text: 'Umpan balik tidak spesifik atau bersifat menghakimi, tidak ada ruang refleksi bermakna bagi guru.'
+      }
+    }
+  },
+  {
+    id: 'dim4',
+    number: 4,
+    title: 'Tindak Lanjut Supervisi',
+    maxPoints: 25,
+    description: 'Tindak lanjut jelas, spesifik, berkelanjutan (coaching, PLC, perbaikan pembelajaran), dan terukur.',
+    criteria: {
+      sangat_baik: {
+        points: 25,
+        text: 'Tindak lanjut jelas, spesifik, berkelanjutan (program coaching rekan sejawat, Komunitas Belajar / PLC, perbaikan pembelajaran), dan terukur dengan target waktu.'
+      },
+      baik: {
+        points: 18.75,
+        text: 'Tindak lanjut spesifik dan terarah pada perbaikan pembelajaran, namun variasi kegiatan pendampingan lanjutan belum beragam.'
+      },
+      cukup: {
+        points: 12.5,
+        text: 'Rencana tindak lanjut ada namun masih bersifat administratif, belum terintegrasi dengan coaching atau Komunitas Belajar (PLC).'
+      },
+      kurang: {
+        points: 6.25,
+        text: 'Tidak ada rencana tindak lanjut yang terukur atau tidak ada komitmen pendampingan pasca supervisi.'
+      }
+    }
+  }
+];
+
