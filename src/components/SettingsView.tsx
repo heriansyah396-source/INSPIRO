@@ -15,7 +15,8 @@ import {
   CheckCircle2,
   Database,
   KeyRound,
-  ShieldCheck
+  ShieldCheck,
+  Sparkles
 } from 'lucide-react';
 import { AppSettings } from '../types/inspiro';
 import {
@@ -352,6 +353,37 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             <span className="text-xs font-bold text-slate-800">Reset ke Data Contoh</span>
             <span className="text-[11px] text-slate-500">Kembalikan 5 guru & 3 supervisi</span>
           </button>
+        </div>
+      </div>
+
+      {/* Informasi Sistem & Pengembang */}
+      <div className="bg-white p-5 sm:p-6 rounded-xl border border-slate-200 shadow-2xs space-y-4">
+        <div className="pb-3 border-b border-slate-100 flex items-center justify-between">
+          <div className="flex items-center gap-2 text-slate-800 font-bold text-sm">
+            <Sparkles className="w-4 h-4 text-blue-600" />
+            <span>Informasi Aplikasi & Pengembang</span>
+          </div>
+          <span className="text-[10px] font-bold bg-blue-50 text-blue-700 px-2.5 py-0.5 rounded-full border border-blue-200">
+            INSPIRO v1.0
+          </span>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+          <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80 space-y-1.5">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block">Pengembang Sistem</span>
+            <div className="font-extrabold text-slate-900 text-sm">Heriansyah, S.Si., S.Pd., M.Pd</div>
+            <p className="text-[11px] text-slate-600 leading-relaxed">
+              Pengawas Sekolah & Pengembang Aplikasi Penjaminan Mutu Supervisi Akademik Kurikulum Merdeka.
+            </p>
+          </div>
+
+          <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80 space-y-1.5">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block">Standar Instrumen</span>
+            <div className="font-bold text-slate-900">Kurikulum Merdeka & Praktik Pedagogis (PM)</div>
+            <p className="text-[11px] text-slate-600 leading-relaxed">
+              Mencakup 12 Indikator Observasi Kelas, Format Dokumen Kedinasan A4, dan Rubrik 4 Dimensi Evaluasi PM.
+            </p>
+          </div>
         </div>
       </div>
     </div>

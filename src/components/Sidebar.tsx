@@ -184,8 +184,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
           })}
         </nav>
 
-        {/* Footer Identity */}
-        <div className="p-3 border-t border-indigo-950/60 bg-black/20">
+        {/* Footer Identity & Pengembang */}
+        <div className="p-3 border-t border-indigo-950/60 bg-black/20 space-y-2">
           <div className="p-2.5 rounded-xl bg-indigo-950/40 border border-indigo-800/30 flex items-center justify-between text-xs">
             <div>
               <div className="text-[11px] font-bold text-slate-200">Database Cloud & Lokal</div>
@@ -195,6 +195,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
               </div>
             </div>
             <span className="text-[10px] text-cyan-400 font-mono font-bold bg-cyan-950/80 px-1.5 py-0.5 rounded border border-cyan-800/40">v1.0</span>
+          </div>
+
+          <div className="px-2 pt-1 pb-0.5 text-center text-[10px] text-slate-400">
+            <span className="block text-slate-500 font-medium">Pengembang Aplikasi:</span>
+            <span className="font-bold text-cyan-300">Heriansyah, S.Si., S.Pd., M.Pd</span>
           </div>
         </div>
       </aside>
