@@ -381,10 +381,6 @@ export default function App() {
               }));
             }
           }}
-          onEnterGuestMode={() => {
-            setIsAuthenticated(true);
-            showToast('Mode Tamu Aktif', 'Anda masuk dalam mode pratinjau lokal offline.', 'info');
-          }}
           showToast={showToast}
         />
       </div>

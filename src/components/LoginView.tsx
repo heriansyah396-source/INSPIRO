@@ -16,7 +16,6 @@ import {
   UserPlus,
   AlertCircle,
   Sparkles,
-  ArrowRight,
   Info,
   CheckCircle2,
   Building,
@@ -32,13 +31,12 @@ import { authenticateUser, addManagedAccount } from '../utils/storage';
 
 interface LoginViewProps {
   onLoginSuccess: (profile: UserRoleProfile) => void;
-  onEnterGuestMode: () => void;
+  onEnterGuestMode?: () => void;
   showToast: (title: string, desc?: string, type?: 'success' | 'warning' | 'error') => void;
 }
 
 export const LoginView: React.FC<LoginViewProps> = ({
   onLoginSuccess,
-  onEnterGuestMode,
   showToast
 }) => {
   // Default to 'pengawas' so the supervisor portal & registration are immediately visible
@@ -864,17 +862,12 @@ export const LoginView: React.FC<LoginViewProps> = ({
             )}
           </div>
 
-          {/* Footer Card with Offline Mode */}
-          <div className="bg-gradient-to-r from-slate-100 via-slate-50 to-slate-100 px-6 py-3.5 border-t border-slate-200 flex items-center justify-between text-xs text-slate-600">
-            <button
-              type="button"
-              onClick={onEnterGuestMode}
-              className="text-blue-700 hover:text-blue-900 font-bold text-[11px] transition-colors cursor-pointer flex items-center gap-1.5 hover:underline"
-            >
-              <span>Mode Tamu / Eksplorasi Lokal (Offline)</span>
-              <ArrowRight className="w-3.5 h-3.5 text-blue-600" />
-            </button>
-            <div className="text-[10px] text-slate-500 font-semibold flex items-center gap-1">
+          {/* Footer Card */}
+          <div className="bg-gradient-to-r from-slate-100 via-slate-50 to-slate-100 px-6 py-3 border-t border-slate-200 flex items-center justify-between text-xs text-slate-600">
+            <div className="text-[11px] text-slate-500 font-medium">
+              Sistem Penjaminan Mutu & Supervisi Akademik
+            </div>
+            <div className="text-[10px] text-slate-500 font-semibold flex items-center gap-1.5">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block" />
               <span>v1.0 Standar Kemendikbudristek</span>
             </div>
