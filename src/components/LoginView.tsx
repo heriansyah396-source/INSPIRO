@@ -545,7 +545,7 @@ export const LoginView: React.FC<LoginViewProps> = ({
                         <span>Akun Contoh: Heriansyah., S.Si., S.Pd., M.Pd</span>
                       </div>
                       <div className="text-[10px] text-emerald-800 font-medium mt-0.5">
-                        NIP: 19820415 200801 1 007 · Pengawas Sekolah
+                        Pengawas Sekolah
                       </div>
                     </div>
                     <span className="text-[10px] font-bold text-emerald-800 bg-emerald-200/80 px-2 py-1 rounded-md border border-emerald-400/50">
