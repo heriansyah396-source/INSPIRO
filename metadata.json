@@ -1,0 +1,6 @@
+{
+  "name": "INSPIRO — Insight Supervisi & Profil Pembelajaran",
+  "description": "Aplikasi digital supervisi akademik Kurikulum Merdeka untuk Pengawas Sekolah, Kepala Sekolah, dan Guru.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

@@ -1,0 +1,233 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "User profile with role, school affiliation, and identity.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "The unique Firebase Auth UID."
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "description": "Email address of the user."
+        },
+        "name": {
+          "type": "string",
+          "description": "Full name with academic titles.",
+          "maxLength": 150
+        },
+        "role": {
+          "type": "string",
+          "enum": ["pengawas", "kepala_sekolah"],
+          "description": "Role in the academic supervision hierarchy."
+        },
+        "nip": {
+          "type": "string",
+          "description": "NIP/NIK identifier.",
+          "maxLength": 50
+        },
+        "schoolName": {
+          "type": "string",
+          "description": "Associated school name.",
+          "maxLength": 200
+        },
+        "schoolId": {
+          "type": "string",
+          "description": "Identifier of the target school."
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Creation timestamp."
+        }
+      },
+      "required": ["id", "email", "name", "role"]
+    },
+    "School": {
+      "title": "School",
+      "description": "School binaan entity under supervisor governance.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique school ID."
+        },
+        "name": {
+          "type": "string",
+          "description": "School name.",
+          "maxLength": 200
+        },
+        "npsn": {
+          "type": "string",
+          "description": "National school identification number.",
+          "maxLength": 20
+        },
+        "city": {
+          "type": "string",
+          "description": "City or regency.",
+          "maxLength": 100
+        },
+        "address": {
+          "type": "string",
+          "description": "Complete physical address.",
+          "maxLength": 300
+        },
+        "principalName": {
+          "type": "string",
+          "description": "Name of the school principal.",
+          "maxLength": 150
+        },
+        "principalNip": {
+          "type": "string",
+          "description": "NIP of the school principal.",
+          "maxLength": 50
+        },
+        "supervisorId": {
+          "type": "string",
+          "description": "UID of the supervisor in charge."
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp created."
+        }
+      },
+      "required": ["id", "name", "npsn"]
+    },
+    "TeacherEntity": {
+      "title": "TeacherEntity",
+      "description": "Educator profile subject to academic supervision.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique teacher identifier."
+        },
+        "nama": {
+          "type": "string",
+          "description": "Full name with titles.",
+          "maxLength": 150
+        },
+        "nip": {
+          "type": "string",
+          "description": "NIP or NUPTK.",
+          "maxLength": 50
+        },
+        "mapel": {
+          "type": "string",
+          "description": "Subject taught.",
+          "maxLength": 100
+        },
+        "kelas": {
+          "type": "string",
+          "description": "Grade / phase level.",
+          "maxLength": 50
+        },
+        "satuanPendidikan": {
+          "type": "string",
+          "description": "Name of the school.",
+          "maxLength": 200
+        },
+        "schoolId": {
+          "type": "string",
+          "description": "Foreign key to School."
+        },
+        "telepon": {
+          "type": "string",
+          "description": "Contact number."
+        },
+        "email": {
+          "type": "string",
+          "description": "Email address."
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Creation timestamp."
+        }
+      },
+      "required": ["id", "nama", "mapel", "kelas"]
+    },
+    "SupervisionEntity": {
+      "title": "SupervisionEntity",
+      "description": "Complete Kurikulum Merdeka supervision record.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Supervision record ID."
+        },
+        "teacherId": {
+          "type": "string",
+          "description": "Foreign key to teacher."
+        },
+        "schoolId": {
+          "type": "string",
+          "description": "Foreign key to school."
+        },
+        "createdBy": {
+          "type": "string",
+          "description": "UID of creator (Supervisor or Principal)."
+        },
+        "creatorRole": {
+          "type": "string",
+          "enum": ["pengawas", "kepala_sekolah"],
+          "description": "Role of creator."
+        },
+        "status": {
+          "type": "string",
+          "enum": ["draft", "selesai"],
+          "description": "Lifecycle state."
+        },
+        "totalScore": {
+          "type": "number",
+          "description": "Sum of 12 indicator scores (max 48)."
+        },
+        "finalScore": {
+          "type": "number",
+          "description": "Scaled final score 0-100."
+        },
+        "category": {
+          "type": "string",
+          "enum": ["Amat Baik (SB)", "Baik (B)", "Cukup (C)", "Kurang (K)"],
+          "description": "Predicate category."
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Creation date."
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "Last updated date."
+        }
+      },
+      "required": ["id", "teacherId", "status", "finalScore", "category"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": {
+        "$ref": "#/entities/UserProfile"
+      },
+      "description": "User profiles for Pengawas and Kepala Sekolah."
+    },
+    "/schools/{schoolId}": {
+      "schema": {
+        "$ref": "#/entities/School"
+      },
+      "description": "School binaan catalog under supervision."
+    },
+    "/teachers/{teacherId}": {
+      "schema": {
+        "$ref": "#/entities/TeacherEntity"
+      },
+      "description": "Teachers registered across schools."
+    },
+    "/supervisions/{supervisionId}": {
+      "schema": {
+        "$ref": "#/entities/SupervisionEntity"
+      },
+      "description": "Academic supervision observation records and follow-up plans."
+    }
+  }
+}
