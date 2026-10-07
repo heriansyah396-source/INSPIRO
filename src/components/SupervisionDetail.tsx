@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import { SupervisionRecord } from '../types/inspiro';
 import { analyzeSupervision } from '../utils/storage';
+import { TeacherRadarChart } from './TeacherRadarChart';
 
 interface SupervisionDetailProps {
   supervision: SupervisionRecord;
@@ -145,6 +146,18 @@ export const SupervisionDetail: React.FC<SupervisionDetailProps> = ({
             <span className="font-semibold text-slate-800 truncate block">{identity.fokusPerilaku || '-'}</span>
           </div>
         </div>
+      </div>
+
+      {/* Visualisasi Radar Capaian Guru */}
+      <div className="bg-white p-5 sm:p-6 rounded-xl border border-slate-200 shadow-2xs space-y-4">
+        <TeacherRadarChart
+          supervision={supervision}
+          teacherName={identity.namaGuru}
+          size="md"
+          showLegend={true}
+          showBreakdown={true}
+          showRecommendations={true}
+        />
       </div>
 
       {/* Visual Stage Breakdown Progress Bars */}

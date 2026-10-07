@@ -466,6 +466,8 @@ export default function App() {
         teacherCount={teachers.length}
         supervisionCount={supervisions.length}
         pmReportCount={pmReports.length}
+        supervisions={supervisions}
+        pmReports={pmReports}
       />
 
       {/* Main Workspace */}

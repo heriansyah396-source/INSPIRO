@@ -12,6 +12,7 @@ import {
   PRE_OBSERVATION_QUESTIONS,
   SupervisionRecord
 } from '../types/inspiro';
+import { TeacherRadarChart } from './TeacherRadarChart';
 
 interface OfficialReportPrintProps {
   supervision: SupervisionRecord;
@@ -247,6 +248,23 @@ export const OfficialReportPrint: React.FC<OfficialReportPrintProps> = ({
                 Kriteria: 91–100 (Amat Baik) · 81–90 (Baik) · 71–80 (Cukup) · ≤70 (Kurang)
               </div>
             </div>
+          </div>
+        </div>
+
+        {/* BAGIAN IV.B: VISUALISASI RADAR PROFIL KOMPETENSI GURU */}
+        <div className="mb-6 print-avoid-break">
+          <div className="bg-slate-100 px-3 py-1 font-sans font-bold text-xs uppercase tracking-wider border-l-4 border-slate-800 mb-2">
+            IV.B. VISUALISASI RADAR 5 DIMENSI KOMPETENSI PEDAGOGIS GURU
+          </div>
+          <div className="border border-slate-300 p-4 rounded bg-white font-sans">
+            <TeacherRadarChart
+              supervision={supervision}
+              teacherName={identity.namaGuru}
+              size="sm"
+              showLegend={true}
+              showBreakdown={true}
+              showRecommendations={false}
+            />
           </div>
         </div>
 

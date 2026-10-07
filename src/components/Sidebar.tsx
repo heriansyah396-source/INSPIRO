@@ -17,6 +17,8 @@ import {
   ChevronRight,
   BookOpenCheck
 } from 'lucide-react';
+import { SupervisionRecord, PMReport } from '../types/inspiro';
+import { RadarChartWidget } from './RadarChartWidget';
 
 export type NavTab = 'dashboard' | 'teachers' | 'supervision' | 'results' | 'reports' | 'pm-reports' | 'settings';
 
@@ -30,6 +32,8 @@ interface SidebarProps {
   teacherCount: number;
   supervisionCount: number;
   pmReportCount?: number;
+  supervisions?: SupervisionRecord[];
+  pmReports?: PMReport[];
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -41,7 +45,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onCloseMobile,
   teacherCount,
   supervisionCount,
-  pmReportCount = 0
+  pmReportCount = 0,
+  supervisions = [],
+  pmReports = []
 }) => {
   const isSidebarVisible = isOpen !== undefined ? isOpen : (isOpenMobile ?? true);
   const handleClose = onClose || onCloseMobile;
@@ -155,47 +161,55 @@ export const Sidebar: React.FC<SidebarProps> = ({
           </p>
         </div>
 
-        {/* Navigation Links */}
-        <nav className="flex-1 px-3 py-2 space-y-1 overflow-y-auto">
-          {menuItems.map((item) => {
-            const Icon = item.icon;
-            const isActive = currentTab === item.id;
-            return (
-              <button
-                key={item.id}
-                onClick={() => handleNavClick(item.id)}
-                className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all group cursor-pointer ${
-                  isActive
-                    ? 'bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-500 text-white shadow-lg shadow-indigo-600/30 ring-1 ring-white/20'
-                    : 'text-slate-300 hover:text-white hover:bg-white/10'
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  <Icon
-                    className={`w-4 h-4 transition-colors ${
-                      isActive ? 'text-white' : 'text-slate-400 group-hover:text-cyan-300'
-                    }`}
-                  />
-                  <span>{item.label}</span>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  {item.badge !== undefined && (
-                    <span
-                      className={`text-[10px] px-2 py-0.5 rounded-full font-bold tabular-nums ${
-                        isActive
-                          ? 'bg-white/20 text-white'
-                          : 'bg-indigo-950/80 text-cyan-300 border border-indigo-800/60'
+        {/* Navigation Links and Radar Chart Widget */}
+        <div className="flex-1 overflow-y-auto px-3 py-2 space-y-3">
+          <nav className="space-y-1">
+            {menuItems.map((item) => {
+              const Icon = item.icon;
+              const isActive = currentTab === item.id;
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => handleNavClick(item.id)}
+                  className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all group cursor-pointer ${
+                    isActive
+                      ? 'bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-500 text-white shadow-lg shadow-indigo-600/30 ring-1 ring-white/20'
+                      : 'text-slate-300 hover:text-white hover:bg-white/10'
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <Icon
+                      className={`w-4 h-4 transition-colors ${
+                        isActive ? 'text-white' : 'text-slate-400 group-hover:text-cyan-300'
                       }`}
-                    >
-                      {item.badge}
-                    </span>
-                  )}
-                  {isActive && <ChevronRight className="w-3.5 h-3.5 text-cyan-200" />}
-                </div>
-              </button>
-            );
-          })}
-        </nav>
+                    />
+                    <span>{item.label}</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    {item.badge !== undefined && (
+                      <span
+                        className={`text-[10px] px-2 py-0.5 rounded-full font-bold tabular-nums ${
+                          isActive
+                            ? 'bg-white/20 text-white'
+                            : 'bg-indigo-950/80 text-cyan-300 border border-indigo-800/60'
+                        }`}
+                      >
+                        {item.badge}
+                      </span>
+                    )}
+                    {isActive && <ChevronRight className="w-3.5 h-3.5 text-cyan-200" />}
+                  </div>
+                </button>
+              );
+            })}
+          </nav>
+
+          {/* Radar Chart: Visualisasi Pencapaian Menuju Ideal (Cita-cita 100%) */}
+          <RadarChartWidget
+            supervisions={supervisions}
+            pmReports={pmReports}
+          />
+        </div>
 
         {/* Footer Identity & Pengembang */}
         <div className="p-3 border-t border-indigo-950/60 bg-black/20 space-y-2">

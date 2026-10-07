@@ -13,9 +13,11 @@ import {
   ClipboardCheck,
   CheckCircle2,
   Clock,
-  Filter
+  Filter,
+  Compass
 } from 'lucide-react';
 import { SupervisionRecord, Teacher } from '../types/inspiro';
+import { TeacherRadarModal } from './TeacherRadarModal';
 
 interface TeacherListProps {
   teachers: Teacher[];
@@ -38,6 +40,8 @@ export const TeacherList: React.FC<TeacherListProps> = ({
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedMapel, setSelectedMapel] = useState<string>('all');
+  const [selectedTeacherForRadar, setSelectedTeacherForRadar] = useState<Teacher | null>(null);
+  const [isRadarOpen, setIsRadarOpen] = useState(false);
 
   // Unique mapels for filtering
   const mapelOptions = useMemo(() => {
@@ -223,13 +227,52 @@ export const TeacherList: React.FC<TeacherListProps> = ({
                             >
                               {latestSup.category}
                             </span>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setSelectedTeacherForRadar(teacher);
+                                setIsRadarOpen(true);
+                              }}
+                              className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold text-cyan-800 bg-cyan-100/80 hover:bg-cyan-200/90 border border-cyan-300 transition-colors cursor-pointer"
+                              title="Buka Grafik Radar Capaian Guru Ini"
+                            >
+                              <Compass className="w-3 h-3 text-cyan-700" />
+                              <span>Radar</span>
+                            </button>
                           </div>
                         ) : (
-                          <span className="text-slate-400">-</span>
+                          <div className="flex items-center gap-2">
+                            <span className="text-slate-400">-</span>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setSelectedTeacherForRadar(teacher);
+                                setIsRadarOpen(true);
+                              }}
+                              className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium text-slate-500 hover:text-cyan-700 bg-slate-100 hover:bg-cyan-50 border border-slate-200 transition-colors cursor-pointer"
+                              title="Lihat Profil Radar Diagnostik Guru"
+                            >
+                              <Compass className="w-3 h-3" />
+                              <span>Radar</span>
+                            </button>
+                          </div>
                         )}
                       </td>
                       <td className="py-3.5 px-4 text-right">
                         <div className="flex items-center justify-end gap-1.5">
+                          {/* Tombol Radar Cepat */}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSelectedTeacherForRadar(teacher);
+                              setIsRadarOpen(true);
+                            }}
+                            className="p-1.5 text-cyan-600 hover:text-cyan-900 hover:bg-cyan-50 rounded-lg transition-colors cursor-pointer"
+                            title="Buka Grafik Radar Guru"
+                          >
+                            <Compass className="w-3.5 h-3.5" />
+                          </button>
+
                           {/* Mulai Supervisi */}
                           <button
                             onClick={() => onStartSupervision(teacher.id)}
@@ -267,6 +310,23 @@ export const TeacherList: React.FC<TeacherListProps> = ({
           </div>
         )}
       </div>
+
+      {/* Teacher Radar Profile Modal */}
+      <TeacherRadarModal
+        isOpen={isRadarOpen}
+        onClose={() => {
+          setIsRadarOpen(false);
+          setSelectedTeacherForRadar(null);
+        }}
+        teacher={selectedTeacherForRadar}
+        supervision={
+          selectedTeacherForRadar
+            ? teacherStatusMap.get(selectedTeacherForRadar.id)
+            : undefined
+        }
+        onStartSupervision={onStartSupervision}
+        onViewDetail={onViewTeacherSupervisions}
+      />
     </div>
   );
 };

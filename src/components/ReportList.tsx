@@ -15,9 +15,11 @@ import {
   CheckCircle2,
   Clock,
   Plus,
-  School
+  School,
+  Compass
 } from 'lucide-react';
-import { SupervisionRecord } from '../types/inspiro';
+import { SupervisionRecord, Teacher } from '../types/inspiro';
+import { TeacherRadarModal } from './TeacherRadarModal';
 
 interface ReportListProps {
   supervisions: SupervisionRecord[];
@@ -40,6 +42,8 @@ export const ReportList: React.FC<ReportListProps> = ({
   const [statusFilter, setStatusFilter] = useState<'all' | 'selesai' | 'draft'>('all');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [schoolFilter, setSchoolFilter] = useState<string>('all');
+  const [selectedSupervisionForRadar, setSelectedSupervisionForRadar] = useState<SupervisionRecord | null>(null);
+  const [isRadarOpen, setIsRadarOpen] = useState(false);
 
   const availableSchools = useMemo(() => {
     const set = new Set<string>();
@@ -251,6 +255,19 @@ export const ReportList: React.FC<ReportListProps> = ({
                       </td>
                       <td className="py-3.5 px-4 text-right">
                         <div className="flex items-center justify-end gap-1">
+                          {/* Visualisasi Radar Guru */}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSelectedSupervisionForRadar(item);
+                              setIsRadarOpen(true);
+                            }}
+                            className="p-1.5 text-cyan-600 hover:text-cyan-800 hover:bg-cyan-50 rounded-md transition-colors cursor-pointer"
+                            title="Buka Visualisasi Radar Guru Ini"
+                          >
+                            <Compass className="w-4 h-4 text-cyan-600" />
+                          </button>
+
                           {/* Lihat Detail */}
                           <button
                             onClick={() => onViewDetail(item.id)}
@@ -296,6 +313,30 @@ export const ReportList: React.FC<ReportListProps> = ({
           </div>
         )}
       </div>
+
+      {/* Teacher Radar Modal */}
+      <TeacherRadarModal
+        isOpen={isRadarOpen}
+        onClose={() => {
+          setIsRadarOpen(false);
+          setSelectedSupervisionForRadar(null);
+        }}
+        teacher={
+          selectedSupervisionForRadar
+            ? {
+                id: selectedSupervisionForRadar.teacherId,
+                nama: selectedSupervisionForRadar.identity.namaGuru,
+                nip: selectedSupervisionForRadar.identity.nipGuru || '',
+                mapel: selectedSupervisionForRadar.identity.mapel,
+                kelas: selectedSupervisionForRadar.identity.kelasSemester,
+                satuanPendidikan: selectedSupervisionForRadar.identity.satuanPendidikan,
+                createdAt: selectedSupervisionForRadar.createdAt
+              }
+            : null
+        }
+        supervision={selectedSupervisionForRadar}
+        onViewDetail={onViewDetail}
+      />
     </div>
   );
 };
