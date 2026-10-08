@@ -15,7 +15,8 @@ import {
   GraduationCap,
   Sparkles,
   ChevronRight,
-  BookOpenCheck
+  BookOpenCheck,
+  KeyRound
 } from 'lucide-react';
 import { SupervisionRecord, PMReport } from '../types/inspiro';
 import { RadarChartWidget } from './RadarChartWidget';
@@ -34,6 +35,8 @@ interface SidebarProps {
   pmReportCount?: number;
   supervisions?: SupervisionRecord[];
   pmReports?: PMReport[];
+  isSupervisor?: boolean;
+  onOpenManagePrincipals?: () => void;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -47,7 +50,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
   supervisionCount,
   pmReportCount = 0,
   supervisions = [],
-  pmReports = []
+  pmReports = [],
+  isSupervisor = false,
+  onOpenManagePrincipals
 }) => {
   const isSidebarVisible = isOpen !== undefined ? isOpen : (isOpenMobile ?? true);
   const handleClose = onClose || onCloseMobile;
@@ -202,6 +207,29 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 </button>
               );
             })}
+
+            {/* Special Pengawas Action: Kelola Akun Kepala Sekolah Binaan */}
+            {isSupervisor && onOpenManagePrincipals && (
+              <button
+                type="button"
+                onClick={() => {
+                  onOpenManagePrincipals();
+                  if (typeof window !== 'undefined' && window.innerWidth < 1024) {
+                    handleClose?.();
+                  }
+                }}
+                className="w-full mt-2 flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all bg-gradient-to-r from-amber-500/20 via-amber-600/30 to-amber-500/20 hover:from-amber-500/30 hover:to-amber-600/40 border border-amber-500/40 text-amber-200 hover:text-white group cursor-pointer shadow-sm shadow-amber-500/10"
+                title="Kelola User & Password Kepala Sekolah Binaan"
+              >
+                <div className="flex items-center gap-3">
+                  <KeyRound className="w-4 h-4 text-amber-400 group-hover:scale-110 transition-transform" />
+                  <span>Akun Kepsek Binaan</span>
+                </div>
+                <span className="text-[9px] bg-amber-400/20 text-amber-300 border border-amber-400/40 px-1.5 py-0.5 rounded font-bold uppercase">
+                  Wewenang
+                </span>
+              </button>
+            )}
           </nav>
 
           {/* Radar Chart: Visualisasi Pencapaian Menuju Ideal (Cita-cita 100%) */}

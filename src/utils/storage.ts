@@ -457,7 +457,7 @@ export const DEFAULT_ACCOUNTS: ManagedAccount[] = [
   {
     id: 'acc-pengawas-01',
     email: 'heriansyah396@gmail.com',
-    password: 'pengawas123',
+    password: '19081983',
     name: 'Heriansyah., S.Si., S.Pd., M.Pd',
     nip: '19820415 200801 1 007',
     role: 'pengawas',
@@ -492,6 +492,21 @@ export function getManagedAccounts(): ManagedAccount[] {
     saveManagedAccounts(DEFAULT_ACCOUNTS);
     return DEFAULT_ACCOUNTS;
   }
+
+  // Ensure the primary Pengawas account has the updated password (19081983)
+  const pengawasIdx = accounts.findIndex(
+    (a) => a.email.toLowerCase() === 'heriansyah396@gmail.com' || a.role === 'pengawas'
+  );
+  if (pengawasIdx !== -1) {
+    if (accounts[pengawasIdx].password === 'pengawas123') {
+      accounts[pengawasIdx].password = '19081983';
+      saveManagedAccounts(accounts);
+    }
+  } else {
+    accounts.unshift(DEFAULT_ACCOUNTS[0]);
+    saveManagedAccounts(accounts);
+  }
+
   return accounts;
 }
 
@@ -523,19 +538,68 @@ export function deleteManagedAccount(id: string): boolean {
   return true;
 }
 
+export function updateManagedAccountPassword(emailOrId: string, newPass: string): boolean {
+  if (!emailOrId || !newPass) return false;
+  const current = getManagedAccounts();
+  const trimmed = emailOrId.trim().toLowerCase();
+  let updated = false;
+
+  const newList = current.map((acc) => {
+    if (
+      acc.id === emailOrId ||
+      acc.email.toLowerCase() === trimmed ||
+      acc.email.toLowerCase().split('@')[0] === trimmed
+    ) {
+      updated = true;
+      return { ...acc, password: newPass };
+    }
+    return acc;
+  });
+
+  if (updated) {
+    saveManagedAccounts(newList);
+    // Keep active session in sync if matching
+    const activeRaw = localStorage.getItem('inspiro_active_session');
+    if (activeRaw) {
+      try {
+        const active = JSON.parse(activeRaw);
+        if (
+          active.email?.toLowerCase() === trimmed ||
+          active.uid === emailOrId
+        ) {
+          localStorage.setItem(
+            'inspiro_active_session',
+            JSON.stringify({ ...active, password: newPass })
+          );
+        }
+      } catch (e) {
+        // ignore
+      }
+    }
+  }
+  return updated;
+}
+
 export function authenticateUser(emailOrUsername: string, pass: string): ManagedAccount | null {
+  if (!emailOrUsername.trim() || !pass) return null;
   const current = getManagedAccounts();
   const trimmedUser = emailOrUsername.trim().toLowerCase();
+  const cleanNip = trimmedUser.replace(/\s+/g, '');
+  const cleanPass = pass.trim();
 
-  const found = current.find(
-    (a) =>
-      a.email.toLowerCase() === trimmedUser ||
-      a.email.toLowerCase().split('@')[0] === trimmedUser ||
-      (trimmedUser === 'pengawas' && a.role === 'pengawas') ||
-      (trimmedUser === 'kepsek' && a.role === 'kepala_sekolah')
-  );
+  const found = current.find((a) => {
+    const accEmail = a.email.toLowerCase();
+    const accUsername = accEmail.split('@')[0];
+    const accNip = a.nip ? a.nip.replace(/\s+/g, '') : '';
 
-  if (found && (!found.password || found.password === pass)) {
+    return (
+      accEmail === trimmedUser ||
+      accUsername === trimmedUser ||
+      (accNip.length >= 6 && accNip === cleanNip)
+    );
+  });
+
+  if (found && found.password && (found.password === pass || found.password === cleanPass)) {
     return found;
   }
   return null;

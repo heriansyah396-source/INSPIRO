@@ -16,16 +16,22 @@ import {
   Database,
   KeyRound,
   ShieldCheck,
-  Sparkles
+  Sparkles,
+  Lock,
+  Eye,
+  EyeOff
 } from 'lucide-react';
 import { AppSettings } from '../types/inspiro';
 import {
   exportDataAsJson,
-  importDataFromJson
+  importDataFromJson,
+  updateManagedAccountPassword
 } from '../utils/storage';
+import { UserRoleProfile } from '../services/firebase';
 
 interface SettingsViewProps {
   settings: AppSettings;
+  currentUser?: UserRoleProfile | null;
   onSaveSettings: (settings: AppSettings) => void;
   onResetDemoData: () => void;
   onDataImported: () => void;
@@ -35,6 +41,7 @@ interface SettingsViewProps {
 
 export const SettingsView: React.FC<SettingsViewProps> = ({
   settings,
+  currentUser,
   onSaveSettings,
   onResetDemoData,
   onDataImported,
@@ -42,11 +49,46 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   showToast
 }) => {
   const [formData, setFormData] = useState<AppSettings>(settings);
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [isChangingPass, setIsChangingPass] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     setFormData(settings);
   }, [settings]);
+
+  const handleUpdatePassword = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newPassword) {
+      showToast('Kata Sandi Kosong', 'Silakan masukkan kata sandi baru.', 'warning');
+      return;
+    }
+    if (newPassword.length < 6) {
+      showToast('Terlalu Pendek', 'Kata sandi minimal 6 karakter untuk keamanan.', 'warning');
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      showToast('Tidak Cocok', 'Konfirmasi kata sandi tidak sama dengan kata sandi baru.', 'error');
+      return;
+    }
+
+    const targetEmail = currentUser?.email || 'heriansyah396@gmail.com';
+    const success = updateManagedAccountPassword(targetEmail, newPassword);
+    if (success) {
+      showToast(
+        'Kata Sandi Diperbarui',
+        'Kata sandi Pengawas berhasil diubah secara aman. Hanya Anda yang memiliki akses login ini.',
+        'success'
+      );
+      setNewPassword('');
+      setConfirmPassword('');
+      setIsChangingPass(false);
+    } else {
+      showToast('Gagal Memperbarui', 'Akun tidak ditemukan di sistem lokal.', 'error');
+    }
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -268,6 +310,128 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           </div>
         </div>
       </form>
+
+      {/* Keamanan Akun & Kata Sandi Pengawas */}
+      <div className="bg-white p-5 sm:p-6 rounded-xl border border-slate-200 shadow-2xs space-y-4">
+        <div className="pb-3 border-b border-slate-100 flex items-center justify-between">
+          <div className="flex items-center gap-2 text-slate-800 font-bold text-sm">
+            <Lock className="w-4 h-4 text-emerald-600" />
+            <span>Keamanan Akun & Kata Sandi Pengawas</span>
+          </div>
+          <span className="text-[10px] bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded-full border border-emerald-300">
+            Akses Terproteksi
+          </span>
+        </div>
+
+        <div className="p-3 bg-emerald-50/70 border border-emerald-200/70 rounded-xl text-xs text-emerald-950 flex items-start gap-2.5">
+          <ShieldCheck className="w-4 h-4 text-emerald-700 shrink-0 mt-0.5" />
+          <div className="leading-relaxed space-y-1">
+            <p>
+              Akun Pengawas Anda (<strong className="text-emerald-900">{currentUser?.email || 'heriansyah396@gmail.com'}</strong>) bersifat pribadi. Hanya Anda yang memiliki akses ke akun ini.
+            </p>
+            <p className="text-[11px] text-emerald-800">
+              Gunakan formulir di bawah ini untuk memperbarui kata sandi Anda agar keamanan akun tetap terjaga.
+            </p>
+          </div>
+        </div>
+
+        {!isChangingPass ? (
+          <div className="flex items-center justify-between pt-1">
+            <div className="text-xs text-slate-500">
+              Ingin mengganti kata sandi login Pengawas? Klik tombol untuk mengubahnya.
+            </div>
+            <button
+              type="button"
+              onClick={() => setIsChangingPass(true)}
+              className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold shadow-xs transition-colors cursor-pointer flex items-center gap-1.5 shrink-0"
+            >
+              <Lock className="w-3.5 h-3.5" />
+              <span>Ganti Kata Sandi Pengawas</span>
+            </button>
+          </div>
+        ) : (
+          <form onSubmit={handleUpdatePassword} className="p-4 rounded-xl border border-emerald-200 bg-emerald-50/30 space-y-3.5 animate-in fade-in">
+            <div className="flex items-center justify-between pb-2 border-b border-emerald-100">
+              <span className="text-xs font-bold text-emerald-950 flex items-center gap-1.5">
+                <Lock className="w-4 h-4 text-emerald-600" />
+                <span>Formulir Pembaruan Kata Sandi Pengawas</span>
+              </span>
+              <button
+                type="button"
+                onClick={() => {
+                  setIsChangingPass(false);
+                  setNewPassword('');
+                  setConfirmPassword('');
+                }}
+                className="text-xs text-slate-500 hover:text-slate-800 font-medium cursor-pointer"
+              >
+                Batal
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-xs font-bold text-slate-700">
+                    Kata Sandi Baru *
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="text-[10px] text-emerald-700 hover:text-emerald-900 font-bold flex items-center gap-1 cursor-pointer"
+                  >
+                    {showPassword ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
+                    <span>{showPassword ? 'Sembunyikan' : 'Lihat'}</span>
+                  </button>
+                </div>
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  placeholder="Minimal 6 karakter"
+                  required
+                  className="w-full px-3 py-2 text-xs rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Konfirmasi Kata Sandi Baru *
+                </label>
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  placeholder="Ulangi kata sandi baru"
+                  required
+                  className="w-full px-3 py-2 text-xs rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white"
+                />
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-2 pt-1">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsChangingPass(false);
+                  setNewPassword('');
+                  setConfirmPassword('');
+                }}
+                className="px-3 py-1.5 rounded-lg border border-slate-300 text-xs font-medium text-slate-600 hover:bg-slate-50 cursor-pointer"
+              >
+                Batal
+              </button>
+              <button
+                type="submit"
+                className="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold shadow-xs cursor-pointer flex items-center gap-1.5"
+              >
+                <Save className="w-3.5 h-3.5" />
+                <span>Simpan Kata Sandi Baru</span>
+              </button>
+            </div>
+          </form>
+        )}
+      </div>
 
       {/* Manajemen Akun Kepala Sekolah Binaan (Otoritas Pengawas) */}
       <div className="bg-white p-5 sm:p-6 rounded-xl border border-slate-200 shadow-2xs space-y-4">

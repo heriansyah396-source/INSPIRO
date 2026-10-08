@@ -50,30 +50,27 @@ export const LoginView: React.FC<LoginViewProps> = ({
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
 
-  // Login credentials - defaults for Pengawas initially
-  const [loginEmail, setLoginEmail] = useState('heriansyah396@gmail.com');
-  const [loginPassword, setLoginPassword] = useState('pengawas123');
+  // Login credentials - strictly empty for user privacy and security
+  const [loginEmail, setLoginEmail] = useState('');
+  const [loginPassword, setLoginPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(true);
 
   // Register state (Strictly for Pengawas Sekolah)
-  const [regName, setRegName] = useState('Heriansyah., S.Si., S.Pd., M.Pd');
-  const [regNip, setRegNip] = useState('19820415 200801 1 007');
+  const [regName, setRegName] = useState('');
+  const [regNip, setRegNip] = useState('');
   const [regEmail, setRegEmail] = useState('');
   const [regPassword, setRegPassword] = useState('');
   const [regConfirmPassword, setRegConfirmPassword] = useState('');
-  const [regRegion, setRegRegion] = useState('Dinas Pendidikan Kab/Kota / Seluruh Sekolah Binaan');
+  const [regRegion, setRegRegion] = useState('');
 
   // Switch role handler
   const handleSelectRole = (role: 'pengawas' | 'kepala_sekolah') => {
     setUserRole(role);
     setErrorMsg('');
+    setLoginEmail('');
+    setLoginPassword('');
     if (role === 'pengawas') {
-      setLoginEmail('heriansyah396@gmail.com');
-      setLoginPassword('pengawas123');
       setPengawasSubTab('login');
-    } else {
-      setLoginEmail('kepsek.smpn1@belajar.id');
-      setLoginPassword('kepsek123');
     }
   };
 
@@ -116,7 +113,7 @@ export const LoginView: React.FC<LoginViewProps> = ({
           ) {
             throw new Error('Email atau kata sandi tidak sesuai.');
           } else if (fbMsg.includes('auth/operation-not-allowed')) {
-            throw new Error('Autentikasi Email/Password Firebase belum diaktifkan di Google Console. Silakan gunakan Akun Cepat Demo atau Masuk dengan Google.');
+            throw new Error('Metode Email/Password Firebase belum diaktifkan. Silakan periksa kembali email dan kata sandi Anda atau gunakan Masuk dengan Google.');
           } else {
             throw new Error(
               userRole === 'kepala_sekolah'
@@ -427,7 +424,7 @@ export const LoginView: React.FC<LoginViewProps> = ({
                         type="text"
                         value={loginEmail}
                         onChange={(e) => setLoginEmail(e.target.value)}
-                        placeholder="heriansyah396@gmail.com"
+                        placeholder="Masukkan email atau NIP pengawas"
                         required
                         className="w-full pl-10 pr-3.5 py-2.5 text-xs rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-600/30 focus:border-emerald-600 transition-colors font-medium text-slate-900 bg-white"
                       />
@@ -495,7 +492,7 @@ export const LoginView: React.FC<LoginViewProps> = ({
                   </div>
                   <div className="relative flex justify-center text-[10px] uppercase">
                     <span className="bg-white px-3 text-slate-400 font-bold tracking-wider">
-                      Atau Masuk Cepat
+                      Atau Masuk dengan Akun Dinas
                     </span>
                   </div>
                 </div>
@@ -528,30 +525,11 @@ export const LoginView: React.FC<LoginViewProps> = ({
                   <span>Masuk dengan Akun Google / Belajar.id</span>
                 </button>
 
-                {/* Quick 1-Click Demo for Pengawas Heriansyah */}
-                <div className="pt-2 border-t border-slate-100">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setLoginEmail('heriansyah396@gmail.com');
-                      setLoginPassword('pengawas123');
-                      setErrorMsg('');
-                    }}
-                    className="w-full p-2.5 rounded-xl border border-emerald-300 bg-gradient-to-r from-emerald-50 via-teal-50 to-emerald-50 hover:from-emerald-100 hover:to-teal-100 text-left transition-all cursor-pointer flex items-center justify-between shadow-2xs"
-                  >
-                    <div>
-                      <div className="text-[11px] font-bold text-emerald-950 flex items-center gap-1.5">
-                        <ShieldCheck className="w-4 h-4 text-emerald-700" />
-                        <span>Akun Contoh: Heriansyah., S.Si., S.Pd., M.Pd</span>
-                      </div>
-                      <div className="text-[10px] text-emerald-800 font-medium mt-0.5">
-                        Pengawas Sekolah
-                      </div>
-                    </div>
-                    <span className="text-[10px] font-bold text-emerald-800 bg-emerald-200/80 px-2 py-1 rounded-md border border-emerald-400/50">
-                      Isi Cepat
-                    </span>
-                  </button>
+                {/* Privacy & Security Notice for Pengawas */}
+                <div className="pt-2 border-t border-slate-100 text-center">
+                  <p className="text-[11px] text-slate-500 font-medium">
+                    Portal terenkripsi aman. Hanya Pengawas Sekolah terdaftar yang dapat mengakses portal utama.
+                  </p>
                 </div>
               </div>
             )}
@@ -772,7 +750,7 @@ export const LoginView: React.FC<LoginViewProps> = ({
                         type="text"
                         value={loginEmail}
                         onChange={(e) => setLoginEmail(e.target.value)}
-                        placeholder="Contoh: kepsek.smpn1@belajar.id"
+                        placeholder="Masukkan username atau email akun kepala sekolah"
                         required
                         className="w-full pl-10 pr-3.5 py-2.5 text-xs rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-600/30 focus:border-blue-600 transition-colors font-medium text-slate-900 bg-white"
                       />
@@ -833,30 +811,11 @@ export const LoginView: React.FC<LoginViewProps> = ({
                   </button>
                 </form>
 
-                {/* Quick 1-Click Demo for Kepala Sekolah */}
-                <div className="pt-2 border-t border-slate-100">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setLoginEmail('kepsek.smpn1@belajar.id');
-                      setLoginPassword('kepsek123');
-                      setErrorMsg('');
-                    }}
-                    className="w-full p-2.5 rounded-xl border border-blue-300 bg-gradient-to-r from-blue-50 via-indigo-50 to-blue-50 hover:from-blue-100 hover:to-indigo-100 text-left transition-all cursor-pointer flex items-center justify-between shadow-2xs"
-                  >
-                    <div>
-                      <div className="text-[11px] font-bold text-blue-950 flex items-center gap-1.5">
-                        <School className="w-4 h-4 text-blue-600" />
-                        <span>Akun Contoh: Dra. Hj. Nurhasanah, M.Pd.</span>
-                      </div>
-                      <div className="text-[10px] text-blue-800 font-medium mt-0.5">
-                        Kepala Sekolah · SMP Negeri 1 Merdeka Nusantara
-                      </div>
-                    </div>
-                    <span className="text-[10px] font-bold text-blue-800 bg-blue-200/80 px-2 py-1 rounded-md border border-blue-400/50">
-                      Isi Cepat
-                    </span>
-                  </button>
+                {/* Helpful Information Notice for Kepala Sekolah */}
+                <div className="pt-2 border-t border-slate-100 text-center">
+                  <p className="text-[11px] text-slate-500 font-medium leading-relaxed">
+                    Akun login Kepala Sekolah diterbitkan resmi oleh Pengawas Sekolah pembina Anda. Hubungi Pengawas Sekolah jika belum memiliki akses atau lupa sandi.
+                  </p>
                 </div>
               </div>
             )}

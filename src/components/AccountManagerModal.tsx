@@ -94,7 +94,7 @@ export const AccountManagerModal: React.FC<AccountManagerModalProps> = ({
   };
 
   const handleCopyCredentials = (acc: ManagedAccount) => {
-    const text = `INFORMASI AKUN SUPERVISI INSPIRO:\nNama: ${acc.name}\nSekolah: ${acc.schoolName}\nEmail: ${acc.email}\nPassword: ${acc.password || 'pengawas123'}\nURL Aplikasi: ${window.location.origin}`;
+    const text = `INFORMASI AKUN SUPERVISI INSPIRO:\nNama: ${acc.name}\nSekolah: ${acc.schoolName}\nEmail: ${acc.email}\nPassword: ${acc.password || '19081983'}\nURL Aplikasi: ${window.location.origin}`;
     navigator.clipboard.writeText(text);
     setCopiedId(acc.id);
     showToast('Disalin ke Clipboard', 'Informasi akun disalin, siap dikirim ke Kepala Sekolah.', 'success');

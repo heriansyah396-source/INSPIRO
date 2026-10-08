@@ -4,13 +4,16 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { X, User, Save, School, Award } from 'lucide-react';
+import { X, User, Save, School, Award, Lock } from 'lucide-react';
 import { AppSettings } from '../types/inspiro';
+import { updateManagedAccountPassword } from '../utils/storage';
+import { UserRoleProfile } from '../services/firebase';
 
 interface ProfileModalProps {
   isOpen: boolean;
   onClose: () => void;
   settings: AppSettings;
+  currentUser?: UserRoleProfile | null;
   onSave: (updated: AppSettings) => void;
 }
 
@@ -18,6 +21,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
   isOpen,
   onClose,
   settings,
+  currentUser,
   onSave
 }) => {
   const [supervisorName, setSupervisorName] = useState(settings.supervisorName);
@@ -25,6 +29,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
   const [supervisorRole, setSupervisorRole] = useState(settings.supervisorRole);
   const [schoolName, setSchoolName] = useState(settings.schoolName);
   const [schoolCity, setSchoolCity] = useState(settings.schoolCity);
+  const [newPassword, setNewPassword] = useState('');
 
   useEffect(() => {
     if (isOpen) {
@@ -33,6 +38,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
       setSupervisorRole(settings.supervisorRole);
       setSchoolName(settings.schoolName);
       setSchoolCity(settings.schoolCity);
+      setNewPassword('');
     }
   }, [isOpen, settings]);
 
@@ -40,6 +46,12 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (newPassword.trim()) {
+      if (newPassword.trim().length >= 6) {
+        const targetEmail = currentUser?.email || 'heriansyah396@gmail.com';
+        updateManagedAccountPassword(targetEmail, newPassword.trim());
+      }
+    }
     onSave({
       ...settings,
       supervisorName: supervisorName.trim() || 'Supervisor Akademik',
@@ -172,6 +184,23 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                 placeholder="Contoh: Jakarta / Surabaya / Bandung"
                 className="w-full px-3 py-2 text-xs rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
+            </div>
+
+            <div className="pt-2 border-t border-slate-100">
+              <label className="block text-xs font-semibold text-slate-700 mb-1 flex items-center gap-1.5">
+                <Lock className="w-3.5 h-3.5 text-slate-500" />
+                <span>Ganti Kata Sandi Baru (Opsional)</span>
+              </label>
+              <input
+                type="password"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                placeholder="Kosongkan jika tidak ingin mengganti sandi"
+                className="w-full px-3 py-2 text-xs rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+              <p className="text-[10.5px] text-slate-400 mt-1">
+                Minimal 6 karakter. Kata sandi ini digunakan untuk login portal Pengawas.
+              </p>
             </div>
           </div>
 

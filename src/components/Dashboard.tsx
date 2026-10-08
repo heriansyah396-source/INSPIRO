@@ -15,7 +15,8 @@ import {
   FileText,
   Printer,
   Plus,
-  BookOpenCheck
+  BookOpenCheck,
+  KeyRound
 } from 'lucide-react';
 import { SupervisionRecord, Teacher } from '../types/inspiro';
 
@@ -28,6 +29,8 @@ interface DashboardProps {
   onNavigateToTeachers: () => void;
   onNavigateToReports: () => void;
   onNavigateToPM?: () => void;
+  onOpenManagePrincipals?: () => void;
+  isSupervisor?: boolean;
 }
 
 export const Dashboard: React.FC<DashboardProps> = ({
@@ -38,7 +41,9 @@ export const Dashboard: React.FC<DashboardProps> = ({
   onPrintReport,
   onNavigateToTeachers,
   onNavigateToReports,
-  onNavigateToPM
+  onNavigateToPM,
+  onOpenManagePrincipals,
+  isSupervisor
 }) => {
   // Calculations
   const totalSupervisi = supervisions.length;
@@ -131,6 +136,16 @@ export const Dashboard: React.FC<DashboardProps> = ({
             >
               <BookOpenCheck className="w-4 h-4 text-slate-950 stroke-[2.5]" />
               <span>Pengelolaan PM</span>
+            </button>
+          )}
+          {isSupervisor && onOpenManagePrincipals && (
+            <button
+              onClick={onOpenManagePrincipals}
+              className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-amber-400 via-amber-500 to-amber-400 hover:from-amber-300 hover:to-amber-400 text-slate-950 font-bold text-xs rounded-xl transition-all shadow-md shadow-amber-500/25 cursor-pointer hover:scale-[1.02] active:scale-[0.98]"
+              title="Buat dan kelola akun login Kepala Sekolah binaan"
+            >
+              <KeyRound className="w-4 h-4 text-slate-950 stroke-[2.5]" />
+              <span>Akun Kepsek Binaan</span>
             </button>
           )}
         </div>

@@ -422,6 +422,7 @@ export default function App() {
         isOpen={isProfileModalOpen}
         onClose={() => setIsProfileModalOpen(false)}
         settings={settings}
+        currentUser={currentUser}
         onSave={(updated) => {
           handleSaveSettings(updated);
           showToast('Profil Diperbarui', `Identitas supervisor diubah menjadi ${updated.supervisorName}`, 'success');
@@ -468,6 +469,8 @@ export default function App() {
         pmReportCount={pmReports.length}
         supervisions={supervisions}
         pmReports={pmReports}
+        isSupervisor={currentUser?.role === 'pengawas'}
+        onOpenManagePrincipals={() => setIsManagePrincipalsOpen(true)}
       />
 
       {/* Main Workspace */}
@@ -513,6 +516,8 @@ export default function App() {
                   onNavigateToTeachers={() => setCurrentTab('teachers')}
                   onNavigateToReports={() => setCurrentTab('reports')}
                   onNavigateToPM={() => setCurrentTab('pm-reports')}
+                  onOpenManagePrincipals={() => setIsManagePrincipalsOpen(true)}
+                  isSupervisor={currentUser?.role === 'pengawas'}
                 />
               )}
 
@@ -597,6 +602,7 @@ export default function App() {
               {currentTab === 'settings' && (
                 <SettingsView
                   settings={settings}
+                  currentUser={currentUser}
                   onSaveSettings={handleSaveSettings}
                   onResetDemoData={handleResetDemoData}
                   onDataImported={refreshData}
