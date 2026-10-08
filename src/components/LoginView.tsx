@@ -8,26 +8,20 @@ import {
   ShieldCheck,
   Lock,
   Mail,
-  User,
   School,
   Eye,
   EyeOff,
   LogIn,
-  UserPlus,
   AlertCircle,
   Sparkles,
-  Info,
-  CheckCircle2,
-  Building,
-  KeyRound
+  Info
 } from 'lucide-react';
 import {
   loginWithEmail,
-  registerWithEmail,
   signInWithGoogle,
   UserRoleProfile
 } from '../services/firebase';
-import { authenticateUser, addManagedAccount } from '../utils/storage';
+import { authenticateUser } from '../utils/storage';
 
 interface LoginViewProps {
   onLoginSuccess: (profile: UserRoleProfile) => void;
@@ -39,12 +33,8 @@ export const LoginView: React.FC<LoginViewProps> = ({
   onLoginSuccess,
   showToast
 }) => {
-  // Default to 'pengawas' so the supervisor portal & registration are immediately visible
+  // Role selection: 'pengawas' or 'kepala_sekolah'
   const [userRole, setUserRole] = useState<'pengawas' | 'kepala_sekolah'>('pengawas');
-
-  // For Pengawas: toggle between 'login' and 'register'
-  // For Kepala Sekolah: strictly login only (no registration available)
-  const [pengawasSubTab, setPengawasSubTab] = useState<'login' | 'register'>('login');
 
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -55,23 +45,12 @@ export const LoginView: React.FC<LoginViewProps> = ({
   const [loginPassword, setLoginPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(true);
 
-  // Register state (Strictly for Pengawas Sekolah)
-  const [regName, setRegName] = useState('');
-  const [regNip, setRegNip] = useState('');
-  const [regEmail, setRegEmail] = useState('');
-  const [regPassword, setRegPassword] = useState('');
-  const [regConfirmPassword, setRegConfirmPassword] = useState('');
-  const [regRegion, setRegRegion] = useState('');
-
   // Switch role handler
   const handleSelectRole = (role: 'pengawas' | 'kepala_sekolah') => {
     setUserRole(role);
     setErrorMsg('');
     setLoginEmail('');
     setLoginPassword('');
-    if (role === 'pengawas') {
-      setPengawasSubTab('login');
-    }
   };
 
   // Handle Login submission
@@ -143,81 +122,6 @@ export const LoginView: React.FC<LoginViewProps> = ({
       }
     } catch (err: any) {
       setErrorMsg(err.message || 'Gagal masuk ke sistem.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Handle Pengawas Registration (Exclusive for Pengawas)
-  const handleRegister = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!regName.trim() || !regEmail.trim() || !regPassword) {
-      setErrorMsg('Semua kolom bertanda bintang (*) wajib diisi.');
-      return;
-    }
-
-    if (regPassword.length < 6) {
-      setErrorMsg('Kata sandi minimal 6 karakter.');
-      return;
-    }
-
-    if (regPassword !== regConfirmPassword) {
-      setErrorMsg('Konfirmasi kata sandi tidak cocok.');
-      return;
-    }
-
-    setLoading(true);
-    setErrorMsg('');
-
-    try {
-      let profile: UserRoleProfile;
-
-      try {
-        profile = await registerWithEmail(
-          regEmail.trim(),
-          regPassword,
-          regName.trim(),
-          'pengawas',
-          regRegion.trim()
-        );
-      } catch (fbErr: any) {
-        console.warn('Firebase register fallback to local database:', fbErr);
-        const newAcc = addManagedAccount({
-          email: regEmail.trim(),
-          password: regPassword,
-          name: regName.trim(),
-          nip: regNip.trim(),
-          role: 'pengawas',
-          schoolName: regRegion.trim()
-        });
-
-        profile = {
-          uid: newAcc.id,
-          email: newAcc.email,
-          name: newAcc.name,
-          role: 'pengawas',
-          nip: newAcc.nip,
-          schoolName: newAcc.schoolName,
-          createdAt: newAcc.createdAt
-        };
-      }
-
-      localStorage.setItem('inspiro_active_session', JSON.stringify(profile));
-
-      showToast(
-        'Pendaftaran Pengawas Berhasil!',
-        `Akun Pengawas Sekolah untuk ${profile.name} telah siap digunakan.`,
-        'success'
-      );
-      onLoginSuccess(profile);
-    } catch (err: any) {
-      const msg = err.message || 'Gagal mendaftar akun pengawas.';
-      if (msg.includes('email-already-in-use')) {
-        setErrorMsg('Email ini sudah terdaftar. Silakan pilih tab "Masuk Pengawas".');
-      } else {
-        setErrorMsg(msg);
-      }
     } finally {
       setLoading(false);
     }
@@ -300,7 +204,7 @@ export const LoginView: React.FC<LoginViewProps> = ({
             </div>
 
             <div className="grid grid-cols-2 gap-2 p-1.5 bg-slate-200/70 rounded-xl">
-              {/* Tab 1: Pengawas Sekolah (Default & Bisa Daftar) */}
+              {/* Tab 1: Pengawas Sekolah */}
               <button
                 type="button"
                 onClick={() => handleSelectRole('pengawas')}
@@ -314,12 +218,12 @@ export const LoginView: React.FC<LoginViewProps> = ({
                   <ShieldCheck className={`w-4 h-4 ${userRole === 'pengawas' ? 'text-white' : 'text-emerald-600'}`} />
                   <span>Pengawas Sekolah</span>
                 </div>
-                <span className={`text-[10px] font-medium ${userRole === 'pengawas' ? 'text-emerald-100' : 'text-emerald-700 font-semibold'}`}>
-                  (Masuk & Daftar Baru)
+                <span className={`text-[10px] font-medium ${userRole === 'pengawas' ? 'text-emerald-100' : 'text-slate-500'}`}>
+                  Portal Pengawas Pembina
                 </span>
               </button>
 
-              {/* Tab 2: Kepala Sekolah (Hanya Masuk, Tidak Ada Form Daftar) */}
+              {/* Tab 2: Kepala Sekolah */}
               <button
                 type="button"
                 onClick={() => handleSelectRole('kepala_sekolah')}
@@ -334,49 +238,11 @@ export const LoginView: React.FC<LoginViewProps> = ({
                   <span>Kepala Sekolah</span>
                 </div>
                 <span className={`text-[10px] font-medium ${userRole === 'kepala_sekolah' ? 'text-blue-100' : 'text-slate-500'}`}>
-                  (Hanya Masuk / Login)
+                  Portal Sekolah Binaan
                 </span>
               </button>
             </div>
           </div>
-
-          {/* Sub-Tabs for Pengawas Sekolah: "Masuk Pengawas" VS "Daftar Akun Pengawas" */}
-          {userRole === 'pengawas' && (
-            <div className="grid grid-cols-2 border-b border-emerald-100 bg-emerald-50/50 p-1.5 gap-1.5">
-              <button
-                type="button"
-                onClick={() => {
-                  setPengawasSubTab('login');
-                  setErrorMsg('');
-                }}
-                className={`py-2 px-3 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
-                  pengawasSubTab === 'login'
-                    ? 'bg-white text-emerald-950 shadow-xs border border-emerald-200'
-                    : 'text-emerald-800/80 hover:text-emerald-950 hover:bg-white/50'
-                }`}
-              >
-                <LogIn className="w-3.5 h-3.5 text-emerald-700" />
-                <span>Masuk Akun Pengawas</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => {
-                  setPengawasSubTab('register');
-                  setErrorMsg('');
-                }}
-                className={`py-2 px-3 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer relative ${
-                  pengawasSubTab === 'register'
-                    ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-xs font-extrabold'
-                    : 'text-emerald-800/80 hover:text-emerald-950 hover:bg-white/50'
-                }`}
-              >
-                <UserPlus className="w-3.5 h-3.5" />
-                <span>Daftar Akun Pengawas</span>
-                <span className="w-2 h-2 rounded-full bg-amber-400 absolute top-1.5 right-2 animate-pulse" />
-              </button>
-            </div>
-          )}
 
           <div className="p-6 sm:p-7">
             {/* Error Message Box */}
@@ -390,7 +256,7 @@ export const LoginView: React.FC<LoginViewProps> = ({
             {/* ========================================================================= */}
             {/* 1. PORTAL PENGAWAS SEKOLAH: FORMULIR MASUK (LOGIN)                        */}
             {/* ========================================================================= */}
-            {userRole === 'pengawas' && pengawasSubTab === 'login' && (
+            {userRole === 'pengawas' && (
               <div className="space-y-4">
                 {/* Header Banner */}
                 <div className="flex items-center gap-3 pb-3 border-b border-slate-100">
@@ -535,157 +401,7 @@ export const LoginView: React.FC<LoginViewProps> = ({
             )}
 
             {/* ========================================================================= */}
-            {/* 2. PORTAL PENGAWAS SEKOLAH: FORMULIR PENDAFTARAN KHUSUS PENGAWAS BARU     */}
-            {/* ========================================================================= */}
-            {userRole === 'pengawas' && pengawasSubTab === 'register' && (
-              <div className="space-y-4">
-                {/* Authority Notice Banner */}
-                <div className="p-3.5 bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-300 rounded-xl text-xs text-emerald-950 flex items-start gap-2.5 shadow-2xs">
-                  <ShieldCheck className="w-5 h-5 text-emerald-700 shrink-0 mt-0.5" />
-                  <div className="space-y-0.5 leading-relaxed text-[11px]">
-                    <div className="font-extrabold text-emerald-900 flex items-center gap-1.5">
-                      <span>Pendaftaran Khusus Pengawas Sekolah Baru</span>
-                      <span className="text-[9px] bg-emerald-200 text-emerald-900 px-1.5 py-0.5 rounded font-bold uppercase">
-                        Resmi
-                      </span>
-                    </div>
-                    <p className="text-emerald-800">
-                      Formulir pendaftaran mandiri ini <strong>khusus untuk Pengawas Sekolah</strong>.
-                      Setelah terdaftar, Anda dapat login dan membuatkan akun untuk seluruh Kepala Sekolah binaan Anda.
-                    </p>
-                  </div>
-                </div>
-
-                <form onSubmit={handleRegister} className="space-y-3 pt-1">
-                  {/* Nama Lengkap & Gelar */}
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1">
-                      Nama Lengkap & Gelar Akademik <span className="text-rose-500">*</span>
-                    </label>
-                    <div className="relative">
-                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
-                        <User className="w-4 h-4" />
-                      </div>
-                      <input
-                        type="text"
-                        value={regName}
-                        onChange={(e) => setRegName(e.target.value)}
-                        placeholder="Contoh: Heriansyah., S.Si., S.Pd., M.Pd"
-                        required
-                        className="w-full pl-9 pr-3 py-2 text-xs rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-slate-900 font-medium"
-                      />
-                    </div>
-                  </div>
-
-                  {/* NIP Pengawas */}
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1">
-                      NIP / NIK Pengawas
-                    </label>
-                    <input
-                      type="text"
-                      value={regNip}
-                      onChange={(e) => setRegNip(e.target.value)}
-                      placeholder="Contoh: 19820415 200801 1 007"
-                      className="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-slate-900 font-mono"
-                    />
-                  </div>
-
-                  {/* Role Locked Notice */}
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1">
-                      Peran Hak Akses (Terkunci)
-                    </label>
-                    <div className="p-2.5 rounded-xl border border-emerald-300 bg-emerald-50 flex items-center justify-between text-xs text-emerald-950 font-bold">
-                      <div className="flex items-center gap-2">
-                        <ShieldCheck className="w-4 h-4 text-emerald-700" />
-                        <span>Pengawas Sekolah (Supervisor Pembina)</span>
-                      </div>
-                      <span className="text-[10px] bg-emerald-200 text-emerald-900 px-2 py-0.5 rounded-md font-extrabold uppercase">
-                        Terkunci
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Email */}
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1">
-                      Alamat Email (Dinas / Belajar.id / Pribadi) <span className="text-rose-500">*</span>
-                    </label>
-                    <div className="relative">
-                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
-                        <Mail className="w-4 h-4" />
-                      </div>
-                      <input
-                        type="email"
-                        value={regEmail}
-                        onChange={(e) => setRegEmail(e.target.value)}
-                        placeholder="pengawas@dinas.go.id"
-                        required
-                        className="w-full pl-9 pr-3 py-2 text-xs rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-slate-900 font-medium"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Password & Confirm */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div>
-                      <label className="block text-xs font-bold text-slate-700 mb-1">
-                        Kata Sandi <span className="text-rose-500">*</span>
-                      </label>
-                      <input
-                        type="password"
-                        value={regPassword}
-                        onChange={(e) => setRegPassword(e.target.value)}
-                        placeholder="Min 6 karakter"
-                        required
-                        className="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-slate-900"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-bold text-slate-700 mb-1">
-                        Ulangi Kata Sandi <span className="text-rose-500">*</span>
-                      </label>
-                      <input
-                        type="password"
-                        value={regConfirmPassword}
-                        onChange={(e) => setRegConfirmPassword(e.target.value)}
-                        placeholder="Ketik ulang sandi"
-                        required
-                        className="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-slate-900"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Wilayah / Sekolah Binaan */}
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1">
-                      Wilayah / Satuan Binaan
-                    </label>
-                    <input
-                      type="text"
-                      value={regRegion}
-                      onChange={(e) => setRegRegion(e.target.value)}
-                      placeholder="Dinas Pendidikan Kab/Kota / Wilayah Binaan"
-                      className="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-slate-900 font-medium"
-                    />
-                  </div>
-
-                  {/* Submit Button */}
-                  <button
-                    type="submit"
-                    disabled={loading}
-                    className="w-full mt-2 py-3 bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-700 hover:to-teal-800 text-white rounded-xl text-xs font-bold shadow-md shadow-emerald-600/25 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
-                  >
-                    <UserPlus className="w-4 h-4" />
-                    <span>{loading ? 'Mendaftarkan Akun...' : 'Daftarkan Akun Pengawas Sekolah'}</span>
-                  </button>
-                </form>
-              </div>
-            )}
-
-            {/* ========================================================================= */}
-            {/* 3. PORTAL KEPALA SEKOLAH BINAAN (STRICTLY LOGIN ONLY, TIDAK BISA DAFTAR)   */}
+            {/* 2. PORTAL KEPALA SEKOLAH BINAAN (STRICTLY LOGIN ONLY, TIDAK BISA DAFTAR)   */}
             {/* ========================================================================= */}
             {userRole === 'kepala_sekolah' && (
               <div className="space-y-4">
@@ -718,21 +434,6 @@ export const LoginView: React.FC<LoginViewProps> = ({
                       Kepala Sekolah <strong>tidak memiliki formulir pendaftaran mandiri</strong>.
                       Akun dan kata sandi Anda dibuat serta diberikan langsung oleh Pengawas Sekolah pembina Anda melalui menu Manajemen Akun Binaan.
                     </p>
-                    {/* Direct switch to Pengawas register if user is actually a supervisor */}
-                    <div className="pt-1">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setUserRole('pengawas');
-                          setPengawasSubTab('register');
-                          setErrorMsg('');
-                        }}
-                        className="text-[11px] font-bold text-emerald-800 bg-white hover:bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-300 inline-flex items-center gap-1.5 transition-colors cursor-pointer"
-                      >
-                        <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-                        <span>Anda Pengawas Sekolah Baru? Buka Pendaftaran Pengawas ➔</span>
-                      </button>
-                    </div>
                   </div>
                 </div>
 
