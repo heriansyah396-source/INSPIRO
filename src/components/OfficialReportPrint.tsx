@@ -3,8 +3,17 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React from 'react';
-import { Printer, ArrowLeft, Download, School } from 'lucide-react';
+import React, { useState } from 'react';
+import {
+  Printer,
+  ArrowLeft,
+  Download,
+  School,
+  FileText,
+  CheckCircle2,
+  HelpCircle,
+  FileDown
+} from 'lucide-react';
 import {
   AppSettings,
   OBSERVATION_INDICATORS,
@@ -13,6 +22,10 @@ import {
   SupervisionRecord
 } from '../types/inspiro';
 import { TeacherRadarChart } from './TeacherRadarChart';
+import {
+  exportSupervisionToWord,
+  printDocumentElement
+} from '../utils/documentExport';
 
 interface OfficialReportPrintProps {
   supervision: SupervisionRecord;
@@ -25,8 +38,39 @@ export const OfficialReportPrint: React.FC<OfficialReportPrintProps> = ({
   settings,
   onBack
 }) => {
+  const [isExportingWord, setIsExportingWord] = useState(false);
+  const [isPrinting, setIsPrinting] = useState(false);
+  const [exportNotice, setExportNotice] = useState<string | null>(null);
+
   const handlePrint = () => {
-    window.print();
+    setIsPrinting(true);
+    setExportNotice('Membuka dialog cetak / Simpan PDF...');
+    const success = printDocumentElement(
+      'official-supervision-print-page',
+      `INSTRUMEN_SUPERVISI_${supervision.identity.namaGuru || 'GURU'}`
+    );
+    setTimeout(() => {
+      setIsPrinting(false);
+      setExportNotice(null);
+    }, 2500);
+  };
+
+  const handleExportWord = () => {
+    setIsExportingWord(true);
+    setExportNotice('Menyiapkan dan mengunduh berkas Microsoft Word (.doc)...');
+    try {
+      exportSupervisionToWord(supervision, settings);
+      setTimeout(() => {
+        setIsExportingWord(false);
+        setExportNotice('Berkas Word berhasil diunduh!');
+        setTimeout(() => setExportNotice(null), 3000);
+      }, 500);
+    } catch (err) {
+      console.error('Gagal mengekspor berkas Word:', err);
+      setIsExportingWord(false);
+      setExportNotice('Gagal mengekspor dokumen Word.');
+      setTimeout(() => setExportNotice(null), 3000);
+    }
   };
 
   const { identity, praObservasi, scores, notes, totalScore, finalScore, category, refleksi, rtl } =
@@ -35,31 +79,62 @@ export const OfficialReportPrint: React.FC<OfficialReportPrintProps> = ({
   return (
     <div className="space-y-6 max-w-4xl mx-auto pb-16">
       {/* Action Header (Hidden in Print) */}
-      <div className="no-print bg-white p-4 rounded-xl border border-slate-200 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <button
-          onClick={onBack}
-          className="flex items-center gap-1.5 text-xs font-semibold text-slate-600 hover:text-slate-900 transition-colors cursor-pointer"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          <span>Kembali ke Aplikasi</span>
-        </button>
-
-        <div className="flex items-center gap-2">
-          <span className="text-xs text-slate-500 hidden sm:inline">
-            Siap cetak kertas A4 atau Simpan sebagai PDF:
-          </span>
+      <div className="no-print space-y-2">
+        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <button
-            onClick={handlePrint}
-            className="flex items-center gap-1.5 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold shadow-xs transition-colors cursor-pointer"
+            onClick={onBack}
+            className="flex items-center gap-1.5 text-xs font-semibold text-slate-600 hover:text-slate-900 transition-colors cursor-pointer"
           >
-            <Printer className="w-4 h-4" />
-            <span>Cetak Dokumen / Simpan PDF</span>
+            <ArrowLeft className="w-4 h-4" />
+            <span>Kembali ke Aplikasi</span>
           </button>
+
+          <div className="flex flex-wrap items-center gap-2">
+            {/* Tombol Cetak Dokumen / Simpan PDF */}
+            <button
+              onClick={handlePrint}
+              disabled={isPrinting}
+              className="flex items-center gap-1.5 px-4 py-2 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white rounded-lg text-xs font-bold shadow-xs transition-all cursor-pointer disabled:opacity-60"
+              title="Cetak langsung ke printer atau Simpan sebagai PDF"
+            >
+              <Printer className="w-4 h-4" />
+              <span>{isPrinting ? 'Menyiapkan Cetak...' : 'Cetak Dokumen / Simpan PDF'}</span>
+            </button>
+
+            {/* Tombol Cetak / Unduh Dokumen Word */}
+            <button
+              onClick={handleExportWord}
+              disabled={isExportingWord}
+              className="flex items-center gap-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white rounded-lg text-xs font-bold shadow-xs transition-all cursor-pointer disabled:opacity-60"
+              title="Unduh format dokumen Microsoft Word (.doc) yang dapat diedit langsung"
+            >
+              <FileDown className="w-4 h-4" />
+              <span>{isExportingWord ? 'Mengunduh...' : 'Cetak / Unduh Word (.doc)'}</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Notice & Printing Guidance Banner */}
+        <div className="bg-blue-50/80 border border-blue-200/90 rounded-lg px-3.5 py-2 text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-blue-900">
+          <div className="flex items-center gap-2">
+            <CheckCircle2 className="w-4 h-4 text-blue-600 shrink-0" />
+            <span>
+              <strong>Petunjuk:</strong> Pilih opsi <em>"Simpan sebagai PDF"</em> di jendela peramban untuk menyimpan dokumen PDF, atau klik <strong>"Cetak / Unduh Word"</strong> untuk dokumen Word yang siap diedit di MS Word / WPS Office.
+            </span>
+          </div>
+          {exportNotice && (
+            <span className="font-semibold text-emerald-800 bg-emerald-100/90 px-2 py-0.5 rounded text-[11px] self-start sm:self-auto shrink-0">
+              {exportNotice}
+            </span>
+          )}
         </div>
       </div>
 
       {/* Official Printable Paper Document Container */}
-      <div className="print-page bg-white p-8 sm:p-12 border border-slate-300 rounded-lg shadow-sm text-slate-900 text-xs font-serif leading-relaxed">
+      <div
+        id="official-supervision-print-page"
+        className="print-page bg-white p-8 sm:p-12 border border-slate-300 rounded-lg shadow-sm text-slate-900 text-xs font-serif leading-relaxed"
+      >
         {/* Kop Surat Resmi */}
         <div className="border-b-2 border-slate-900 pb-3 mb-6 text-center">
           <div className="text-[11px] uppercase tracking-widest font-sans font-semibold text-slate-600">

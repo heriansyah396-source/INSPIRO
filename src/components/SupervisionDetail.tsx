@@ -19,14 +19,18 @@ import {
   School,
   CheckCircle2,
   Clock,
-  ExternalLink
+  ExternalLink,
+  FileDown
 } from 'lucide-react';
-import { SupervisionRecord } from '../types/inspiro';
+import { AppSettings, SupervisionRecord } from '../types/inspiro';
 import { analyzeSupervision } from '../utils/storage';
+import { DEFAULT_SETTINGS } from '../data/seedData';
+import { exportSupervisionToWord } from '../utils/documentExport';
 import { TeacherRadarChart } from './TeacherRadarChart';
 
 interface SupervisionDetailProps {
   supervision: SupervisionRecord;
+  settings?: AppSettings;
   onBack: () => void;
   onEdit: () => void;
   onPrint: () => void;
@@ -34,6 +38,7 @@ interface SupervisionDetailProps {
 
 export const SupervisionDetail: React.FC<SupervisionDetailProps> = ({
   supervision,
+  settings = DEFAULT_SETTINGS,
   onBack,
   onEdit,
   onPrint
@@ -54,7 +59,7 @@ export const SupervisionDetail: React.FC<SupervisionDetailProps> = ({
           <span>Kembali ke Daftar Laporan</span>
         </button>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <button
             onClick={onEdit}
             className="flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors shadow-2xs cursor-pointer"
@@ -63,11 +68,19 @@ export const SupervisionDetail: React.FC<SupervisionDetailProps> = ({
             <span>Ubah / Lengkapi Data</span>
           </button>
           <button
+            onClick={() => exportSupervisionToWord(supervision, settings)}
+            className="flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg transition-colors shadow-xs cursor-pointer"
+            title="Unduh format dokumen Microsoft Word (.doc)"
+          >
+            <FileDown className="w-4 h-4" />
+            <span>Unduh Word (.doc)</span>
+          </button>
+          <button
             onClick={onPrint}
             className="flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors shadow-xs cursor-pointer"
           >
             <Printer className="w-4 h-4" />
-            <span>Cetak Dokumen Resmi / PDF</span>
+            <span>Cetak Dokumen / Simpan PDF</span>
           </button>
         </div>
       </div>

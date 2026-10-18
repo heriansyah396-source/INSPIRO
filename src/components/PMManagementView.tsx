@@ -26,7 +26,8 @@ import {
   RotateCcw,
   X,
   ShieldCheck,
-  Users
+  Users,
+  FileDown
 } from 'lucide-react';
 import {
   PMReport,
@@ -36,6 +37,7 @@ import {
   AppSettings
 } from '../types/inspiro';
 import { UserRoleProfile } from '../services/firebase';
+import { exportPMReportToWord, printDocumentElement } from '../utils/documentExport';
 
 interface PMManagementViewProps {
   pmReports: PMReport[];
@@ -394,22 +396,45 @@ export const PMManagementView: React.FC<PMManagementViewProps> = ({
               <X className="w-4 h-4" />
               <span>Tutup Pratinjau Cetak</span>
             </button>
-            <span className="text-xs text-slate-500 font-medium">
+            <span className="text-xs text-slate-500 font-medium hidden sm:inline">
               Format Dokumen Resmi Kedinasan A4 · Pengelolaan Praktik Pedagogis (PM)
             </span>
           </div>
 
-          <button
-            onClick={() => window.print()}
-            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold flex items-center gap-2 shadow-md cursor-pointer"
-          >
-            <Printer className="w-4 h-4" />
-            <span>Cetak / Simpan PDF</span>
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => {
+                printDocumentElement(
+                  'pm-report-print-page',
+                  `LAPORAN_PM_${selectedReportForView.schoolName}_${selectedReportForView.academicYear}`
+                );
+              }}
+              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white rounded-lg text-xs font-bold flex items-center gap-2 shadow-sm transition-all cursor-pointer"
+              title="Cetak langsung atau Simpan sebagai PDF"
+            >
+              <Printer className="w-4 h-4" />
+              <span>Cetak / Simpan PDF</span>
+            </button>
+
+            <button
+              onClick={() => {
+                exportPMReportToWord(selectedReportForView, settings);
+                showToast('Unduh Berhasil', 'Dokumen Word (.doc) berhasil diunduh.', 'success');
+              }}
+              className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white rounded-lg text-xs font-bold flex items-center gap-2 shadow-sm transition-all cursor-pointer"
+              title="Unduh format dokumen Microsoft Word (.doc)"
+            >
+              <FileDown className="w-4 h-4" />
+              <span>Cetak / Unduh Word</span>
+            </button>
+          </div>
         </div>
 
         {/* Printable Document Sheet (A4 Format) */}
-        <div className="print-page bg-white p-8 sm:p-12 rounded-xl shadow-lg border border-slate-200 max-w-4xl mx-auto text-slate-900 leading-relaxed font-serif">
+        <div
+          id="pm-report-print-page"
+          className="print-page bg-white p-8 sm:p-12 rounded-xl shadow-lg border border-slate-200 max-w-4xl mx-auto text-slate-900 leading-relaxed font-serif"
+        >
           {/* Official Header */}
           <div className="text-center border-b-2 border-slate-900 pb-4 mb-6">
             <h3 className="text-sm font-bold uppercase tracking-wider">

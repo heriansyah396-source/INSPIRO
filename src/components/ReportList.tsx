@@ -16,13 +16,17 @@ import {
   Clock,
   Plus,
   School,
-  Compass
+  Compass,
+  FileDown
 } from 'lucide-react';
-import { SupervisionRecord, Teacher } from '../types/inspiro';
+import { AppSettings, SupervisionRecord, Teacher } from '../types/inspiro';
+import { DEFAULT_SETTINGS } from '../data/seedData';
+import { exportSupervisionToWord } from '../utils/documentExport';
 import { TeacherRadarModal } from './TeacherRadarModal';
 
 interface ReportListProps {
   supervisions: SupervisionRecord[];
+  settings?: AppSettings;
   onViewDetail: (id: string) => void;
   onEditSupervision: (id: string) => void;
   onPrintReport: (id: string) => void;
@@ -32,6 +36,7 @@ interface ReportListProps {
 
 export const ReportList: React.FC<ReportListProps> = ({
   supervisions,
+  settings = DEFAULT_SETTINGS,
   onViewDetail,
   onEditSupervision,
   onPrintReport,
@@ -277,13 +282,22 @@ export const ReportList: React.FC<ReportListProps> = ({
                             <Eye className="w-4 h-4" />
                           </button>
 
-                          {/* Cetak Resmi */}
+                          {/* Cetak Resmi / PDF */}
                           <button
                             onClick={() => onPrintReport(item.id)}
                             className="p-1.5 text-slate-600 hover:text-blue-600 hover:bg-slate-100 rounded-md transition-colors"
                             title="Cetak Laporan Format Resmi / PDF"
                           >
                             <Printer className="w-4 h-4" />
+                          </button>
+
+                          {/* Unduh Word (.doc) */}
+                          <button
+                            onClick={() => exportSupervisionToWord(item, settings)}
+                            className="p-1.5 text-slate-600 hover:text-emerald-600 hover:bg-emerald-50 rounded-md transition-colors"
+                            title="Unduh Dokumen Word (.doc)"
+                          >
+                            <FileDown className="w-4 h-4" />
                           </button>
 
                           {/* Edit */}

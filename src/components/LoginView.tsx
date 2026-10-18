@@ -96,16 +96,16 @@ export const LoginView: React.FC<LoginViewProps> = ({
           } else {
             throw new Error(
               userRole === 'kepala_sekolah'
-                ? 'Akun Kepala Sekolah tidak ditemukan atau kata sandi salah. Gunakan username dan password yang telah diberikan oleh Pengawas Sekolah.'
-                : 'Akun Pengawas tidak ditemukan atau kata sandi salah. Silakan periksa kembali atau pilih tab "Daftar Akun Pengawas" bila belum mendaftar.'
+                ? 'Akun Kepala Sekolah tidak ditemukan atau kata sandi salah. Gunakan username dan kata sandi yang telah diberikan oleh Pengawas Sekolah.'
+                : 'Akun Pengawas tidak ditemukan atau kata sandi salah. Pastikan email/username dan kata sandi Anda sudah sesuai.'
             );
           }
         }
       } else {
         throw new Error(
           userRole === 'kepala_sekolah'
-            ? 'Akun Kepala Sekolah tidak ditemukan atau kata sandi salah. Gunakan username dan password yang telah diberikan oleh Pengawas Sekolah.'
-            : 'Akun Pengawas tidak ditemukan atau kata sandi salah. Silakan periksa kembali atau pilih tab "Daftar Akun Pengawas" bila belum mendaftar.'
+            ? 'Akun Kepala Sekolah tidak ditemukan atau kata sandi salah. Gunakan username dan kata sandi yang telah diberikan oleh Pengawas Sekolah.'
+            : 'Akun Pengawas tidak ditemukan atau kata sandi salah. Pastikan email/username dan kata sandi Anda sudah sesuai.'
         );
       }
 

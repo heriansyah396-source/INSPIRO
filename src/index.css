@@ -8,21 +8,72 @@
 
 /* Custom print styles for official Indonesian academic supervision document */
 @media print {
+  @page {
+    size: A4 portrait;
+    margin: 1.2cm 1cm 1.2cm 1cm;
+  }
+
+  *, *::before, *::after {
+    box-sizing: border-box !important;
+  }
+
+  html,
   body {
     background: #ffffff !important;
     color: #000000 !important;
-    font-size: 11pt !important;
+    font-size: 10.5pt !important;
     line-height: 1.4 !important;
+    height: auto !important;
+    min-height: auto !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
   }
   
+  #root,
+  .min-h-screen,
+  div,
+  main {
+    height: auto !important;
+    min-height: auto !important;
+    overflow: visible !important;
+    position: static !important;
+    max-width: 100% !important;
+    float: none !important;
+  }
+
+  /* Reset flex wrappers that cause empty or collapsed pages in Chrome / Safari */
+  .min-h-screen.flex {
+    display: block !important;
+  }
+  
+  div.transition-all {
+    padding-left: 0 !important;
+  }
+
+  main {
+    padding: 0 !important;
+    margin: 0 !important;
+    max-width: 100% !important;
+  }
+
   .no-print,
   nav,
   aside,
   header,
   footer,
   button,
-  .toast-container {
+  .toast-container,
+  [role="dialog"] {
     display: none !important;
+    visibility: hidden !important;
+    height: 0 !important;
+    width: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
   }
 
   .print-only {
@@ -30,24 +81,43 @@
   }
 
   .print-page {
+    display: block !important;
     width: 100% !important;
+    max-width: 100% !important;
     margin: 0 !important;
-    padding: 0 !important;
+    padding: 4px !important;
     box-shadow: none !important;
     border: none !important;
-    background: white !important;
+    background: #ffffff !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
   }
 
   .print-page-break {
     page-break-before: always;
+    break-before: page;
   }
 
   .print-avoid-break {
-    page-break-inside: avoid;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
   }
 
-  @page {
-    size: A4 portrait;
-    margin: 1.8cm 1.5cm 1.8cm 1.5cm;
+  table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+    page-break-inside: auto !important;
+  }
+
+  tr {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+    page-break-after: auto !important;
+  }
+
+  th, td {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
   }
 }
+

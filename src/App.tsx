@@ -556,6 +556,7 @@ export default function App() {
                 activeRecord ? (
                   <SupervisionDetail
                     supervision={activeRecord}
+                    settings={settings}
                     onBack={() => setCurrentTab('reports')}
                     onEdit={() => handleEditSupervision(activeRecord.id)}
                     onPrint={() => handlePrintReport(activeRecord.id)}
@@ -577,6 +578,7 @@ export default function App() {
               {currentTab === 'reports' && (
                 <ReportList
                   supervisions={supervisions}
+                  settings={settings}
                   onViewDetail={handleViewResult}
                   onEditSupervision={handleEditSupervision}
                   onPrintReport={handlePrintReport}
