@@ -98,81 +98,170 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
   return (
     <div className="space-y-6">
-      {/* Welcome Banner with Rich Educational Gradient & Ambient Lighting */}
-      <div className="relative overflow-hidden bg-gradient-to-r from-[#0c1c4f] via-[#1a2b6d] to-[#162356] rounded-2xl p-6 sm:p-7 text-white shadow-xl border border-blue-400/20 flex flex-col md:flex-row md:items-center justify-between gap-5">
-        {/* Ambient decorative lighting */}
-        <div className="absolute -top-12 -right-12 w-64 h-64 bg-cyan-500/15 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute -bottom-12 left-1/3 w-64 h-64 bg-indigo-500/20 rounded-full blur-3xl pointer-events-none" />
+      {/* Welcome Banner with Executive Presence & Responsive Feature Hub */}
+      <div className="relative overflow-hidden bg-gradient-to-br from-[#0a1638] via-[#0f214d] to-[#0d1b3f] rounded-2xl p-6 sm:p-7 text-white shadow-xl border border-blue-400/20">
+        {/* Ambient subtle lighting */}
+        <div className="absolute -top-16 -right-16 w-80 h-80 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute -bottom-16 left-1/4 w-80 h-80 bg-indigo-500/15 rounded-full blur-3xl pointer-events-none" />
 
-        <div className="space-y-2 max-w-xl z-10">
-          <div className="flex items-center gap-2">
-            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-cyan-400/20 text-cyan-200 border border-cyan-400/30">
-              Siklus Supervisi Akademik
-            </span>
-            <span className="text-xs text-blue-200 font-medium">Tahun Ajaran 2026/2027</span>
+        {/* Top Section: Branding, Unboxed Kicker, and Primary Action */}
+        <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-6 pb-6 border-b border-white/10">
+          <div className="space-y-2 max-w-2xl">
+            {/* Clean unboxed metadata (zero-pill discipline) */}
+            <div className="flex flex-wrap items-center gap-2 text-xs text-cyan-300 font-semibold tracking-wide">
+              <span>Siklus Supervisi Akademik</span>
+              <span aria-hidden="true" className="text-white/40">·</span>
+              <span>Kurikulum Merdeka 12 Indikator</span>
+              <span aria-hidden="true" className="text-white/40">·</span>
+              <span className="text-blue-200">Tahun Ajaran 2026/2027</span>
+            </div>
+
+            <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white leading-tight">
+              Selamat Datang di INSPIRO
+            </h2>
+            <p className="text-xs sm:text-sm text-blue-100/85 leading-relaxed font-normal">
+              Platform pendataan dan penilaian observasi kelas berbasis instrumen resmi Kurikulum Merdeka.
+              Didesain untuk proses supervisi klinis yang cepat, terukur, dan siap cetak dokumen dinas.
+            </p>
           </div>
-          <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white">
-            Selamat Datang di INSPIRO
-          </h2>
-          <p className="text-xs sm:text-sm text-blue-100/90 leading-relaxed font-normal">
-            Platform pendataan dan penilaian observasi kelas berbasis 12 indikator Kurikulum Merdeka.
-            Didesain untuk proses supervisi yang cepat, terukur, dan siap cetak dokumen dinas.
-          </p>
+
+          {/* Primary Action Buttons (Clear focal anchor) */}
+          <div className="flex flex-wrap items-center gap-3 shrink-0">
+            <button
+              onClick={() => onStartSupervision()}
+              className="flex items-center gap-2.5 px-5 py-3 bg-gradient-to-r from-cyan-400 via-cyan-300 to-blue-400 hover:from-cyan-300 hover:to-blue-300 text-slate-950 font-extrabold text-xs sm:text-sm rounded-xl transition-all shadow-lg shadow-cyan-500/25 cursor-pointer hover:scale-[1.02] active:scale-[0.98]"
+            >
+              <Plus className="w-4 h-4 text-slate-950 stroke-[3]" />
+              <span>Mulai Observasi Baru</span>
+            </button>
+            <button
+              onClick={onNavigateToTeachers}
+              className="flex items-center gap-2 px-4 py-3 bg-white/10 hover:bg-white/15 text-white font-semibold text-xs rounded-xl transition-all border border-white/15 backdrop-blur-xs cursor-pointer hover:border-white/30"
+            >
+              <Users className="w-4 h-4 text-cyan-300" />
+              <span>Kelola Guru</span>
+            </button>
+          </div>
         </div>
-        <div className="flex flex-wrap items-center gap-3 shrink-0 z-10">
-          <button
-            onClick={() => onStartSupervision()}
-            className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-cyan-400 to-blue-500 hover:from-cyan-300 hover:to-blue-400 text-slate-950 font-bold text-xs rounded-xl transition-all shadow-md shadow-cyan-500/25 cursor-pointer hover:scale-[1.02] active:scale-[0.98]"
-          >
-            <Plus className="w-4 h-4 text-slate-950 stroke-[3]" />
-            <span>Mulai Observasi Baru</span>
-          </button>
-          <button
-            onClick={onNavigateToTeachers}
-            className="flex items-center gap-2 px-4 py-2.5 bg-white/10 hover:bg-white/20 text-white font-semibold text-xs rounded-xl transition-all border border-white/20 backdrop-blur-xs cursor-pointer"
-          >
-            <Users className="w-4 h-4 text-cyan-300" />
-            <span>Kelola Guru</span>
-          </button>
-          {onNavigateToQualityMap && (
+
+        {/* Bottom Section: Quick-Access Feature Tiles (Grid 2 cols on mobile, 4 cols on desktop) */}
+        <div className="relative z-10 pt-5">
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-[11px] font-bold text-blue-200 uppercase tracking-wider">
+              Akses Cepat Modul Supervisi &amp; Evaluasi Mutu
+            </span>
+            <span className="text-[11px] text-blue-300/70 hidden sm:inline">
+              Klik modul untuk navigasi instan
+            </span>
+          </div>
+
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            {/* Tile 1: Peta Mutu Binaan */}
             <button
               onClick={onNavigateToQualityMap}
-              className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-indigo-500 via-blue-500 to-indigo-600 hover:from-indigo-400 hover:to-blue-400 text-white font-bold text-xs rounded-xl transition-all shadow-md shadow-indigo-500/25 cursor-pointer hover:scale-[1.02] active:scale-[0.98]"
-              title="Buka Peta Mutu & Komparasi Antar-Sekolah Binaan"
+              className="group text-left p-3.5 rounded-xl bg-white/6 hover:bg-white/12 border border-white/10 hover:border-blue-400/40 transition-all duration-200 cursor-pointer flex flex-col justify-between"
             >
-              <Compass className="w-4 h-4 text-cyan-200 stroke-[2.5]" />
-              <span>Peta Mutu Binaan</span>
+              <div className="flex items-center justify-between mb-2">
+                <div className="w-8 h-8 rounded-lg bg-blue-500/20 text-cyan-300 flex items-center justify-center border border-blue-400/30 group-hover:scale-105 transition-transform">
+                  <Compass className="w-4 h-4" />
+                </div>
+                <ArrowRight className="w-3.5 h-3.5 text-white/40 group-hover:text-cyan-300 group-hover:translate-x-0.5 transition-all" />
+              </div>
+              <div>
+                <p className="text-xs font-bold text-white group-hover:text-cyan-200 transition-colors">
+                  Peta Mutu Binaan
+                </p>
+                <p className="text-[11px] text-blue-200/70 mt-0.5 line-clamp-1">
+                  Radar komparasi antar-sekolah
+                </p>
+              </div>
             </button>
-          )}
-          {onNavigateToGrowthTracker && (
+
+            {/* Tile 2: Growth Tracker Siklus */}
             <button
               onClick={onNavigateToGrowthTracker}
-              className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-600 hover:from-emerald-400 hover:to-teal-400 text-white font-bold text-xs rounded-xl transition-all shadow-md shadow-emerald-500/25 cursor-pointer hover:scale-[1.02] active:scale-[0.98]"
-              title="Buka Growth Tracker: Komparasi Siklus I vs Siklus II"
+              className="group text-left p-3.5 rounded-xl bg-white/6 hover:bg-white/12 border border-white/10 hover:border-emerald-400/40 transition-all duration-200 cursor-pointer flex flex-col justify-between"
             >
-              <TrendingUp className="w-4 h-4 text-emerald-100 stroke-[2.5]" />
-              <span>Growth Tracker Siklus</span>
+              <div className="flex items-center justify-between mb-2">
+                <div className="w-8 h-8 rounded-lg bg-emerald-500/20 text-emerald-300 flex items-center justify-center border border-emerald-400/30 group-hover:scale-105 transition-transform">
+                  <TrendingUp className="w-4 h-4" />
+                </div>
+                <ArrowRight className="w-3.5 h-3.5 text-white/40 group-hover:text-emerald-300 group-hover:translate-x-0.5 transition-all" />
+              </div>
+              <div>
+                <p className="text-xs font-bold text-white group-hover:text-emerald-200 transition-colors">
+                  Growth Tracker Siklus
+                </p>
+                <p className="text-[11px] text-emerald-200/70 mt-0.5 line-clamp-1">
+                  Lompatan nilai Siklus I vs II
+                </p>
+              </div>
             </button>
-          )}
-          {onNavigateToPM && (
+
+            {/* Tile 3: Pengelolaan PM */}
             <button
               onClick={onNavigateToPM}
-              className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-emerald-400 to-teal-400 hover:from-emerald-300 hover:to-teal-300 text-slate-950 font-bold text-xs rounded-xl transition-all shadow-md shadow-emerald-500/20 cursor-pointer hover:scale-[1.02] active:scale-[0.98]"
+              className="group text-left p-3.5 rounded-xl bg-white/6 hover:bg-white/12 border border-white/10 hover:border-teal-400/40 transition-all duration-200 cursor-pointer flex flex-col justify-between"
             >
-              <BookOpenCheck className="w-4 h-4 text-slate-950 stroke-[2.5]" />
-              <span>Pengelolaan PM</span>
+              <div className="flex items-center justify-between mb-2">
+                <div className="w-8 h-8 rounded-lg bg-teal-500/20 text-teal-300 flex items-center justify-center border border-teal-400/30 group-hover:scale-105 transition-transform">
+                  <BookOpenCheck className="w-4 h-4" />
+                </div>
+                <ArrowRight className="w-3.5 h-3.5 text-white/40 group-hover:text-teal-300 group-hover:translate-x-0.5 transition-all" />
+              </div>
+              <div>
+                <p className="text-xs font-bold text-white group-hover:text-teal-200 transition-colors">
+                  Pengelolaan PM
+                </p>
+                <p className="text-[11px] text-teal-200/70 mt-0.5 line-clamp-1">
+                  Evaluasi praktik pedagogis
+                </p>
+              </div>
             </button>
-          )}
-          {isSupervisor && onOpenManagePrincipals && (
-            <button
-              onClick={onOpenManagePrincipals}
-              className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-amber-400 via-amber-500 to-amber-400 hover:from-amber-300 hover:to-amber-400 text-slate-950 font-bold text-xs rounded-xl transition-all shadow-md shadow-amber-500/25 cursor-pointer hover:scale-[1.02] active:scale-[0.98]"
-              title="Buat dan kelola akun login Kepala Sekolah binaan"
-            >
-              <KeyRound className="w-4 h-4 text-slate-950 stroke-[2.5]" />
-              <span>Akun Kepsek Binaan</span>
-            </button>
-          )}
+
+            {/* Tile 4: Akun Kepsek Binaan atau Laporan Resmi */}
+            {isSupervisor && onOpenManagePrincipals ? (
+              <button
+                onClick={onOpenManagePrincipals}
+                className="group text-left p-3.5 rounded-xl bg-white/6 hover:bg-white/12 border border-white/10 hover:border-amber-400/40 transition-all duration-200 cursor-pointer flex flex-col justify-between"
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <div className="w-8 h-8 rounded-lg bg-amber-500/20 text-amber-300 flex items-center justify-center border border-amber-400/30 group-hover:scale-105 transition-transform">
+                    <KeyRound className="w-4 h-4" />
+                  </div>
+                  <ArrowRight className="w-3.5 h-3.5 text-white/40 group-hover:text-amber-300 group-hover:translate-x-0.5 transition-all" />
+                </div>
+                <div>
+                  <p className="text-xs font-bold text-white group-hover:text-amber-200 transition-colors">
+                    Akun Kepsek Binaan
+                  </p>
+                  <p className="text-[11px] text-amber-200/70 mt-0.5 line-clamp-1">
+                    Kelola akses kepala sekolah
+                  </p>
+                </div>
+              </button>
+            ) : (
+              <button
+                onClick={onNavigateToReports}
+                className="group text-left p-3.5 rounded-xl bg-white/6 hover:bg-white/12 border border-white/10 hover:border-blue-400/40 transition-all duration-200 cursor-pointer flex flex-col justify-between"
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <div className="w-8 h-8 rounded-lg bg-blue-500/20 text-blue-300 flex items-center justify-center border border-blue-400/30 group-hover:scale-105 transition-transform">
+                    <FileText className="w-4 h-4" />
+                  </div>
+                  <ArrowRight className="w-3.5 h-3.5 text-white/40 group-hover:text-blue-300 group-hover:translate-x-0.5 transition-all" />
+                </div>
+                <div>
+                  <p className="text-xs font-bold text-white group-hover:text-blue-200 transition-colors">
+                    Laporan Supervisi
+                  </p>
+                  <p className="text-[11px] text-blue-200/70 mt-0.5 line-clamp-1">
+                    Arsip &amp; cetak resmi dinas
+                  </p>
+                </div>
+              </button>
+            )}
+          </div>
         </div>
       </div>
 

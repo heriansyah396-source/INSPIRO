@@ -414,7 +414,7 @@ export function exportSupervisionToWord(
           <td style="padding:3px;">${escapeHtml(identity.mapel)}</td>
           <td style="font-weight:bold; padding:3px;">9. Siklus Ke-</td>
           <td style="padding:3px;">:</td>
-          <td style="padding:3px;">${escapeHtml(identity.siklus)}</td>
+          <td style="padding:3px; font-weight:bold;">${escapeHtml(identity.siklus || 'Siklus 1')}</td>
         </tr>
         <tr>
           <td style="font-weight:bold; padding:3px;">4. Kelas / Semester</td>
@@ -1222,10 +1222,10 @@ export function exportGrowthTrackerToWord(
 
       <!-- JUDUL LAPORAN -->
       <div class="doc-title">
-        ${selectedTeacher ? 'LAPORAN EVALUASI PERTUMBUHAN KOMPETENSI GURU (SIKLUS I VS SIKLUS II)' : 'REKAPITULASI EVALUASI PERTUMBUHAN GURU ANTAR-SIKLUS SUPERVISI'}
+        ${selectedTeacher ? `LAPORAN EVALUASI PERTUMBUHAN MULTI-SIKLUS GURU (${escapeHtml(selectedTeacher.baselineCycleName)} VS ${escapeHtml(selectedTeacher.targetCycleName)})` : 'REKAPITULASI EVALUASI PERTUMBUHAN GURU LINTAS 4 SIKLUS SUPERVISI (SIKLUS 1, 2, 3, &amp; LANJUTAN)'}
       </div>
       <div class="doc-subtitle">
-        Tahun Ajaran 2026/2027 · Semester Ganjil · Berdasarkan Observasi Kelas 12 Indikator &amp; Verifikasi RTL
+        Tahun Ajaran 2026/2027 · Evaluasi Berkelanjutan Berbasis 12 Indikator Kurikulum Merdeka &amp; Bimbingan Klinis Pengawas
       </div>
 
       <!-- I. RINGKASAN EKSEKUTIF -->
@@ -1255,7 +1255,7 @@ export function exportGrowthTrackerToWord(
         selectedTeacher
           ? `
         <!-- DETAIL GURU TERPILIH -->
-        <div class="section-header">II. BIODATA PENDIDIK &amp; PERTUMBUHAN ANTAR-SIKLUS</div>
+        <div class="section-header">II. BIODATA PENDIDIK &amp; PROGRESIVITAS 4 TAHAPAN SIKLUS</div>
         <table class="data-table">
           <tr>
             <td style="width:25%; font-weight:bold;">Nama Guru</td>
@@ -1270,43 +1270,57 @@ export function exportGrowthTrackerToWord(
             <td>${escapeHtml(selectedTeacher.satuanPendidikan)}</td>
           </tr>
           <tr>
-            <td style="font-weight:bold;">Skor Siklus I (Awal)</td>
-            <td style="font-weight:bold;">${selectedTeacher.scoreCycle1}% (${selectedTeacher.categoryCycle1})</td>
-            <td style="font-weight:bold;">Skor Siklus II (Evaluasi)</td>
-            <td style="font-weight:bold; color:#15803d;">${selectedTeacher.scoreCycle2}% (${selectedTeacher.categoryCycle2})</td>
+            <td style="font-weight:bold;">Siklus 1 (Awal)</td>
+            <td style="font-weight:bold;">${selectedTeacher.cycles.s1.score}% (${selectedTeacher.cycles.s1.category})</td>
+            <td style="font-weight:bold;">Siklus 2 (Evaluasi)</td>
+            <td style="font-weight:bold; color:#15803d;">${selectedTeacher.cycles.s2.score}% (${selectedTeacher.cycles.s2.category})</td>
           </tr>
           <tr>
-            <td style="font-weight:bold;">Lompatan Mutu (&Delta;)</td>
-            <td style="font-weight:bold; color:#15803d;">+${selectedTeacher.deltaScore} Poin (+${selectedTeacher.growthPercentage}%)</td>
-            <td style="font-weight:bold;">Status Trajektori</td>
-            <td style="font-weight:bold;">${escapeHtml(selectedTeacher.trajectoryLabel)}</td>
+            <td style="font-weight:bold;">Siklus 3 (Konsolidasi)</td>
+            <td style="font-weight:bold; color:#7e22ce;">${selectedTeacher.cycles.s3.score}% (${selectedTeacher.cycles.s3.category})</td>
+            <td style="font-weight:bold;">Siklus Lanjutan (RTL)</td>
+            <td style="font-weight:bold; color:#b45309;">${selectedTeacher.cycles.sl.score}% (${selectedTeacher.cycles.sl.category})</td>
+          </tr>
+          <tr>
+            <td style="font-weight:bold;">Komparasi Aktif</td>
+            <td style="font-weight:bold;">${escapeHtml(selectedTeacher.baselineCycleName)} vs ${escapeHtml(selectedTeacher.targetCycleName)}: +${selectedTeacher.deltaScore} pt (+${selectedTeacher.growthPercentage}%)</td>
+            <td style="font-weight:bold;">Total Kumulatif S1 ➔ Lanjutan</td>
+            <td style="font-weight:bold; color:#15803d;">+${selectedTeacher.totalCumulativeDelta} Poin</td>
           </tr>
         </table>
 
-        <!-- TABEL KOMPARASI 12 INDIKATOR GURU -->
-        <div class="section-header">III. KOMPARASI DETAIL 12 INDIKATOR OBSERVASI KELAS (SIKLUS I VS SIKLUS II)</div>
+        <!-- TABEL KOMPARASI 12 INDIKATOR GURU LINTAS 4 SIKLUS -->
+        <div class="section-header">III. KOMPARASI 12 INDIKATOR OBSERVASI KELAS LINTAS SIKLUS (SIKLUS 1, 2, 3, &amp; LANJUTAN)</div>
         <table class="data-table">
           <thead>
             <tr>
-              <th style="width:5%;">No</th>
-              <th style="width:45%;">Indikator Observasi Kurikulum Merdeka</th>
-              <th style="width:15%;">Siklus I (1-4)</th>
-              <th style="width:15%;">Siklus II (1-4)</th>
-              <th style="width:20%;">Pertumbuhan (&Delta;)</th>
+              <th style="width:4%;">No</th>
+              <th style="width:40%;">Indikator Observasi Kurikulum Merdeka</th>
+              <th style="width:11%;">S1 (Awal)</th>
+              <th style="width:11%;">S2 (Evaluasi)</th>
+              <th style="width:11%;">S3 (Konsolidasi)</th>
+              <th style="width:11%;">Lanjutan</th>
+              <th style="width:12%;">Total Naik (&Delta;)</th>
             </tr>
           </thead>
           <tbody>
             ${OBSERVATION_INDICATORS.map((ind) => {
-              const deltaInfo = selectedTeacher.indicatorDeltas[ind.id] || { cycle1: 0, cycle2: 0, delta: 0 };
-              const isPositive = deltaInfo.delta > 0;
+              const s1 = selectedTeacher.cycles.s1.scores[ind.id] || 0;
+              const s2 = selectedTeacher.cycles.s2.scores[ind.id] || 0;
+              const s3 = selectedTeacher.cycles.s3.scores[ind.id] || 0;
+              const sl = selectedTeacher.cycles.sl.scores[ind.id] || 0;
+              const totalDelta = sl - s1;
+              const isPositive = totalDelta > 0;
               return `
                 <tr style="${isPositive ? 'background-color:#f0fdf4;' : ''}">
                   <td class="text-center">${ind.id}</td>
                   <td><strong>${escapeHtml(ind.title)}</strong><br><span style="font-size:8pt; color:#475569;">${escapeHtml(ind.description)}</span></td>
-                  <td class="text-center bold">${deltaInfo.cycle1.toFixed(1)}</td>
-                  <td class="text-center bold" style="color:#15803d;">${deltaInfo.cycle2.toFixed(1)}</td>
+                  <td class="text-center bold">${s1.toFixed(1)}</td>
+                  <td class="text-center bold" style="color:#15803d;">${s2.toFixed(1)}</td>
+                  <td class="text-center bold" style="color:#7e22ce;">${s3.toFixed(1)}</td>
+                  <td class="text-center bold" style="color:#b45309;">${sl.toFixed(1)}</td>
                   <td class="text-center bold" style="color:${isPositive ? '#15803d' : '#475569'};">
-                    ${isPositive ? '+' : ''}${deltaInfo.delta.toFixed(1)}
+                    ${isPositive ? '+' : ''}${totalDelta.toFixed(1)}
                   </td>
                 </tr>
               `;
@@ -1318,7 +1332,7 @@ export function exportGrowthTrackerToWord(
         <div class="section-header">IV. INTERVENSI KLINIS YANG DITERAPKAN &amp; REKOMENDASI LANJUTAN</div>
         <table class="data-table">
           <tr>
-            <td style="width:30%; font-weight:bold;">Intervensi Pasca Siklus I</td>
+            <td style="width:30%; font-weight:bold;">Intervensi Bimbingan Klinis Pengawas</td>
             <td style="width:70%;">
               <ul>
                 ${selectedTeacher.interventionsApplied.map((intv) => `<li>${escapeHtml(intv)}</li>`).join('')}
@@ -1332,19 +1346,20 @@ export function exportGrowthTrackerToWord(
         </table>
       `
           : `
-        <!-- DAFTAR PERTUMBUHAN SELURUH GURU -->
-        <div class="section-header">II. MATRIKS PERKEMBANGAN GURU BINAAN (SIKLUS I KE SIKLUS II)</div>
+        <!-- DAFTAR PERTUMBUHAN SELURUH GURU LINTAS 4 SIKLUS -->
+        <div class="section-header">II. MATRIKS PERKEMBANGAN GURU BINAAN LINTAS 4 SIKLUS</div>
         <table class="data-table">
           <thead>
             <tr>
               <th style="width:4%;">No</th>
-              <th style="width:24%;">Nama Guru &amp; NIP</th>
-              <th style="width:16%;">Mata Pelajaran</th>
-              <th style="width:18%;">Satuan Pendidikan</th>
-              <th style="width:10%;">Siklus I</th>
-              <th style="width:10%;">Siklus II</th>
-              <th style="width:9%;">Pertumbuhan (&Delta;)</th>
-              <th style="width:9%;">Status</th>
+              <th style="width:22%;">Nama Guru &amp; NIP</th>
+              <th style="width:14%;">Mata Pelajaran</th>
+              <th style="width:16%;">Satuan Pendidikan</th>
+              <th style="width:8%;">Siklus 1</th>
+              <th style="width:8%;">Siklus 2</th>
+              <th style="width:8%;">Siklus 3</th>
+              <th style="width:8%;">Lanjutan</th>
+              <th style="width:12%;">Total Delta (&Delta;)</th>
             </tr>
           </thead>
           <tbody>
@@ -1356,10 +1371,11 @@ export function exportGrowthTrackerToWord(
                 <td><strong>${escapeHtml(c.teacherName)}</strong><br><span style="font-size:8pt; color:#475569;">NIP: ${escapeHtml(c.nip)}</span></td>
                 <td>${escapeHtml(c.mapel)}</td>
                 <td>${escapeHtml(c.satuanPendidikan)}</td>
-                <td class="text-center">${c.scoreCycle1}%</td>
-                <td class="text-center bold" style="color:#15803d;">${c.scoreCycle2}%</td>
-                <td class="text-center bold" style="color:#15803d;">+${c.deltaScore} pt</td>
-                <td class="bold" style="font-size:8pt;">${escapeHtml(c.trajectory)}</td>
+                <td class="text-center">${c.cycles.s1.score}%</td>
+                <td class="text-center" style="color:#15803d;">${c.cycles.s2.score}%</td>
+                <td class="text-center" style="color:#7e22ce;">${c.cycles.s3.score}%</td>
+                <td class="text-center bold" style="color:#b45309;">${c.cycles.sl.score}%</td>
+                <td class="text-center bold" style="color:#15803d;">+${c.totalCumulativeDelta} pt</td>
               </tr>
             `
               )

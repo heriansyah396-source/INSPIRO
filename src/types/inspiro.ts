@@ -598,6 +598,35 @@ export interface RegionalQualitySummary {
   regionalStrengthsIndicator: { id: number; title: string; score: number };
 }
 
+export type CycleKey = 's1' | 's2' | 's3' | 'sl';
+
+export interface TeacherCycleDetail {
+  key: CycleKey;
+  label: string;
+  subLabel: string;
+  supervision?: SupervisionRecord;
+  score: number;
+  category: SupervisionCategory;
+  isReal: boolean;
+  dateStr: string;
+  scores: Record<number, number>;
+  dimensions: {
+    praObservasi: number;
+    pendahuluan: number;
+    inti: number;
+    penutup: number;
+    refleksiRtl: number;
+  };
+}
+
+export type CycleCompareMode =
+  | 's1_vs_s2'
+  | 's2_vs_s3'
+  | 's1_vs_s3'
+  | 's3_vs_sl'
+  | 's1_vs_sl'
+  | 'all_multi';
+
 export interface TeacherCycleComparison {
   teacherId: string;
   teacherName: string;
@@ -605,6 +634,9 @@ export interface TeacherCycleComparison {
   mapel: string;
   kelas: string;
   satuanPendidikan: string;
+  compareMode: CycleCompareMode;
+  baselineCycleName: string;
+  targetCycleName: string;
   cycle1Supervision: SupervisionRecord;
   cycle2Supervision: SupervisionRecord;
   scoreCycle1: number;
@@ -615,6 +647,14 @@ export interface TeacherCycleComparison {
   categoryCycle2: SupervisionCategory;
   trajectory: 'Akselerasi Tinggi' | 'Peningkatan Konsisten' | 'Stabil' | 'Perlu Perhatian';
   trajectoryLabel: string;
+  // Multi-cycle individual details
+  cycles: {
+    s1: TeacherCycleDetail;
+    s2: TeacherCycleDetail;
+    s3: TeacherCycleDetail;
+    sl: TeacherCycleDetail;
+  };
+  totalCumulativeDelta: number;
   indicatorDeltas: Record<number, { cycle1: number; cycle2: number; delta: number }>;
   dimensionDeltas: {
     praObservasi: { cycle1: number; cycle2: number; delta: number };

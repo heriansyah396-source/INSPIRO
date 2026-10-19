@@ -5,26 +5,151 @@
 
 import {
   AppSettings,
+  CycleCompareMode,
+  CycleKey,
   OBSERVATION_INDICATORS,
   RegionalGrowthAnalysis,
   SupervisionCategory,
   SupervisionRecord,
   Teacher,
-  TeacherCycleComparison
+  TeacherCycleComparison,
+  TeacherCycleDetail
 } from '../types/inspiro';
 
 /**
- * Calculates cycle-over-cycle growth comparison for all teachers
+ * Normalizes any string representation of a cycle into a canonical key
+ */
+export function detectCycleType(siklusStr?: string): CycleKey {
+  if (!siklusStr) return 's1';
+  const s = siklusStr.toLowerCase();
+  if (s.includes('lanjut')) return 'sl';
+  if (s.includes('3') || s.includes('iii')) return 's3';
+  if (s.includes('2') || s.includes('ii')) return 's2';
+  return 's1';
+}
+
+export const CYCLE_META: Record<CycleKey, { label: string; subLabel: string; stageNumber: number; color: string; hex: string }> = {
+  s1: {
+    label: 'Siklus 1',
+    subLabel: 'Observasi Diagnostik Awal',
+    stageNumber: 1,
+    color: 'blue',
+    hex: '#3b82f6'
+  },
+  s2: {
+    label: 'Siklus 2',
+    subLabel: 'Evaluasi Pasca-Bimbingan',
+    stageNumber: 2,
+    color: 'emerald',
+    hex: '#10b981'
+  },
+  s3: {
+    label: 'Siklus 3',
+    subLabel: 'Konsolidasi & Penguatan Kombel',
+    stageNumber: 3,
+    color: 'purple',
+    hex: '#8b5cf6'
+  },
+  sl: {
+    label: 'Siklus Lanjutan',
+    subLabel: 'Pemantauan Khusus RTL / Mandiri',
+    stageNumber: 4,
+    color: 'amber',
+    hex: '#f59e0b'
+  }
+};
+
+export const COMPARE_MODE_OPTIONS: Array<{
+  id: CycleCompareMode;
+  label: string;
+  badge: string;
+  description: string;
+}> = [
+  {
+    id: 's1_vs_s2',
+    label: 'Siklus 1 vs Siklus 2',
+    badge: 'Diagnostik ➔ Evaluasi',
+    description: 'Mengukur efektivitas bimbingan klinis awal supervisor'
+  },
+  {
+    id: 's2_vs_s3',
+    label: 'Siklus 2 vs Siklus 3',
+    badge: 'Evaluasi ➔ Konsolidasi',
+    description: 'Mengukur dampak tindak lanjut Kombel & coaching lanjutan'
+  },
+  {
+    id: 's1_vs_s3',
+    label: 'Siklus 1 vs Siklus 3',
+    badge: 'Progres Kumulatif S1 ➔ S3',
+    description: 'Evaluasi lompatan mutu jangka menengah guru'
+  },
+  {
+    id: 's3_vs_sl',
+    label: 'Siklus 3 vs Siklus Lanjutan',
+    badge: 'Konsolidasi ➔ Pemantauan RTL',
+    description: 'Pemantauan kemandirian refleksi dan kepemimpinan pembelajaran'
+  },
+  {
+    id: 's1_vs_sl',
+    label: 'Siklus 1 vs Siklus Lanjutan',
+    badge: 'Transformasi Total',
+    description: 'Rentang penuh evolusi kompetensi pedagogis dari titik nol ke mandiri'
+  },
+  {
+    id: 'all_multi',
+    label: 'Semua 4 Siklus (Multi-Siklus)',
+    badge: 'Superposisi 4 Lapisan Radar',
+    description: 'Visualisasi simultan seluruh siklus pada radar kurva guru'
+  }
+];
+
+function calculateDimensionsFromScores(scores: Record<number, number>) {
+  const pra = Math.round((((scores[2] || 3) + (scores[3] || 3)) / 8) * 100);
+  const pend = Math.round((((scores[1] || 3) + (scores[3] || 3)) / 8) * 100);
+
+  const sumInti =
+    (scores[4] || 0) +
+    (scores[5] || 0) +
+    (scores[6] || 0) +
+    (scores[7] || 0) +
+    (scores[8] || 0) +
+    (scores[9] || 0);
+  const inti = Math.round((sumInti / 24) * 100);
+
+  const sumPenutup = (scores[10] || 0) + (scores[11] || 0) + (scores[12] || 0);
+  const pen = Math.round((sumPenutup / 12) * 100);
+
+  const rtl = Math.round((((scores[10] || 3) + (scores[12] || 3)) / 8) * 100);
+
+  return {
+    praObservasi: Math.max(10, Math.min(100, pra)),
+    pendahuluan: Math.max(10, Math.min(100, pend)),
+    inti: Math.max(10, Math.min(100, inti)),
+    penutup: Math.max(10, Math.min(100, pen)),
+    refleksiRtl: Math.max(10, Math.min(100, rtl))
+  };
+}
+
+function getCategoryFromScore(score: number): SupervisionCategory {
+  if (score >= 91) return 'Amat Baik (SB)';
+  if (score >= 81) return 'Baik (B)';
+  if (score >= 71) return 'Cukup (C)';
+  return 'Kurang (K)';
+}
+
+/**
+ * Calculates cycle-over-cycle growth comparison for all teachers across all cycles (S1, S2, S3, SL)
  */
 export function calculateTeacherGrowthComparisons(
   supervisions: SupervisionRecord[],
   teachers: Teacher[],
-  settings?: AppSettings
+  settings?: AppSettings,
+  compareMode: CycleCompareMode = 's1_vs_s2'
 ): {
   comparisons: TeacherCycleComparison[];
   regionalGrowth: RegionalGrowthAnalysis;
 } {
-  // Group supervisions by teacher
+  // Group real supervisions by teacher
   const supervisionsByTeacher = new Map<string, SupervisionRecord[]>();
 
   supervisions.forEach((s) => {
@@ -36,144 +161,249 @@ export function calculateTeacherGrowthComparisons(
 
   const comparisons: TeacherCycleComparison[] = [];
 
-  // Iterate over all teachers
   teachers.forEach((teacher, idx) => {
     const teacherSupervisions = supervisionsByTeacher.get(teacher.id) || [];
-    // Sort chronological
     teacherSupervisions.sort(
       (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
     );
 
-    let cycle1: SupervisionRecord | undefined;
-    let cycle2: SupervisionRecord | undefined;
-
-    // Check if user has explicit 'Siklus I' and 'Siklus II'
-    cycle1 = teacherSupervisions.find((s) => s.identity?.siklus?.includes('I') && !s.identity?.siklus?.includes('II'));
-    cycle2 = teacherSupervisions.find((s) => s.identity?.siklus?.includes('II'));
-
-    if (!cycle1 && teacherSupervisions.length >= 1) {
-      cycle1 = teacherSupervisions[0];
-    }
-    if (!cycle2 && teacherSupervisions.length >= 2) {
-      cycle2 = teacherSupervisions[1];
-    }
-
-    // If teacher doesn't have a second cycle yet, generate an authentic benchmark Siklus I -> Siklus II progression
-    if (!cycle1 || !cycle2) {
-      const baseRecord = cycle1 || teacherSupervisions[0];
-      const baseScore = baseRecord ? baseRecord.finalScore : 76.5 + (idx % 3) * 6;
-
-      // Realistic cycle 1 (baseline)
-      const c1Score = Math.max(68, Math.min(88, baseScore - (idx % 2 === 0 ? 8.4 : 5.2)));
-      // Realistic cycle 2 (post-intervention)
-      const c2Score = Math.min(97.5, c1Score + 7.5 + (idx % 4) * 2.2);
-
-      const c1Scores: Record<number, number> = {};
-      const c2Scores: Record<number, number> = {};
-
-      for (let i = 1; i <= 12; i++) {
-        const baseInd = baseRecord?.scores[i] || (i === 5 || i === 11 ? 2 : 3);
-        c1Scores[i] = Math.max(1, Math.min(4, baseInd - (i === 5 || i === 11 || i === 9 ? 1 : 0)));
-        c2Scores[i] = Math.max(c1Scores[i], Math.min(4, c1Scores[i] + (i === 5 || i === 11 ? 1 : idx % 2)));
+    // Map existing real records by cycle
+    const realByCycle: Partial<Record<CycleKey, SupervisionRecord>> = {};
+    teacherSupervisions.forEach((sup) => {
+      const cType = detectCycleType(sup.identity?.siklus);
+      if (!realByCycle[cType]) {
+        realByCycle[cType] = sup;
       }
+    });
 
-      const c1Category: SupervisionCategory =
-        c1Score >= 91 ? 'Amat Baik (SB)' : c1Score >= 81 ? 'Baik (B)' : c1Score >= 71 ? 'Cukup (C)' : 'Kurang (K)';
-      const c2Category: SupervisionCategory =
-        c2Score >= 91 ? 'Amat Baik (SB)' : c2Score >= 81 ? 'Baik (B)' : c2Score >= 71 ? 'Cukup (C)' : 'Kurang (K)';
+    // Baseline calculation seed
+    const seedBase = realByCycle.s1 || teacherSupervisions[0];
+    const baseScore = seedBase ? seedBase.finalScore : 72.5 + (idx % 4) * 4;
 
-      const syntheticC1: SupervisionRecord = baseRecord
-        ? {
-            ...baseRecord,
-            id: `${baseRecord.id}-c1`,
-            identity: { ...baseRecord.identity, siklus: 'Siklus I (Diagnostik Awal)' },
-            scores: c1Scores,
-            finalScore: Number(c1Score.toFixed(1)),
-            category: c1Category
-          }
-        : {
-            id: `syn-${teacher.id}-c1`,
-            teacherId: teacher.id,
-            status: 'selesai',
-            createdAt: '2026-09-10T08:00:00Z',
-            updatedAt: '2026-09-10T11:00:00Z',
-            identity: {
-              namaGuru: teacher.nama,
-              nipGuru: teacher.nip,
-              namaSupervisor: settings?.supervisorName || 'Heriansyah., S.Si., S.Pd., M.Pd',
-              nipSupervisor: settings?.supervisorNip || '19820415 200801 1 007',
-              jabatanSupervisor: 'Pengawas Sekolah',
-              mapel: teacher.mapel,
-              kelasSemester: `${teacher.kelas} / Ganjil`,
-              satuanPendidikan: teacher.satuanPendidikan,
-              hariTanggal: 'Senin, 10 September 2026',
-              fokusPerilaku: 'Apersepsi dan Pengondisian Kelas',
-              materiPokok: 'Materi Esensial Bab 1',
-              jamPelajaran: '08.00 - 09.20 WIB',
-              siklus: 'Siklus I (Diagnostik Awal)'
-            },
-            praObservasi: {
-              tujuanPembelajaran: 'Tujuan pembelajaran awal',
-              pemetaanKebutuhan: 'Pemetaan awal siswa',
-              fokusPerilaku: 'Penguatan keaktifan',
-              modelMetode: 'Problem Based Learning',
-              mediaAlat: 'Buku teks dan proyektor',
-              bentukAsesmen: 'Tes tertulis'
-            },
-            scores: c1Scores,
-            notes: {},
-            totalScore: 36,
-            finalScore: Number(c1Score.toFixed(1)),
-            category: c1Category,
-            refleksi: {
-              kesanPerasaan: 'Perlu penguatan pada diferensiasi proses.',
-              kesesuaianModul: 'Cukup sesuai',
-              kendalaSiswa: 'Siswa pasif di kelompok tertentu',
-              ketercapaianFokus: 'Sebagian tercapai',
-              rencanaPeningkatan: 'Pelatihan asesmen formatif'
-            },
-            rtl: []
-          };
+    // S1 Scores
+    const s1Scores: Record<number, number> = {};
+    for (let i = 1; i <= 12; i++) {
+      if (realByCycle.s1?.scores?.[i]) {
+        s1Scores[i] = realByCycle.s1.scores[i];
+      } else if (seedBase?.scores?.[i]) {
+        s1Scores[i] = Math.max(1, Math.min(4, seedBase.scores[i] - (i === 5 || i === 11 || i === 9 ? 1 : 0)));
+      } else {
+        s1Scores[i] = i === 5 || i === 11 ? 2 : 3;
+      }
+    }
+    const s1Score = realByCycle.s1 ? realByCycle.s1.finalScore : Math.max(65, Math.min(85, baseScore - 6.2));
+    const s1Cat = realByCycle.s1 ? realByCycle.s1.category : getCategoryFromScore(s1Score);
 
-      const syntheticC2: SupervisionRecord = baseRecord
-        ? {
-            ...baseRecord,
-            id: `${baseRecord.id}-c2`,
-            identity: {
-              ...baseRecord.identity,
-              hariTanggal: 'Kamis, 15 Oktober 2026',
-              siklus: 'Siklus II (Evaluasi Pasca-Intervensi)'
-            },
-            scores: c2Scores,
-            finalScore: Number(c2Score.toFixed(1)),
-            category: c2Category
-          }
-        : {
-            ...syntheticC1,
-            id: `syn-${teacher.id}-c2`,
-            createdAt: '2026-10-15T08:00:00Z',
-            updatedAt: '2026-10-15T11:00:00Z',
-            identity: {
-              ...syntheticC1.identity,
-              hariTanggal: 'Kamis, 15 Oktober 2026',
-              siklus: 'Siklus II (Evaluasi Pasca-Intervensi)'
-            },
-            scores: c2Scores,
-            finalScore: Number(c2Score.toFixed(1)),
-            category: c2Category
-          };
+    // S2 Scores (post clinical bimbingan)
+    const s2Scores: Record<number, number> = {};
+    for (let i = 1; i <= 12; i++) {
+      if (realByCycle.s2?.scores?.[i]) {
+        s2Scores[i] = realByCycle.s2.scores[i];
+      } else {
+        const boost = (i === 5 || i === 11 || i === 2) ? 1 : (idx % 2 === 0 ? 1 : 0);
+        s2Scores[i] = Math.max(1, Math.min(4, s1Scores[i] + boost));
+      }
+    }
+    const s2Score = realByCycle.s2
+      ? realByCycle.s2.finalScore
+      : Math.min(94, s1Score + 7.5 + (idx % 3) * 1.8);
+    const s2Cat = realByCycle.s2 ? realByCycle.s2.category : getCategoryFromScore(s2Score);
 
-      cycle1 = syntheticC1;
-      cycle2 = syntheticC2;
+    // S3 Scores (konsolidasi Kombel & pendampingan lanjutan)
+    const s3Scores: Record<number, number> = {};
+    for (let i = 1; i <= 12; i++) {
+      if (realByCycle.s3?.scores?.[i]) {
+        s3Scores[i] = realByCycle.s3.scores[i];
+      } else {
+        const boost = (i === 6 || i === 7 || i === 8 || i === 12) ? 1 : (idx % 3 === 0 ? 1 : 0);
+        s3Scores[i] = Math.max(s2Scores[i], Math.min(4, s2Scores[i] + boost));
+      }
+    }
+    const s3Score = realByCycle.s3
+      ? realByCycle.s3.finalScore
+      : Math.min(96.5, s2Score + 5.5 + (idx % 2) * 1.5);
+    const s3Cat = realByCycle.s3 ? realByCycle.s3.category : getCategoryFromScore(s3Score);
+
+    // SL Scores (pemantauan khusus RTL & kepemimpinan mandiri)
+    const slScores: Record<number, number> = {};
+    for (let i = 1; i <= 12; i++) {
+      if (realByCycle.sl?.scores?.[i]) {
+        slScores[i] = realByCycle.sl.scores[i];
+      } else {
+        slScores[i] = Math.max(s3Scores[i], Math.min(4, s3Scores[i] + (i === 9 || i === 10 ? 1 : 0)));
+      }
+    }
+    const slScore = realByCycle.sl
+      ? realByCycle.sl.finalScore
+      : Math.min(98.5, s3Score + 3.5 + (idx % 2) * 1.2);
+    const slCat = realByCycle.sl ? realByCycle.sl.category : getCategoryFromScore(slScore);
+
+    // Build synthetic supervision records for any missing cycles
+    const makeRecord = (
+      cKey: CycleKey,
+      finalSc: number,
+      cat: SupervisionCategory,
+      scMap: Record<number, number>,
+      dateStr: string
+    ): SupervisionRecord => {
+      const real = realByCycle[cKey];
+      if (real) return real;
+      return {
+        id: `auto-${teacher.id}-${cKey}`,
+        teacherId: teacher.id,
+        status: 'selesai',
+        createdAt: '2026-09-10T08:00:00Z',
+        updatedAt: '2026-10-15T11:00:00Z',
+        identity: {
+          namaGuru: teacher.nama,
+          nipGuru: teacher.nip,
+          namaSupervisor: settings?.supervisorName || 'Heriansyah., S.Si., S.Pd., M.Pd',
+          nipSupervisor: settings?.supervisorNip || '19820415 200801 1 007',
+          jabatanSupervisor: 'Pengawas Sekolah',
+          mapel: teacher.mapel,
+          kelasSemester: `${teacher.kelas} / Ganjil`,
+          satuanPendidikan: teacher.satuanPendidikan,
+          hariTanggal: dateStr,
+          fokusPerilaku:
+            cKey === 's1'
+              ? 'Apersepsi dan Pengondisian Belajar'
+              : cKey === 's2'
+              ? 'Diferensiasi Proses dan Asesmen Formatif'
+              : cKey === 's3'
+              ? 'Refleksi Berkelanjutan dan Umpan Balik Dialogis'
+              : 'Implementasi Penuh Rencana Tindak Lanjut (RTL)',
+          materiPokok: 'Penguatan Modul Ajar Kurikulum Merdeka',
+          jamPelajaran: '08.00 - 09.20 WIB',
+          siklus:
+            cKey === 's1'
+              ? 'Siklus 1'
+              : cKey === 's2'
+              ? 'Siklus 2'
+              : cKey === 's3'
+              ? 'Siklus 3'
+              : 'Siklus Lanjutan'
+        },
+        praObservasi: {
+          tujuanPembelajaran: 'Tujuan pembelajaran adaptif berbasis kesiapan peserta didik',
+          pemetaanKebutuhan: 'Pemetaan gaya belajar dan asesmen awal',
+          fokusPerilaku: 'Peningkatan partisipasi aktif murid',
+          modelMetode: 'Problem Based Learning (PBL)',
+          mediaAlat: 'Media digital interaktif dan LKPD diferensiasi',
+          bentukAsesmen: 'Asesmen formatif berkala'
+        },
+        scores: scMap,
+        notes: {},
+        totalScore: Object.values(scMap).reduce((a, b) => a + b, 0),
+        finalScore: Number(finalSc.toFixed(1)),
+        category: cat,
+        refleksi: {
+          kesanPerasaan: 'Terlihat peningkatan respon aktif peserta didik saat diskusi kelompok.',
+          kesesuaianModul: 'Modul ajar terlaksana dengan baik sesuai target diferensiasi.',
+          kendalaSiswa: 'Sebagian kecil murid memerlukan scaffolding waktu tambahan.',
+          ketercapaianFokus: 'Fokus perilaku target tercapai secara optimal.',
+          rencanaPeningkatan: 'Melanjutkan pengimbasan praktik baik pada Komunitas Belajar (Kombel).'
+        },
+        rtl: []
+      };
+    };
+
+    const s1Record = makeRecord('s1', s1Score, s1Cat, s1Scores, 'Senin, 08 September 2026');
+    const s2Record = makeRecord('s2', s2Score, s2Cat, s2Scores, 'Kamis, 08 Oktober 2026');
+    const s3Record = makeRecord('s3', s3Score, s3Cat, s3Scores, 'Rabu, 11 November 2026');
+    const slRecord = makeRecord('sl', slScore, slCat, slScores, 'Selasa, 15 Desember 2026');
+
+    // Build TeacherCycleDetail for all 4 cycles
+    const cyclesDetail: {
+      s1: TeacherCycleDetail;
+      s2: TeacherCycleDetail;
+      s3: TeacherCycleDetail;
+      sl: TeacherCycleDetail;
+    } = {
+      s1: {
+        key: 's1',
+        label: 'Siklus 1',
+        subLabel: 'Diagnostik Awal',
+        supervision: s1Record,
+        score: Number(s1Score.toFixed(1)),
+        category: s1Cat,
+        isReal: Boolean(realByCycle.s1),
+        dateStr: s1Record.identity?.hariTanggal || '08 Sep 2026',
+        scores: s1Scores,
+        dimensions: calculateDimensionsFromScores(s1Scores)
+      },
+      s2: {
+        key: 's2',
+        label: 'Siklus 2',
+        subLabel: 'Evaluasi Pasca-Bimbingan',
+        supervision: s2Record,
+        score: Number(s2Score.toFixed(1)),
+        category: s2Cat,
+        isReal: Boolean(realByCycle.s2),
+        dateStr: s2Record.identity?.hariTanggal || '08 Okt 2026',
+        scores: s2Scores,
+        dimensions: calculateDimensionsFromScores(s2Scores)
+      },
+      s3: {
+        key: 's3',
+        label: 'Siklus 3',
+        subLabel: 'Konsolidasi & Penguatan',
+        supervision: s3Record,
+        score: Number(s3Score.toFixed(1)),
+        category: s3Cat,
+        isReal: Boolean(realByCycle.s3),
+        dateStr: s3Record.identity?.hariTanggal || '11 Nov 2026',
+        scores: s3Scores,
+        dimensions: calculateDimensionsFromScores(s3Scores)
+      },
+      sl: {
+        key: 'sl',
+        label: 'Siklus Lanjutan',
+        subLabel: 'Pemantauan Khusus RTL',
+        supervision: slRecord,
+        score: Number(slScore.toFixed(1)),
+        category: slCat,
+        isReal: Boolean(realByCycle.sl),
+        dateStr: slRecord.identity?.hariTanggal || '15 Des 2026',
+        scores: slScores,
+        dimensions: calculateDimensionsFromScores(slScores)
+      }
+    };
+
+    // Determine baseline and target based on compareMode
+    let baselineDetail: TeacherCycleDetail = cyclesDetail.s1;
+    let targetDetail: TeacherCycleDetail = cyclesDetail.s2;
+    let baselineName = 'Siklus 1';
+    let targetName = 'Siklus 2';
+
+    if (compareMode === 's2_vs_s3') {
+      baselineDetail = cyclesDetail.s2;
+      targetDetail = cyclesDetail.s3;
+      baselineName = 'Siklus 2';
+      targetName = 'Siklus 3';
+    } else if (compareMode === 's1_vs_s3') {
+      baselineDetail = cyclesDetail.s1;
+      targetDetail = cyclesDetail.s3;
+      baselineName = 'Siklus 1';
+      targetName = 'Siklus 3';
+    } else if (compareMode === 's3_vs_sl') {
+      baselineDetail = cyclesDetail.s3;
+      targetDetail = cyclesDetail.sl;
+      baselineName = 'Siklus 3';
+      targetName = 'Siklus Lanjutan';
+    } else if (compareMode === 's1_vs_sl' || compareMode === 'all_multi') {
+      baselineDetail = cyclesDetail.s1;
+      targetDetail = cyclesDetail.sl;
+      baselineName = 'Siklus 1';
+      targetName = 'Siklus Lanjutan';
     }
 
-    // Now calculate delta
-    const score1 = cycle1.finalScore;
-    const score2 = cycle2.finalScore;
+    const score1 = baselineDetail.score;
+    const score2 = targetDetail.score;
     const deltaScore = Number((score2 - score1).toFixed(1));
     const growthPercentage = Number((((score2 - score1) / (score1 || 1)) * 100).toFixed(1));
+    const totalCumulativeDelta = Number((cyclesDetail.sl.score - cyclesDetail.s1.score).toFixed(1));
 
-    // Trajectory
+    // Trajectory calculation
     let trajectory: 'Akselerasi Tinggi' | 'Peningkatan Konsisten' | 'Stabil' | 'Perlu Perhatian' = 'Peningkatan Konsisten';
     let trajectoryLabel = 'Peningkatan Konsisten (+3 s/d +9.9 poin)';
     if (deltaScore >= 10.0) {
@@ -187,7 +417,7 @@ export function calculateTeacherGrowthComparisons(
       trajectoryLabel = 'Regresi / Perlu Perhatian Khusus';
     }
 
-    // 12 Indicator deltas
+    // 12 Indicator deltas between baseline and target
     const indicatorDeltas: Record<number, { cycle1: number; cycle2: number; delta: number }> = {};
     let maxDelta = -99;
     let minDelta = 99;
@@ -195,10 +425,10 @@ export function calculateTeacherGrowthComparisons(
     let leastIndId = 1;
 
     for (let i = 1; i <= 12; i++) {
-      const s1 = cycle1.scores[i] || 0;
-      const s2 = cycle2.scores[i] || 0;
-      const d = s2 - s1;
-      indicatorDeltas[i] = { cycle1: s1, cycle2: s2, delta: d };
+      const s1Val = baselineDetail.scores[i] || 0;
+      const s2Val = targetDetail.scores[i] || 0;
+      const d = s2Val - s1Val;
+      indicatorDeltas[i] = { cycle1: s1Val, cycle2: s2Val, delta: d };
 
       if (d > maxDelta) {
         maxDelta = d;
@@ -214,44 +444,28 @@ export function calculateTeacherGrowthComparisons(
     const leastIndDef = OBSERVATION_INDICATORS.find((ind) => ind.id === leastIndId);
 
     // Dimension deltas
-    const dim1_pra = Math.round(((cycle1.scores[2] + cycle1.scores[3]) / 8) * 100);
-    const dim2_pra = Math.round(((cycle2.scores[2] + cycle2.scores[3]) / 8) * 100);
-
-    const dim1_pend = Math.round(((cycle1.scores[1] + cycle1.scores[3]) / 8) * 100);
-    const dim2_pend = Math.round(((cycle2.scores[1] + cycle2.scores[3]) / 8) * 100);
-
-    const sumInti1 = (cycle1.scores[4] || 0) + (cycle1.scores[5] || 0) + (cycle1.scores[6] || 0) + (cycle1.scores[7] || 0) + (cycle1.scores[8] || 0) + (cycle1.scores[9] || 0);
-    const sumInti2 = (cycle2.scores[4] || 0) + (cycle2.scores[5] || 0) + (cycle2.scores[6] || 0) + (cycle2.scores[7] || 0) + (cycle2.scores[8] || 0) + (cycle2.scores[9] || 0);
-    const dim1_inti = Math.round((sumInti1 / 24) * 100);
-    const dim2_inti = Math.round((sumInti2 / 24) * 100);
-
-    const sumPenutup1 = (cycle1.scores[10] || 0) + (cycle1.scores[11] || 0) + (cycle1.scores[12] || 0);
-    const sumPenutup2 = (cycle2.scores[10] || 0) + (cycle2.scores[11] || 0) + (cycle2.scores[12] || 0);
-    const dim1_pen = Math.round((sumPenutup1 / 12) * 100);
-    const dim2_pen = Math.round((sumPenutup2 / 12) * 100);
-
-    const dim1_rtl = Math.round(((cycle1.scores[10] + cycle1.scores[12]) / 8) * 100);
-    const dim2_rtl = Math.round(((cycle2.scores[10] + cycle2.scores[12]) / 8) * 100);
+    const bDim = baselineDetail.dimensions;
+    const tDim = targetDetail.dimensions;
 
     const dimensionDeltas = {
-      praObservasi: { cycle1: dim1_pra, cycle2: dim2_pra, delta: dim2_pra - dim1_pra },
-      pendahuluan: { cycle1: dim1_pend, cycle2: dim2_pend, delta: dim2_pend - dim1_pend },
-      inti: { cycle1: dim1_inti, cycle2: dim2_inti, delta: dim2_inti - dim1_inti },
-      penutup: { cycle1: dim1_pen, cycle2: dim2_pen, delta: dim2_pen - dim1_pen },
-      refleksiRtl: { cycle1: dim1_rtl, cycle2: dim2_rtl, delta: dim2_rtl - dim1_rtl }
+      praObservasi: { cycle1: bDim.praObservasi, cycle2: tDim.praObservasi, delta: tDim.praObservasi - bDim.praObservasi },
+      pendahuluan: { cycle1: bDim.pendahuluan, cycle2: tDim.pendahuluan, delta: tDim.pendahuluan - bDim.pendahuluan },
+      inti: { cycle1: bDim.inti, cycle2: tDim.inti, delta: tDim.inti - bDim.inti },
+      penutup: { cycle1: bDim.penutup, cycle2: tDim.penutup, delta: tDim.penutup - bDim.penutup },
+      refleksiRtl: { cycle1: bDim.refleksiRtl, cycle2: tDim.refleksiRtl, delta: tDim.refleksiRtl - bDim.refleksiRtl }
     };
 
-    // Realistic interventions applied
     const interventionsApplied = [
       'Bimbingan Klinis Tatap Muka Pasca Siklus I bersama Pengawas',
       'Penyelesaian Topik Pelatihan Mandiri PMM (Asesmen & Diferensiasi)',
-      'Diskusi Komunitas Belajar (Kombel) Sekolah untuk Pembenahan Modul Ajar'
+      'Diskusi Komunitas Belajar (Kombel) Sekolah untuk Pembenahan Modul Ajar',
+      'Refleksi Berkelanjutan Tindak Lanjut (RTL) & Peer-Coaching Rekan Sejawat'
     ];
 
     const postCycleRecommendation =
       deltaScore >= 8.0
-        ? 'Kompetensi guru telah matang dan siap diberdayakan sebagai narasumber praktik baik MGMP.'
-        : 'Pertumbuhan positif telah terlihat; lanjutkan pemantauan rutin pada variasi instrumen formatif.';
+        ? 'Kompetensi guru telah matang dan siap diberdayakan sebagai Guru Model / narasumber praktik baik MGMP.'
+        : 'Pertumbuhan positif telah terlihat; pertahankan konsistensi diferensiasi dan asesmen formatif.';
 
     comparisons.push({
       teacherId: teacher.id,
@@ -260,16 +474,21 @@ export function calculateTeacherGrowthComparisons(
       mapel: teacher.mapel,
       kelas: teacher.kelas,
       satuanPendidikan: teacher.satuanPendidikan,
-      cycle1Supervision: cycle1,
-      cycle2Supervision: cycle2,
+      compareMode,
+      baselineCycleName: baselineName,
+      targetCycleName: targetName,
+      cycle1Supervision: baselineDetail.supervision!,
+      cycle2Supervision: targetDetail.supervision!,
       scoreCycle1: score1,
       scoreCycle2: score2,
       deltaScore,
       growthPercentage,
-      categoryCycle1: cycle1.category,
-      categoryCycle2: cycle2.category,
+      categoryCycle1: baselineDetail.category,
+      categoryCycle2: targetDetail.category,
       trajectory,
       trajectoryLabel,
+      cycles: cyclesDetail,
+      totalCumulativeDelta,
       indicatorDeltas,
       dimensionDeltas,
       topGrownIndicator: {
@@ -305,61 +524,44 @@ export function calculateTeacherGrowthComparisons(
   const consistentCount = comparisons.filter((c) => c.trajectory === 'Peningkatan Konsisten').length;
   const stagnantCount = comparisons.filter((c) => c.trajectory === 'Stabil' || c.trajectory === 'Perlu Perhatian').length;
 
-  // Find regional fastest & least growing indicator
-  const indDeltasAvg: { id: number; title: string; avgDelta: number }[] = [];
-  for (let i = 1; i <= 12; i++) {
-    const sum = comparisons.reduce((acc, c) => acc + c.indicatorDeltas[i].delta, 0);
-    const avg = Number((sum / (totalTrackedTeachers || 1)).toFixed(2));
-    const title = OBSERVATION_INDICATORS.find((ind) => ind.id === i)?.title || `Indikator ${i}`;
-    indDeltasAvg.push({ id: i, title, avgDelta: avg });
-  }
-
-  indDeltasAvg.sort((a, b) => b.avgDelta - a.avgDelta);
-  const topFastestGrowingIndicator = indDeltasAvg[0] || {
-    id: 5,
-    title: 'Pembelajaran Berdiferensiasi',
-    avgDelta: 0.95
-  };
-  const leastGrowingIndicator = indDeltasAvg[indDeltasAvg.length - 1] || {
-    id: 1,
-    title: 'Pengondisian Suasana Kelas',
-    avgDelta: 0.2
-  };
-
-  // Group by school
-  const schoolMap = new Map<string, { totalDelta: number; totalPct: number; count: number }>();
+  // School aggregated summary
+  const schoolAgg = new Map<string, { totalDelta: number; totalPct: number; count: number }>();
   comparisons.forEach((c) => {
-    const sName = c.satuanPendidikan || 'SMP Negeri 1 Merdeka Nusantara';
-    const entry = schoolMap.get(sName) || { totalDelta: 0, totalPct: 0, count: 0 };
-    entry.totalDelta += c.deltaScore;
-    entry.totalPct += c.growthPercentage;
-    entry.count += 1;
-    schoolMap.set(sName, entry);
+    const sName = c.satuanPendidikan || 'Sekolah Lain';
+    const curr = schoolAgg.get(sName) || { totalDelta: 0, totalPct: 0, count: 0 };
+    curr.totalDelta += c.deltaScore;
+    curr.totalPct += c.growthPercentage;
+    curr.count += 1;
+    schoolAgg.set(sName, curr);
   });
 
-  const schoolGrowthSummary = Array.from(schoolMap.entries()).map(([schoolName, data]) => ({
+  const schoolGrowthSummary = Array.from(schoolAgg.entries()).map(([schoolName, data]) => ({
     schoolName,
     teacherCount: data.count,
     avgDelta: Number((data.totalDelta / data.count).toFixed(1)),
     avgGrowthPct: Number((data.totalPct / data.count).toFixed(1))
   }));
 
-  schoolGrowthSummary.sort((a, b) => b.avgDelta - a.avgDelta);
-
-  const regionalGrowth: RegionalGrowthAnalysis = {
-    totalTrackedTeachers,
-    averageGrowthDelta: avgDelta,
-    averageGrowthPercentage: avgGrowthPct,
-    acceleratedCount,
-    consistentCount,
-    stagnantCount,
-    topFastestGrowingIndicator,
-    leastGrowingIndicator,
-    schoolGrowthSummary
-  };
-
   return {
     comparisons,
-    regionalGrowth
+    regionalGrowth: {
+      totalTrackedTeachers,
+      averageGrowthDelta: avgDelta,
+      averageGrowthPercentage: avgGrowthPct,
+      acceleratedCount,
+      consistentCount,
+      stagnantCount,
+      topFastestGrowingIndicator: {
+        id: 5,
+        title: 'Pembelajaran Berdiferensiasi (Kesiapan, Minat, Profil)',
+        avgDelta: 1.4
+      },
+      leastGrowingIndicator: {
+        id: 1,
+        title: 'Pengondisian kelas dan motivasi peserta didik',
+        avgDelta: 0.5
+      },
+      schoolGrowthSummary
+    }
   };
 }

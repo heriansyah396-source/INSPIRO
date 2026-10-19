@@ -141,7 +141,13 @@ export const SupervisionDetail: React.FC<SupervisionDetailProps> = ({
         </div>
 
         {/* Identity Details Row */}
-        <div className="p-4 sm:p-5 bg-slate-50/70 border-t border-slate-200 grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs">
+        <div className="p-4 sm:p-5 bg-slate-50/70 border-t border-slate-200 grid grid-cols-2 sm:grid-cols-5 gap-4 text-xs">
+          <div>
+            <span className="text-slate-400 block text-[11px]">Siklus Observasi:</span>
+            <span className="font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded border border-blue-200/80 inline-block mt-0.5">
+              {identity.siklus || 'Siklus 1'}
+            </span>
+          </div>
           <div>
             <span className="text-slate-400 block text-[11px]">NIP Guru:</span>
             <span className="font-semibold text-slate-800 font-mono">{identity.nipGuru || '-'}</span>

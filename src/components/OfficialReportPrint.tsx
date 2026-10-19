@@ -193,7 +193,7 @@ export const OfficialReportPrint: React.FC<OfficialReportPrintProps> = ({
                 <td className="py-1 font-semibold">{identity.mapel}</td>
                 <td className="py-1 font-semibold text-slate-700">9. Siklus Ke-</td>
                 <td className="py-1">:</td>
-                <td className="py-1">{identity.siklus}</td>
+                <td className="py-1 font-semibold text-slate-900">{identity.siklus || 'Siklus 1'}</td>
               </tr>
               <tr>
                 <td className="py-1 font-semibold text-slate-700">4. Kelas / Semester</td>

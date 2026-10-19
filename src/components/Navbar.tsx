@@ -53,8 +53,8 @@ const TAB_TITLES: Record<NavTab, { title: string; subtitle: string }> = {
     subtitle: 'Benchmarking kurva mutu, gap analysis 12 indikator, dan rekomendasi intervensi pengawas'
   },
   'growth-tracker': {
-    title: 'Growth Tracker: Komparasi Siklus I vs Siklus II',
-    subtitle: 'Evaluasi peningkatan kompetensi guru berkelanjutan dan verifikasi RTL supervisi'
+    title: 'Growth Tracker: Komparasi Multi-Siklus Guru',
+    subtitle: 'Evaluasi peningkatan kompetensi guru lintas Siklus 1, 2, 3, dan Siklus Lanjutan'
   },
   settings: {
     title: 'Pengaturan Sistem',
