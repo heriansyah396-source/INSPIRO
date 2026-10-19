@@ -19,9 +19,15 @@ import {
 import {
   loginWithEmail,
   signInWithGoogle,
-  UserRoleProfile
+  UserRoleProfile,
+  fetchCloudManagedAccounts
 } from '../services/firebase';
-import { authenticateUser } from '../utils/storage';
+import {
+  authenticateUser,
+  getManagedAccounts,
+  saveManagedAccounts
+} from '../utils/storage';
+import { ManagedAccount } from '../types/inspiro';
 
 interface LoginViewProps {
   onLoginSuccess: (profile: UserRoleProfile) => void;
@@ -44,6 +50,21 @@ export const LoginView: React.FC<LoginViewProps> = ({
   const [loginEmail, setLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(true);
+
+  // Sync cloud managed accounts on mount
+  React.useEffect(() => {
+    fetchCloudManagedAccounts()
+      .then((cloudAccs) => {
+        if (cloudAccs && cloudAccs.length > 0) {
+          const localAccs = getManagedAccounts();
+          const map = new Map<string, ManagedAccount>();
+          localAccs.forEach((a) => map.set(a.id, a));
+          cloudAccs.forEach((a) => map.set(a.id, a));
+          saveManagedAccounts(Array.from(map.values()));
+        }
+      })
+      .catch((err) => console.warn('Fetch cloud accounts on login view:', err));
+  }, []);
 
   // Switch role handler
   const handleSelectRole = (role: 'pengawas' | 'kepala_sekolah') => {
@@ -68,7 +89,24 @@ export const LoginView: React.FC<LoginViewProps> = ({
       let profile: UserRoleProfile | null = null;
 
       // 1. Prioritize pre-configured and managed accounts (Demo / Kepsek Binaan / Pengawas)
-      const localAuth = authenticateUser(loginEmail.trim(), loginPassword);
+      let localAuth = authenticateUser(loginEmail.trim(), loginPassword);
+      if (!localAuth) {
+        // Fetch latest accounts from Google Cloud Firestore in case account was created on another device
+        try {
+          const cloudAccs = await fetchCloudManagedAccounts();
+          if (cloudAccs && cloudAccs.length > 0) {
+            const currentAccs = getManagedAccounts();
+            const map = new Map<string, ManagedAccount>();
+            currentAccs.forEach((a) => map.set(a.id, a));
+            cloudAccs.forEach((a) => map.set(a.id, a));
+            saveManagedAccounts(Array.from(map.values()));
+            localAuth = authenticateUser(loginEmail.trim(), loginPassword);
+          }
+        } catch (syncErr) {
+          console.warn('Cloud account sync error during login:', syncErr);
+        }
+      }
+
       if (localAuth) {
         profile = {
           uid: localAuth.id,

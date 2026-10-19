@@ -2,12 +2,11 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Global Safety Net: default-deny catch-all
-    match /{document=**} {
-      allow read, write: if false;
+    // Helper functions
+    function isValidId(id) {
+      return id is string && id.size() > 0 && id.size() <= 128;
     }
 
-    // Helper functions
     function isSignedIn() {
       return request.auth != null;
     }
@@ -16,41 +15,57 @@ service cloud.firestore {
       return isSignedIn() && request.auth.uid == userId;
     }
 
-    function isValidId(id) {
-      return id is string && id.size() > 0 && id.size() <= 128;
+    // Connection Healthcheck
+    match /test/{docId} {
+      allow read, write: if true;
     }
 
-    // Users Collection
-    match /users/{userId} {
-      allow get: if isSignedIn();
-      allow list: if isSignedIn();
-      allow create: if isOwner(userId);
-      allow update: if isOwner(userId);
-      allow delete: if false;
+    // Managed Accounts (Pengawas & Kepala Sekolah Binaan Multi-Device Sync)
+    match /managed_accounts/{accountId} {
+      allow read: if true;
+      allow write: if isValidId(accountId);
     }
 
-    // Schools Binaan Collection
-    match /schools/{schoolId} {
-      allow read: if isSignedIn();
-      allow write: if isSignedIn() && isValidId(schoolId);
+    // App Settings (School profile, supervisor credentials)
+    match /settings/{settingId} {
+      allow read: if true;
+      allow write: if isValidId(settingId);
     }
 
-    // Teachers Collection
+    // Teachers Directory
     match /teachers/{teacherId} {
-      allow read: if isSignedIn();
-      allow write: if isSignedIn() && isValidId(teacherId);
+      allow read: if true;
+      allow write: if isValidId(teacherId);
     }
 
-    // Supervisions Collection
+    // Academic Supervision Records
     match /supervisions/{supervisionId} {
-      allow read: if isSignedIn();
-      allow write: if isSignedIn() && isValidId(supervisionId);
+      allow read: if true;
+      allow write: if isValidId(supervisionId);
     }
 
     // PM Management Reports (Praktik Pedagogis)
     match /pm_reports/{reportId} {
-      allow read: if isSignedIn();
-      allow write: if isSignedIn() && isValidId(reportId);
+      allow read: if true;
+      allow write: if isValidId(reportId);
+    }
+
+    // Users Collection (Firebase Auth Profiles)
+    match /users/{userId} {
+      allow read: if true;
+      allow write: if isValidId(userId);
+    }
+
+    // Schools Binaan Collection
+    match /schools/{schoolId} {
+      allow read: if true;
+      allow write: if isValidId(schoolId);
+    }
+
+    // Default deny catch-all for any other path
+    match /{document=**} {
+      allow read, write: if false;
     }
   }
 }
+

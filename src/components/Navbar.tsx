@@ -48,6 +48,14 @@ const TAB_TITLES: Record<NavTab, { title: string; subtitle: string }> = {
     title: 'Laporan Pengelolaan PM di Sekolah',
     subtitle: 'Audit evaluasi mutu 4 dimensi praktik pedagogis di sekolah binaan'
   },
+  'quality-map': {
+    title: 'Peta Mutu & Komparasi Antar-Sekolah Binaan',
+    subtitle: 'Benchmarking kurva mutu, gap analysis 12 indikator, dan rekomendasi intervensi pengawas'
+  },
+  'growth-tracker': {
+    title: 'Growth Tracker: Komparasi Siklus I vs Siklus II',
+    subtitle: 'Evaluasi peningkatan kompetensi guru berkelanjutan dan verifikasi RTL supervisi'
+  },
   settings: {
     title: 'Pengaturan Sistem',
     subtitle: 'Identitas sekolah, data pengawas, dan backup / restore database'
@@ -128,10 +136,17 @@ export const Navbar: React.FC<NavbarProps> = ({
           </button>
         )}
 
-        {/* School tag */}
-        <div className="hidden xl:flex items-center gap-1.5 text-xs text-slate-700 bg-gradient-to-r from-blue-50 to-indigo-50 px-3 py-1.5 rounded-xl border border-blue-200/80 shadow-2xs">
-          <School className="w-3.5 h-3.5 text-blue-600" />
-          <span className="truncate max-w-[160px] font-bold text-blue-950">{settings.schoolName}</span>
+        {/* Cloud Database Online Status Indicator */}
+        <div
+          className="hidden sm:flex items-center gap-1.5 text-xs text-emerald-800 bg-emerald-50/90 px-3 py-1.5 rounded-xl border border-emerald-200/90 shadow-2xs"
+          title="Data tersambung dan tersinkronisasi otomatis dengan Google Cloud Firestore. Dapat dibuka dari peramban dan komputer mana pun."
+        >
+          <span className="relative flex h-2 w-2">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+          </span>
+          <Cloud className="w-3.5 h-3.5 text-emerald-600" />
+          <span className="font-bold text-[11px] text-emerald-900">Cloud Online</span>
         </div>
 
         {/* Profile Pill - Clickable to edit */}

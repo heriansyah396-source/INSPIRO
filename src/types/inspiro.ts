@@ -565,3 +565,85 @@ export const PM_RUBRICS: PMDimensionRubric[] = [
   }
 ];
 
+export interface SchoolQualityMetrics {
+  schoolName: string;
+  teacherCount: number;
+  supervisedCount: number;
+  averageScore: number;
+  averagePercentage: number;
+  category: SupervisionCategory;
+  dimensions: {
+    praObservasi: number;
+    pendahuluan: number;
+    inti: number;
+    penutup: number;
+    refleksiRtl: number;
+  };
+  indicatorScores: Record<number, number>; // 1-12 average scale 1-4
+  supportTier: 'berbagi' | 'terfokus' | 'intensif';
+  supportTierLabel: string;
+  recommendedAction: string;
+  priorityFocus: string;
+  color: string;
+}
+
+export interface RegionalQualitySummary {
+  totalSchools: number;
+  totalTeachers: number;
+  totalSupervisions: number;
+  regionalAverageScore: number;
+  topSchool: { name: string; score: number };
+  needSupportSchool: { name: string; score: number };
+  regionalBlindspotIndicator: { id: number; title: string; score: number };
+  regionalStrengthsIndicator: { id: number; title: string; score: number };
+}
+
+export interface TeacherCycleComparison {
+  teacherId: string;
+  teacherName: string;
+  nip: string;
+  mapel: string;
+  kelas: string;
+  satuanPendidikan: string;
+  cycle1Supervision: SupervisionRecord;
+  cycle2Supervision: SupervisionRecord;
+  scoreCycle1: number;
+  scoreCycle2: number;
+  deltaScore: number;
+  growthPercentage: number;
+  categoryCycle1: SupervisionCategory;
+  categoryCycle2: SupervisionCategory;
+  trajectory: 'Akselerasi Tinggi' | 'Peningkatan Konsisten' | 'Stabil' | 'Perlu Perhatian';
+  trajectoryLabel: string;
+  indicatorDeltas: Record<number, { cycle1: number; cycle2: number; delta: number }>;
+  dimensionDeltas: {
+    praObservasi: { cycle1: number; cycle2: number; delta: number };
+    pendahuluan: { cycle1: number; cycle2: number; delta: number };
+    inti: { cycle1: number; cycle2: number; delta: number };
+    penutup: { cycle1: number; cycle2: number; delta: number };
+    refleksiRtl: { cycle1: number; cycle2: number; delta: number };
+  };
+  topGrownIndicator: { id: number; title: string; delta: number };
+  leastGrownIndicator: { id: number; title: string; delta: number };
+  interventionsApplied: string[];
+  postCycleRecommendation: string;
+}
+
+export interface RegionalGrowthAnalysis {
+  totalTrackedTeachers: number;
+  averageGrowthDelta: number;
+  averageGrowthPercentage: number;
+  acceleratedCount: number;
+  consistentCount: number;
+  stagnantCount: number;
+  topFastestGrowingIndicator: { id: number; title: string; avgDelta: number };
+  leastGrowingIndicator: { id: number; title: string; avgDelta: number };
+  schoolGrowthSummary: {
+    schoolName: string;
+    teacherCount: number;
+    avgDelta: number;
+    avgGrowthPct: number;
+  }[];
+}
+
+

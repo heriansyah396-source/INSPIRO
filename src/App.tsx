@@ -21,11 +21,14 @@ import { ConfirmModal } from './components/ConfirmModal';
 import { LoginView } from './components/LoginView';
 import { ManagePrincipalsModal } from './components/ManagePrincipalsModal';
 import { PMManagementView } from './components/PMManagementView';
+import { SchoolQualityMapView } from './components/SchoolQualityMapView';
+import { GrowthTrackerView } from './components/GrowthTrackerView';
 import {
   AppSettings,
   SupervisionRecord,
   Teacher,
-  PMReport
+  PMReport,
+  ManagedAccount
 } from './types/inspiro';
 import {
   addTeacher,
@@ -38,10 +41,15 @@ import {
   resetToDemoData,
   saveSettings,
   saveSupervisionRecord,
+  saveSupervisions,
+  saveTeachers,
   updateTeacher,
   getPMReports,
   savePMReport,
-  deletePMReport
+  savePMReports,
+  deletePMReport,
+  getManagedAccounts,
+  saveManagedAccounts
 } from './utils/storage';
 import {
   auth,
@@ -49,12 +57,17 @@ import {
   testConnection,
   logOut,
   syncSupervisionToCloud,
+  deleteSupervisionFromCloud,
   syncTeacherToCloud,
+  deleteTeacherFromCloud,
   fetchCloudSupervisions,
   fetchCloudTeachers,
   syncPMReportToCloud,
   fetchCloudPMReports,
   deletePMReportFromCloud,
+  syncSettingsToCloud,
+  fetchCloudSettings,
+  fetchCloudManagedAccounts,
   UserRoleProfile
 } from './services/firebase';
 
@@ -108,7 +121,7 @@ export default function App() {
     onConfirm: () => void;
   } | null>(null);
 
-  // Load initial data
+  // Load initial data from local storage
   const refreshData = useCallback(() => {
     setTeachers(getTeachers());
     setSupervisions(getSupervisions());
@@ -116,9 +129,75 @@ export default function App() {
     setSettings(getSettings());
   }, []);
 
+  // Bi-directional Google Cloud Firestore Sync
+  const syncAllWithCloud = useCallback(async () => {
+    try {
+      const isOnline = await testConnection();
+      if (!isOnline) return;
+
+      // 1. Sync Settings from Cloud
+      const cloudSettings = await fetchCloudSettings();
+      if (cloudSettings) {
+        setSettings(cloudSettings);
+        saveSettings(cloudSettings);
+      }
+
+      // 2. Sync Managed Accounts (Pengawas & Kepala Sekolah)
+      const cloudAccounts = await fetchCloudManagedAccounts();
+      if (cloudAccounts && cloudAccounts.length > 0) {
+        const localAccounts = getManagedAccounts();
+        const map = new Map<string, ManagedAccount>();
+        localAccounts.forEach((a) => map.set(a.id, a));
+        cloudAccounts.forEach((a) => map.set(a.id, a));
+        saveManagedAccounts(Array.from(map.values()));
+      }
+
+      // 3. Sync Teachers from Cloud
+      const cloudTeachers = await fetchCloudTeachers();
+      if (cloudTeachers && cloudTeachers.length > 0) {
+        setTeachers((prev) => {
+          const map = new Map<string, Teacher>();
+          prev.forEach((t) => map.set(t.id, t));
+          cloudTeachers.forEach((t) => map.set(t.id, t));
+          const merged = Array.from(map.values());
+          saveTeachers(merged);
+          return merged;
+        });
+      }
+
+      // 4. Sync Supervisions from Cloud
+      const cloudSups = await fetchCloudSupervisions();
+      if (cloudSups && cloudSups.length > 0) {
+        setSupervisions((prev) => {
+          const map = new Map<string, SupervisionRecord>();
+          prev.forEach((s) => map.set(s.id, s));
+          cloudSups.forEach((s) => map.set(s.id, s));
+          const merged = Array.from(map.values());
+          saveSupervisions(merged);
+          return merged;
+        });
+      }
+
+      // 5. Sync PM Reports from Cloud
+      const cloudPM = await fetchCloudPMReports();
+      if (cloudPM && cloudPM.length > 0) {
+        setPmReports((prev) => {
+          const map = new Map<string, PMReport>();
+          prev.forEach((r) => map.set(r.id, r));
+          cloudPM.forEach((r) => map.set(r.id, r));
+          const merged = Array.from(map.values());
+          savePMReports(merged);
+          return merged;
+        });
+      }
+    } catch (err) {
+      console.warn('Initial cloud sync:', err);
+    }
+  }, []);
+
   useEffect(() => {
     refreshData();
-    testConnection();
+    syncAllWithCloud();
 
     const unsub = onAuthStateChanged(auth, async (fbUser) => {
       if (fbUser) {
@@ -131,46 +210,11 @@ export default function App() {
           createdAt: new Date().toISOString()
         };
         setCurrentUser(profile);
-
-        // Fetch cloud data and merge
-        try {
-          const cloudSups = await fetchCloudSupervisions(profile);
-          if (cloudSups.length > 0) {
-            setSupervisions((prev) => {
-              const map = new Map<string, SupervisionRecord>();
-              prev.forEach((s) => map.set(s.id, s));
-              cloudSups.forEach((s) => map.set(s.id, s));
-              return Array.from(map.values());
-            });
-          }
-          const cloudTeachers = await fetchCloudTeachers();
-          if (cloudTeachers.length > 0) {
-            setTeachers((prev) => {
-              const map = new Map<string, Teacher>();
-              prev.forEach((t) => map.set(t.id, t));
-              cloudTeachers.forEach((t) => map.set(t.id, t));
-              return Array.from(map.values());
-            });
-          }
-          const cloudPM = await fetchCloudPMReports();
-          if (cloudPM.length > 0) {
-            setPmReports((prev) => {
-              const map = new Map<string, PMReport>();
-              prev.forEach((r) => map.set(r.id, r));
-              cloudPM.forEach((r) => map.set(r.id, r));
-              return Array.from(map.values());
-            });
-          }
-        } catch (err) {
-          console.warn('Initial cloud fetch:', err);
-        }
-      } else {
-        setCurrentUser(null);
       }
     });
 
     return () => unsub();
-  }, [refreshData]);
+  }, [refreshData, syncAllWithCloud]);
 
   // Toast Helper
   const showToast = useCallback(
@@ -210,25 +254,21 @@ export default function App() {
 
   const handleSaveDraft = (record: SupervisionRecord) => {
     saveSupervisionRecord(record);
-    if (currentUser) {
-      syncSupervisionToCloud(record).catch((err) => console.warn('Cloud sync draft:', err));
-    }
+    syncSupervisionToCloud(record).catch((err) => console.warn('Cloud sync draft:', err));
     refreshData();
-    showToast('Draf Tersimpan', `Supervisi ${record.identity.namaGuru} berhasil disimpan${currentUser ? ' dan disinkronkan ke Cloud' : ''}.`, 'info');
+    showToast('Draf Tersimpan', `Supervisi ${record.identity.namaGuru} berhasil disimpan dan disinkronkan ke Cloud.`, 'info');
   };
 
   const handleCompleteSupervision = (record: SupervisionRecord) => {
     saveSupervisionRecord(record);
-    if (currentUser) {
-      syncSupervisionToCloud(record).catch((err) => console.warn('Cloud sync complete:', err));
-    }
+    syncSupervisionToCloud(record).catch((err) => console.warn('Cloud sync complete:', err));
     refreshData();
     setSelectedSupervisionId(record.id);
     setCurrentTab('results');
     setPrintSupervisionId(null);
     showToast(
       'Supervisi Selesai!',
-      `Nilai Akhir: ${record.finalScore} (${record.category}). Dokumen siap dicetak${currentUser ? ' dan tersimpan di Cloud' : ''}.`,
+      `Nilai Akhir: ${record.finalScore} (${record.category}). Dokumen siap dicetak dan tersimpan di Cloud.`,
       'success'
     );
   };
@@ -260,9 +300,10 @@ export default function App() {
       message: `Apakah Anda yakin ingin menghapus laporan supervisi untuk ${item.identity.namaGuru} (${item.identity.hariTanggal})? Tindakan ini tidak dapat dibatalkan.`,
       onConfirm: () => {
         deleteSupervisionRecord(item.id);
+        deleteSupervisionFromCloud(item.id).catch((err) => console.warn('Cloud delete supervision:', err));
         refreshData();
         setConfirmModal(null);
-        showToast('Laporan Dihapus', 'Data supervisi berhasil dihapus dari sistem.', 'info');
+        showToast('Laporan Dihapus', 'Data supervisi berhasil dihapus dari sistem dan Cloud.', 'info');
       }
     });
   };
@@ -281,16 +322,13 @@ export default function App() {
   const handleSaveTeacher = (teacherData: Omit<Teacher, 'id' | 'createdAt'>) => {
     if (teacherToEdit) {
       updateTeacher(teacherToEdit.id, teacherData);
-      if (currentUser) {
-        syncTeacherToCloud({ ...teacherData, id: teacherToEdit.id, createdAt: teacherToEdit.createdAt }).catch(console.warn);
-      }
-      showToast('Data Guru Diperbarui', `Identitas ${teacherData.nama} berhasil disimpan.`, 'success');
+      const updatedTeacher = { ...teacherData, id: teacherToEdit.id, createdAt: teacherToEdit.createdAt };
+      syncTeacherToCloud(updatedTeacher).catch(console.warn);
+      showToast('Data Guru Diperbarui', `Identitas ${teacherData.nama} berhasil disimpan dan disinkronkan ke Cloud.`, 'success');
     } else {
       const created = addTeacher(teacherData);
-      if (currentUser) {
-        syncTeacherToCloud(created).catch(console.warn);
-      }
-      showToast('Guru Ditambahkan', `${teacherData.nama} berhasil didaftarkan ke sistem.`, 'success');
+      syncTeacherToCloud(created).catch(console.warn);
+      showToast('Guru Ditambahkan', `${teacherData.nama} berhasil didaftarkan dan tersimpan di Cloud.`, 'success');
     }
     refreshData();
     setIsTeacherModalOpen(false);
@@ -316,9 +354,10 @@ export default function App() {
       message: `Hapus data ${teacher.nama} (${teacher.mapel})? Riwayat supervisi yang telah selesai akan tetap tersimpan di arsip.`,
       onConfirm: () => {
         deleteTeacher(teacher.id);
+        deleteTeacherFromCloud(teacher.id).catch(console.warn);
         refreshData();
         setConfirmModal(null);
-        showToast('Guru Dihapus', `Data ${teacher.nama} berhasil dihapus.`, 'info');
+        showToast('Guru Dihapus', `Data ${teacher.nama} berhasil dihapus dari sistem dan Cloud.`, 'info');
       }
     });
   };
@@ -326,7 +365,9 @@ export default function App() {
   // Handlers: Settings & Reset
   const handleSaveSettings = (newSettings: AppSettings) => {
     saveSettings(newSettings);
+    syncSettingsToCloud(newSettings).catch((err) => console.warn('Cloud sync settings:', err));
     refreshData();
+    showToast('Pengaturan Disimpan', 'Identitas sekolah dan profil pengawas berhasil disimpan dan disinkronkan ke Cloud.', 'success');
   };
 
   const handleResetDemoData = () => {
@@ -346,17 +387,13 @@ export default function App() {
   // Handlers: PM Reports (Praktik Pedagogis)
   const handleSavePMReport = (report: PMReport) => {
     savePMReport(report);
-    if (currentUser) {
-      syncPMReportToCloud(report).catch((err) => console.warn('Cloud sync PM report:', err));
-    }
+    syncPMReportToCloud(report).catch((err) => console.warn('Cloud sync PM report:', err));
     refreshData();
   };
 
   const handleDeletePMReport = (id: string) => {
     deletePMReport(id);
-    if (currentUser) {
-      deletePMReportFromCloud(id).catch((err) => console.warn('Cloud delete PM report:', err));
-    }
+    deletePMReportFromCloud(id).catch((err) => console.warn('Cloud delete PM report:', err));
     refreshData();
   };
 
@@ -516,6 +553,8 @@ export default function App() {
                   onNavigateToTeachers={() => setCurrentTab('teachers')}
                   onNavigateToReports={() => setCurrentTab('reports')}
                   onNavigateToPM={() => setCurrentTab('pm-reports')}
+                  onNavigateToQualityMap={() => setCurrentTab('quality-map')}
+                  onNavigateToGrowthTracker={() => setCurrentTab('growth-tracker')}
                   onOpenManagePrincipals={() => setIsManagePrincipalsOpen(true)}
                   isSupervisor={currentUser?.role === 'pengawas'}
                 />
@@ -600,7 +639,31 @@ export default function App() {
                 />
               )}
 
-              {/* Tab 7: Pengaturan */}
+              {/* Tab 7: Peta Mutu & Komparasi Antar-Sekolah Binaan */}
+              {currentTab === 'quality-map' && (
+                <SchoolQualityMapView
+                  supervisions={supervisions}
+                  teachers={teachers}
+                  pmReports={pmReports}
+                  settings={settings}
+                  onNavigateToSupervision={(school) => handleStartNewSupervision()}
+                  onNavigateToPM={() => setCurrentTab('pm-reports')}
+                  showToast={showToast}
+                />
+              )}
+
+              {/* Tab 8: Growth Tracker: Komparasi Siklus I vs Siklus II */}
+              {currentTab === 'growth-tracker' && (
+                <GrowthTrackerView
+                  supervisions={supervisions}
+                  teachers={teachers}
+                  settings={settings}
+                  onNavigateToSupervision={(teacherId) => handleStartNewSupervision(teacherId)}
+                  showToast={showToast}
+                />
+              )}
+
+              {/* Tab 9: Pengaturan */}
               {currentTab === 'settings' && (
                 <SettingsView
                   settings={settings}

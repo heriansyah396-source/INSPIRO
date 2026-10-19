@@ -30,7 +30,7 @@ import {
 import firebaseConfig from '@/firebase-applet-config.json';
 
 export { onAuthStateChanged };
-import { SupervisionRecord, Teacher, AppSettings, PMReport } from '../types/inspiro';
+import { SupervisionRecord, Teacher, AppSettings, PMReport, ManagedAccount } from '../types/inspiro';
 
 // Initialize Firebase App
 export const app = initializeApp(firebaseConfig);
@@ -285,6 +285,82 @@ export async function deletePMReportFromCloud(id: string): Promise<void> {
     await deleteDoc(doc(db, 'pm_reports', id));
   } catch (error) {
     handleFirestoreError(error, OperationType.DELETE, path);
+  }
+}
+
+export async function deleteSupervisionFromCloud(id: string): Promise<void> {
+  const path = `supervisions/${id}`;
+  try {
+    await deleteDoc(doc(db, 'supervisions', id));
+  } catch (error) {
+    handleFirestoreError(error, OperationType.DELETE, path);
+  }
+}
+
+export async function deleteTeacherFromCloud(id: string): Promise<void> {
+  const path = `teachers/${id}`;
+  try {
+    await deleteDoc(doc(db, 'teachers', id));
+  } catch (error) {
+    handleFirestoreError(error, OperationType.DELETE, path);
+  }
+}
+
+// 4. Cloud Settings Sync
+export async function syncSettingsToCloud(settings: AppSettings): Promise<void> {
+  const path = 'settings/app_config';
+  try {
+    await setDoc(doc(db, 'settings', 'app_config'), settings);
+  } catch (error) {
+    handleFirestoreError(error, OperationType.WRITE, path);
+  }
+}
+
+export async function fetchCloudSettings(): Promise<AppSettings | null> {
+  const path = 'settings/app_config';
+  try {
+    const snap = await getDoc(doc(db, 'settings', 'app_config'));
+    if (snap.exists()) {
+      return snap.data() as AppSettings;
+    }
+    return null;
+  } catch (error) {
+    handleFirestoreError(error, OperationType.GET, path);
+    return null;
+  }
+}
+
+// 5. Cloud Managed Accounts Sync (Multi-Device Login for Pengawas & Kepsek Binaan)
+export async function syncManagedAccountToCloud(account: ManagedAccount): Promise<void> {
+  const path = `managed_accounts/${account.id}`;
+  try {
+    await setDoc(doc(db, 'managed_accounts', account.id), account);
+  } catch (error) {
+    handleFirestoreError(error, OperationType.WRITE, path);
+  }
+}
+
+export async function deleteManagedAccountFromCloud(id: string): Promise<void> {
+  const path = `managed_accounts/${id}`;
+  try {
+    await deleteDoc(doc(db, 'managed_accounts', id));
+  } catch (error) {
+    handleFirestoreError(error, OperationType.DELETE, path);
+  }
+}
+
+export async function fetchCloudManagedAccounts(): Promise<ManagedAccount[]> {
+  const path = 'managed_accounts';
+  try {
+    const snap = await getDocs(collection(db, 'managed_accounts'));
+    const list: ManagedAccount[] = [];
+    snap.forEach((d) => {
+      list.push(d.data() as ManagedAccount);
+    });
+    return list;
+  } catch (error) {
+    handleFirestoreError(error, OperationType.LIST, path);
+    return [];
   }
 }
 

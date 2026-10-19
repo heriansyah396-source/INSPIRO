@@ -16,12 +16,23 @@ import {
   Sparkles,
   ChevronRight,
   BookOpenCheck,
-  KeyRound
+  KeyRound,
+  Compass,
+  TrendingUp
 } from 'lucide-react';
 import { SupervisionRecord, PMReport } from '../types/inspiro';
 import { RadarChartWidget } from './RadarChartWidget';
 
-export type NavTab = 'dashboard' | 'teachers' | 'supervision' | 'results' | 'reports' | 'pm-reports' | 'settings';
+export type NavTab =
+  | 'dashboard'
+  | 'teachers'
+  | 'supervision'
+  | 'results'
+  | 'reports'
+  | 'pm-reports'
+  | 'quality-map'
+  | 'growth-tracker'
+  | 'settings';
 
 interface SidebarProps {
   currentTab: NavTab;
@@ -93,6 +104,18 @@ export const Sidebar: React.FC<SidebarProps> = ({
       label: 'Pengelolaan PM',
       icon: BookOpenCheck,
       badge: pmReportCount > 0 ? pmReportCount : 'Praktik Pedagogis'
+    },
+    {
+      id: 'quality-map' as NavTab,
+      label: 'Peta Mutu & Komparasi',
+      icon: Compass,
+      badge: 'Unggulan'
+    },
+    {
+      id: 'growth-tracker' as NavTab,
+      label: 'Growth Tracker Siklus',
+      icon: TrendingUp,
+      badge: 'Siklus I & II'
     },
     {
       id: 'settings' as NavTab,

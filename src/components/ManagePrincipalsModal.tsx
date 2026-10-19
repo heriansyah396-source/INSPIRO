@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   X,
   School,
@@ -19,8 +19,14 @@ import { ManagedAccount } from '../types/inspiro';
 import {
   getManagedAccounts,
   addManagedAccount,
-  deleteManagedAccount
+  deleteManagedAccount,
+  saveManagedAccounts
 } from '../utils/storage';
+import {
+  syncManagedAccountToCloud,
+  deleteManagedAccountFromCloud,
+  fetchCloudManagedAccounts
+} from '../services/firebase';
 
 interface ManagePrincipalsModalProps {
   isOpen: boolean;
@@ -51,6 +57,25 @@ export const ManagePrincipalsModal: React.FC<ManagePrincipalsModalProps> = ({
     setAccounts(getManagedAccounts().filter((a) => a.role === 'kepala_sekolah'));
   };
 
+  useEffect(() => {
+    if (isOpen) {
+      refreshAccounts();
+      fetchCloudManagedAccounts()
+        .then((cloudAccs) => {
+          if (cloudAccs && cloudAccs.length > 0) {
+            const localAccs = getManagedAccounts();
+            const map = new Map<string, ManagedAccount>();
+            localAccs.forEach((a) => map.set(a.id, a));
+            cloudAccs.forEach((a) => map.set(a.id, a));
+            const merged = Array.from(map.values());
+            saveManagedAccounts(merged);
+            setAccounts(merged.filter((a) => a.role === 'kepala_sekolah'));
+          }
+        })
+        .catch((err) => console.warn('Fetch cloud accounts:', err));
+    }
+  }, [isOpen]);
+
   const handleCreate = (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim() || !email.trim() || !password.trim()) {
@@ -58,7 +83,7 @@ export const ManagePrincipalsModal: React.FC<ManagePrincipalsModalProps> = ({
       return;
     }
 
-    addManagedAccount({
+    const created = addManagedAccount({
       name: name.trim(),
       nip: nip.trim(),
       email: email.trim(),
@@ -67,6 +92,11 @@ export const ManagePrincipalsModal: React.FC<ManagePrincipalsModalProps> = ({
       role: 'kepala_sekolah'
     });
 
+    // Sync to Google Cloud Firestore immediately
+    syncManagedAccountToCloud(created).catch((err) =>
+      console.warn('Sync account to cloud:', err)
+    );
+
     refreshAccounts();
     setIsAdding(false);
     setName('');
@@ -74,12 +104,15 @@ export const ManagePrincipalsModal: React.FC<ManagePrincipalsModalProps> = ({
     setSchoolName('');
     setEmail('');
     setPassword('kepsek123');
-    showToast('Akun Kepala Sekolah Dibuat', `Akun untuk ${name} berhasil didaftarkan.`, 'success');
+    showToast('Akun Kepala Sekolah Dibuat', `Akun untuk ${name} berhasil didaftarkan dan tersimpan di Cloud.`, 'success');
   };
 
   const handleDelete = (id: string, accName: string) => {
     if (confirm(`Hapus akses login untuk ${accName}?`)) {
       deleteManagedAccount(id);
+      deleteManagedAccountFromCloud(id).catch((err) =>
+        console.warn('Delete account from cloud:', err)
+      );
       refreshAccounts();
       showToast('Akun Dihapus', `Akses ${accName} telah dicabut.`, 'info');
     }

@@ -10,9 +10,12 @@ import {
   PM_RUBRICS,
   POST_OBSERVATION_QUESTIONS,
   PRE_OBSERVATION_QUESTIONS,
-  SupervisionRecord
+  SupervisionRecord,
+  TeacherCycleComparison,
+  RegionalGrowthAnalysis
 } from '../types/inspiro';
 import { calculateTeacherRadarData } from '../components/TeacherRadarChart';
+import { QualityMapAnalysis } from './qualityMapUtils';
 
 /**
  * Robust Isolated Iframe Printer
@@ -740,6 +743,649 @@ export function exportPMReportToWord(report: PMReport, settings: AppSettings): v
             <div style="height:80px;"></div>
             <strong><u>${escapeHtml(report.assessorName)}</u></strong><br>
             NIP: ${escapeHtml(report.assessorNip || '-')}
+          </td>
+        </tr>
+      </table>
+    </body>
+    </html>
+  `;
+
+  downloadBlob(wordHtml, fileName, 'application/msword;charset=utf-8');
+}
+
+/**
+ * Export School Quality Map & Cross-School Comparison to Microsoft Word (.doc)
+ */
+export function exportQualityMapToWord(
+  analysis: QualityMapAnalysis,
+  settings: AppSettings
+): void {
+  const currentDate = new Date().toLocaleDateString('id-ID', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric'
+  });
+
+  const fileName = `PETA_MUTU_KOMPARASI_SEKOLAH_BINAAN_${new Date().toISOString().slice(0, 10)}.doc`;
+
+  const wordHtml = `
+    <html xmlns:o="urn:schemas-microsoft-com:office:office" 
+          xmlns:w="urn:schemas-microsoft-com:office:word" 
+          xmlns="http://www.w3.org/TR/REC-html40">
+    <head>
+      <meta charset="utf-8">
+      <title>Laporan Peta Mutu & Komparasi Antar-Sekolah Binaan</title>
+      <!--[if gte mso 9]>
+      <xml>
+        <w:WordDocument>
+          <w:View>Print</w:View>
+          <w:Zoom>100</w:Zoom>
+          <w:DoNotOptimizeForBrowser/>
+        </w:WordDocument>
+      </xml>
+      <![endif]-->
+      <style>
+        @page {
+          size: 21cm 29.7cm; /* A4 portrait */
+          margin: 2cm 2cm 2cm 2cm;
+          mso-page-orientation: portrait;
+        }
+        body {
+          font-family: 'Times New Roman', Times, serif;
+          font-size: 11pt;
+          line-height: 1.35;
+          color: #000000;
+        }
+        h1, h2, h3, h4 {
+          margin: 0;
+          padding: 0;
+          font-family: 'Arial', sans-serif;
+        }
+        .header-title {
+          text-align: center;
+          font-size: 14pt;
+          font-weight: bold;
+          text-transform: uppercase;
+          margin-bottom: 2px;
+        }
+        .header-sub {
+          text-align: center;
+          font-size: 11pt;
+          margin-bottom: 2px;
+        }
+        .header-address {
+          text-align: center;
+          font-size: 9pt;
+          font-style: italic;
+          color: #333333;
+          border-bottom: 2.5px solid #000000;
+          padding-bottom: 8px;
+          margin-bottom: 16px;
+        }
+        .doc-title {
+          text-align: center;
+          font-size: 12pt;
+          font-weight: bold;
+          text-transform: uppercase;
+          margin-top: 14px;
+          margin-bottom: 4px;
+          text-decoration: underline;
+        }
+        .doc-subtitle {
+          text-align: center;
+          font-size: 10pt;
+          font-style: italic;
+          margin-bottom: 18px;
+        }
+        .section-header {
+          font-size: 11pt;
+          font-weight: bold;
+          background-color: #f1f5f9;
+          padding: 5px 8px;
+          border-top: 1px solid #000000;
+          border-bottom: 1px solid #000000;
+          margin-top: 16px;
+          margin-bottom: 8px;
+        }
+        table.data-table {
+          width: 100%;
+          border-collapse: collapse;
+          margin-bottom: 14px;
+        }
+        table.data-table th, table.data-table td {
+          border: 1px solid #000000;
+          padding: 5px 7px;
+          font-size: 9.5pt;
+          vertical-align: top;
+        }
+        table.data-table th {
+          background-color: #f8fafc;
+          font-weight: bold;
+          text-align: center;
+        }
+        .text-center { text-align: center; }
+        .text-right { text-align: right; }
+        .bold { font-weight: bold; }
+        .badge {
+          display: inline-block;
+          padding: 2px 5px;
+          font-size: 8pt;
+          font-weight: bold;
+        }
+      </style>
+    </head>
+    <body>
+      <!-- KOP DINAS PENGAWAS SEKOLAH -->
+      <div class="header-title">PEMERINTAH DAERAH DINAS PENDIDIKAN</div>
+      <div class="header-title">KOORDINATOR PENGAWAS SEKOLAH MENENGAH PERTAMA</div>
+      <div class="header-sub">WILAYAH BINAAN KABUPATEN / KOTA PENDIDIKAN</div>
+      <div class="header-address">
+        Sekretariat: ${escapeHtml(settings.schoolAddress || 'Gedung Pusat Pengawas Pembina Pendidikan Terpadu')}
+      </div>
+
+      <!-- JUDUL RESMI LAPORAN -->
+      <div class="doc-title">LAPORAN PETA MUTU &amp; KOMPARASI ANTAR-SEKOLAH BINAAN</div>
+      <div class="doc-subtitle">
+        Tahun Ajaran 2026/2027 · Semester Ganjil · Evaluasi Berbasis Supervisi Akademik &amp; Praktik Pedagogis
+      </div>
+
+      <!-- I. IDENTITAS PENGAWAS & RINGKASAN WILAYAH -->
+      <div class="section-header">I. IDENTITAS PENGAWAS PEMBINA &amp; RINGKASAN WILAYAH</div>
+      <table class="data-table" style="margin-bottom: 10px;">
+        <tr>
+          <td style="width:25%; font-weight:bold;">Nama Pengawas Sekolah</td>
+          <td style="width:40%;">${escapeHtml(settings.supervisorName)}</td>
+          <td style="width:20%; font-weight:bold;">Total Sekolah Binaan</td>
+          <td style="width:15%; text-align:center; font-weight:bold;">${analysis.regional.totalSchools} Sekolah</td>
+        </tr>
+        <tr>
+          <td style="font-weight:bold;">NIP Pengawas</td>
+          <td>${escapeHtml(settings.supervisorNip)}</td>
+          <td style="font-weight:bold;">Total Guru Binaan</td>
+          <td style="text-align:center; font-weight:bold;">${analysis.regional.totalTeachers} Guru</td>
+        </tr>
+        <tr>
+          <td style="font-weight:bold;">Jabatan Dinas</td>
+          <td>${escapeHtml(settings.supervisorRole || 'Pengawas Sekolah Pembina')}</td>
+          <td style="font-weight:bold;">Rata-rata Skor Wilayah</td>
+          <td style="text-align:center; font-weight:bold;">${analysis.regional.regionalAverageScore} / 100</td>
+        </tr>
+        <tr>
+          <td style="font-weight:bold;">Sekolah Nilai Tertinggi</td>
+          <td>${escapeHtml(analysis.regional.topSchool.name)} (${analysis.regional.topSchool.score}%)</td>
+          <td style="font-weight:bold;">Indikator Unggulan</td>
+          <td>${escapeHtml(analysis.regional.regionalStrengthsIndicator.title)} (${analysis.regional.regionalStrengthsIndicator.score})</td>
+        </tr>
+        <tr>
+          <td style="font-weight:bold;">Sekolah Prioritas Intervensi</td>
+          <td>${escapeHtml(analysis.regional.needSupportSchool.name)} (${analysis.regional.needSupportSchool.score}%)</td>
+          <td style="font-weight:bold;">Blindspot / Gap Wilayah</td>
+          <td style="color:#b91c1c; font-weight:bold;">${escapeHtml(analysis.regional.regionalBlindspotIndicator.title)} (${analysis.regional.regionalBlindspotIndicator.score})</td>
+        </tr>
+      </table>
+
+      <!-- II. MATRIKS PETA MUTU SEKOLAH BINAAN -->
+      <div class="section-header">II. MATRIKS PETA MUTU &amp; CAPAIAN 5 DIMENSI PEMBELAJARAN</div>
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th style="width:4%;">No</th>
+            <th style="width:28%;">Satuan Pendidikan (Sekolah Binaan)</th>
+            <th style="width:8%;">Guru</th>
+            <th style="width:9%;">Skor Akhir</th>
+            <th style="width:12%;">Predikat</th>
+            <th style="width:7%;">Pra (%)</th>
+            <th style="width:7%;">Awal (%)</th>
+            <th style="width:7%;">Inti (%)</th>
+            <th style="width:7%;">Tutup (%)</th>
+            <th style="width:11%;">Status Dukungan</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${analysis.schools
+            .map(
+              (s, i) => `
+            <tr>
+              <td class="text-center">${i + 1}</td>
+              <td class="bold">${escapeHtml(s.schoolName)}</td>
+              <td class="text-center">${s.teacherCount}</td>
+              <td class="text-center bold" style="font-size:10.5pt;">${s.averagePercentage}%</td>
+              <td class="text-center">${escapeHtml(s.category)}</td>
+              <td class="text-center">${s.dimensions.praObservasi}%</td>
+              <td class="text-center">${s.dimensions.pendahuluan}%</td>
+              <td class="text-center">${s.dimensions.inti}%</td>
+              <td class="text-center">${s.dimensions.penutup}%</td>
+              <td class="bold" style="font-size:8.5pt;">${escapeHtml(s.supportTierLabel)}</td>
+            </tr>
+          `
+            )
+            .join('')}
+        </tbody>
+      </table>
+
+      <!-- III. KOMPARASI 12 INDIKATOR OBSERVASI KELAS -->
+      <div class="section-header">III. KOMPARASI DETAIL 12 INDIKATOR OBSERVASI KELAS (SKALA 1.0 - 4.0)</div>
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th style="width:5%;">No</th>
+            <th style="width:35%;">Indikator Observasi Kurikulum Merdeka</th>
+            ${analysis.schools.map((s) => `<th style="width:12%;">${escapeHtml(s.schoolName.replace('Merdeka Nusantara', '').replace('SMP Negeri ', 'SMPN '))}</th>`).join('')}
+            <th style="width:10%;">Rerata Wilayah</th>
+            <th style="width:14%;">Status Evaluasi</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${OBSERVATION_INDICATORS.map((ind) => {
+            const rowScores = analysis.schools.map((s) => s.indicatorScores[ind.id] || 0);
+            const avg = Number((rowScores.reduce((a, b) => a + b, 0) / analysis.schools.length).toFixed(2));
+            const isHighest = avg >= 3.6;
+            const isLowest = avg < 3.2;
+            const statusLabel = isHighest ? 'Kekuatan Bersama' : isLowest ? 'Blindspot / Butuh Bimtek' : 'Tercapai Sesuai Target';
+
+            return `
+              <tr style="${isLowest ? 'background-color:#fff5f5;' : isHighest ? 'background-color:#f0fdf4;' : ''}">
+                <td class="text-center">${ind.id}</td>
+                <td><strong>${escapeHtml(ind.title)}</strong><br><span style="font-size:8pt; color:#475569;">${escapeHtml(ind.description)}</span></td>
+                ${analysis.schools
+                  .map(
+                    (s) => `
+                  <td class="text-center bold">${s.indicatorScores[ind.id] ? s.indicatorScores[ind.id].toFixed(2) : '-'}</td>
+                `
+                  )
+                  .join('')}
+                <td class="text-center bold" style="background-color:#f8fafc;">${avg.toFixed(2)}</td>
+                <td class="bold" style="font-size:8.5pt; color:${isLowest ? '#b91c1c' : isHighest ? '#15803d' : '#334155'};">${statusLabel}</td>
+              </tr>
+            `;
+          }).join('')}
+        </tbody>
+      </table>
+
+      <!-- IV. PROGRAM KEMITRAAN ANTAR-SEKOLAH (PEER MENTORING) -->
+      <div class="section-header">IV. REKOMENDASI PROGRAM KEMITRAAN ANTAR-SEKOLAH (PEER-TO-PEER SCHOOL MENTORING)</div>
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th style="width:5%;">No</th>
+            <th style="width:20%;">Sekolah Pengimbas (Mentor)</th>
+            <th style="width:20%;">Sekolah Sasaran (Mentee)</th>
+            <th style="width:20%;">Fokus Pendampingan</th>
+            <th style="width:35%;">Bentuk Kegiatan &amp; Strategi Pengawas</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${analysis.pairings
+            .map(
+              (pair, idx) => `
+            <tr>
+              <td class="text-center">${idx + 1}</td>
+              <td><strong>${escapeHtml(pair.sourceSchool)}</strong><br><span style="font-size:8pt; color:#15803d;">Skor Capaian: ${pair.mentorScore}%</span></td>
+              <td><strong>${escapeHtml(pair.targetSchool)}</strong><br><span style="font-size:8pt; color:#b91c1c;">Skor Capaian: ${pair.targetScore}%</span></td>
+              <td class="bold">${escapeHtml(pair.focusArea)}</td>
+              <td>
+                ${escapeHtml(pair.actionStrategy)}<br>
+                <span style="font-size:8pt; font-style:italic; color:#475569;">Target Hasil: ${escapeHtml(pair.expectedOutcome)}</span>
+              </td>
+            </tr>
+          `
+            )
+            .join('')}
+        </tbody>
+      </table>
+
+      <!-- V. AGENDA TINDAK LANJUT KOLEKTIF PENGAWAS -->
+      <div class="section-header">V. AGENDA TINDAK LANJUT KOLEKTIF PENGAWAS PEMBINA</div>
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th style="width:5%;">No</th>
+            <th style="width:25%;">Topik Intervensi</th>
+            <th style="width:15%;">Format Program</th>
+            <th style="width:20%;">Sasaran Peserta</th>
+            <th style="width:35%;">Rasional &amp; Waktu Pelaksanaan</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${analysis.collectivePlans
+            .map(
+              (plan, idx) => `
+            <tr>
+              <td class="text-center">${idx + 1}</td>
+              <td class="bold">${escapeHtml(plan.topic)}</td>
+              <td>${escapeHtml(plan.format)}</td>
+              <td>${escapeHtml(plan.targetAudience)}</td>
+              <td>
+                ${escapeHtml(plan.rationale)}<br>
+                <strong>Jadwal:</strong> ${escapeHtml(plan.scheduleRecommendation)}
+              </td>
+            </tr>
+          `
+            )
+            .join('')}
+        </tbody>
+      </table>
+
+      <!-- LEMBAR PENGESAHAN DOKUMEN -->
+      <br>
+      <table style="width:100%; border:none; margin-top:20px; font-size:10pt;">
+        <tr>
+          <td style="width:50%; text-align:left; vertical-align:top; border:none;">
+            Mengetahui,<br>
+            Koordinator Pengawas / Kepala Dinas Pendidikan<br>
+            <div style="height:70px;"></div>
+            <strong><u>${escapeHtml(settings.pengawasPembinaName || 'Dr. Hj. Endang Sulastri, M.Pd.')}</u></strong><br>
+            NIP. ${escapeHtml(settings.pengawasPembinaNip || '19650410 199103 2 001')}
+          </td>
+          <td style="width:50%; text-align:left; vertical-align:top; border:none; padding-left:40px;">
+            ${escapeHtml(settings.schoolCity || 'Kota Pendidikan')}, ${currentDate}<br>
+            Pengawas Sekolah Pembina,<br>
+            <div style="height:70px;"></div>
+            <strong><u>${escapeHtml(settings.supervisorName)}</u></strong><br>
+            NIP. ${escapeHtml(settings.supervisorNip)}
+          </td>
+        </tr>
+      </table>
+    </body>
+    </html>
+  `;
+
+  downloadBlob(wordHtml, fileName, 'application/msword;charset=utf-8');
+}
+
+/**
+ * Export Cycle Growth Tracker (Siklus I vs Siklus II) to Microsoft Word (.doc)
+ */
+export function exportGrowthTrackerToWord(
+  comparisons: TeacherCycleComparison[],
+  regional: RegionalGrowthAnalysis,
+  settings: AppSettings,
+  selectedTeacherId?: string
+): void {
+  const currentDate = new Date().toLocaleDateString('id-ID', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric'
+  });
+
+  const selectedTeacher = selectedTeacherId
+    ? comparisons.find((c) => c.teacherId === selectedTeacherId)
+    : undefined;
+
+  const fileName = selectedTeacher
+    ? `GROWTH_SIKLUS_${selectedTeacher.teacherName.replace(/[^a-zA-Z0-9]/g, '_')}_${new Date().toISOString().slice(0, 10)}.doc`
+    : `REKAP_PERTUMBUHAN_SIKLUS_GURU_${new Date().toISOString().slice(0, 10)}.doc`;
+
+  const wordHtml = `
+    <html xmlns:o="urn:schemas-microsoft-com:office:office" 
+          xmlns:w="urn:schemas-microsoft-com:office:word" 
+          xmlns="http://www.w3.org/TR/REC-html40">
+    <head>
+      <meta charset="utf-8">
+      <title>Laporan Perkembangan Kompetensi Guru Antar-Siklus Supervisi</title>
+      <!--[if gte mso 9]>
+      <xml>
+        <w:WordDocument>
+          <w:View>Print</w:View>
+          <w:Zoom>100</w:Zoom>
+          <w:DoNotOptimizeForBrowser/>
+        </w:WordDocument>
+      </xml>
+      <![endif]-->
+      <style>
+        @page {
+          size: 21cm 29.7cm;
+          margin: 2cm 2cm 2cm 2cm;
+          mso-page-orientation: portrait;
+        }
+        body {
+          font-family: 'Times New Roman', Times, serif;
+          font-size: 11pt;
+          line-height: 1.35;
+          color: #000000;
+        }
+        .header-title {
+          text-align: center;
+          font-size: 14pt;
+          font-weight: bold;
+          text-transform: uppercase;
+          margin-bottom: 2px;
+        }
+        .header-sub {
+          text-align: center;
+          font-size: 11pt;
+          margin-bottom: 2px;
+        }
+        .header-address {
+          text-align: center;
+          font-size: 9pt;
+          font-style: italic;
+          color: #333333;
+          border-bottom: 2.5px solid #000000;
+          padding-bottom: 8px;
+          margin-bottom: 16px;
+        }
+        .doc-title {
+          text-align: center;
+          font-size: 12pt;
+          font-weight: bold;
+          text-transform: uppercase;
+          margin-top: 14px;
+          margin-bottom: 4px;
+          text-decoration: underline;
+        }
+        .doc-subtitle {
+          text-align: center;
+          font-size: 10pt;
+          font-style: italic;
+          margin-bottom: 18px;
+        }
+        .section-header {
+          font-size: 11pt;
+          font-weight: bold;
+          background-color: #f1f5f9;
+          padding: 5px 8px;
+          border-top: 1px solid #000000;
+          border-bottom: 1px solid #000000;
+          margin-top: 16px;
+          margin-bottom: 8px;
+        }
+        table.data-table {
+          width: 100%;
+          border-collapse: collapse;
+          margin-bottom: 14px;
+        }
+        table.data-table th, table.data-table td {
+          border: 1px solid #000000;
+          padding: 5px 7px;
+          font-size: 9.5pt;
+          vertical-align: top;
+        }
+        table.data-table th {
+          background-color: #f8fafc;
+          font-weight: bold;
+          text-align: center;
+        }
+        .text-center { text-align: center; }
+        .text-right { text-align: right; }
+        .bold { font-weight: bold; }
+      </style>
+    </head>
+    <body>
+      <!-- KOP DINAS -->
+      <div class="header-title">PEMERINTAH DAERAH DINAS PENDIDIKAN</div>
+      <div class="header-title">KOORDINATOR PENGAWAS SEKOLAH MENENGAH PERTAMA</div>
+      <div class="header-sub">PROGRAM SUPERVISI KLINIS BERKELANJUTAN KURIKULUM MERDEKA</div>
+      <div class="header-address">
+        Sekretariat: ${escapeHtml(settings.schoolAddress || 'Gedung Pusat Pengawas Pembina Pendidikan Terpadu')}
+      </div>
+
+      <!-- JUDUL LAPORAN -->
+      <div class="doc-title">
+        ${selectedTeacher ? 'LAPORAN EVALUASI PERTUMBUHAN KOMPETENSI GURU (SIKLUS I VS SIKLUS II)' : 'REKAPITULASI EVALUASI PERTUMBUHAN GURU ANTAR-SIKLUS SUPERVISI'}
+      </div>
+      <div class="doc-subtitle">
+        Tahun Ajaran 2026/2027 · Semester Ganjil · Berdasarkan Observasi Kelas 12 Indikator &amp; Verifikasi RTL
+      </div>
+
+      <!-- I. RINGKASAN EKSEKUTIF -->
+      <div class="section-header">I. IDENTITAS PENGAWAS &amp; RINGKASAN CAPAIAN WILAYAH</div>
+      <table class="data-table">
+        <tr>
+          <td style="width:25%; font-weight:bold;">Nama Pengawas</td>
+          <td style="width:40%;">${escapeHtml(settings.supervisorName)}</td>
+          <td style="width:20%; font-weight:bold;">Total Guru Terpantau</td>
+          <td style="width:15%; text-align:center; font-weight:bold;">${regional.totalTrackedTeachers} Guru</td>
+        </tr>
+        <tr>
+          <td style="font-weight:bold;">NIP Pengawas</td>
+          <td>${escapeHtml(settings.supervisorNip)}</td>
+          <td style="font-weight:bold;">Rata-rata Kenaikan Skor</td>
+          <td style="text-align:center; font-weight:bold; color:#15803d;">+${regional.averageGrowthDelta} Poin (+${regional.averageGrowthPercentage}%)</td>
+        </tr>
+        <tr>
+          <td style="font-weight:bold;">Indikator Melejit Cepat</td>
+          <td>${escapeHtml(regional.topFastestGrowingIndicator.title)} (+${regional.topFastestGrowingIndicator.avgDelta})</td>
+          <td style="font-weight:bold;">Kategori Akselerasi</td>
+          <td style="text-align:center; font-weight:bold;">${regional.acceleratedCount} Guru (&ge; +10 pt)</td>
+        </tr>
+      </table>
+
+      ${
+        selectedTeacher
+          ? `
+        <!-- DETAIL GURU TERPILIH -->
+        <div class="section-header">II. BIODATA PENDIDIK &amp; PERTUMBUHAN ANTAR-SIKLUS</div>
+        <table class="data-table">
+          <tr>
+            <td style="width:25%; font-weight:bold;">Nama Guru</td>
+            <td style="width:35%;">${escapeHtml(selectedTeacher.teacherName)}</td>
+            <td style="width:20%; font-weight:bold;">Mata Pelajaran</td>
+            <td style="width:20%;">${escapeHtml(selectedTeacher.mapel)}</td>
+          </tr>
+          <tr>
+            <td style="font-weight:bold;">NIP Guru</td>
+            <td>${escapeHtml(selectedTeacher.nip)}</td>
+            <td style="font-weight:bold;">Satuan Pendidikan</td>
+            <td>${escapeHtml(selectedTeacher.satuanPendidikan)}</td>
+          </tr>
+          <tr>
+            <td style="font-weight:bold;">Skor Siklus I (Awal)</td>
+            <td style="font-weight:bold;">${selectedTeacher.scoreCycle1}% (${selectedTeacher.categoryCycle1})</td>
+            <td style="font-weight:bold;">Skor Siklus II (Evaluasi)</td>
+            <td style="font-weight:bold; color:#15803d;">${selectedTeacher.scoreCycle2}% (${selectedTeacher.categoryCycle2})</td>
+          </tr>
+          <tr>
+            <td style="font-weight:bold;">Lompatan Mutu (&Delta;)</td>
+            <td style="font-weight:bold; color:#15803d;">+${selectedTeacher.deltaScore} Poin (+${selectedTeacher.growthPercentage}%)</td>
+            <td style="font-weight:bold;">Status Trajektori</td>
+            <td style="font-weight:bold;">${escapeHtml(selectedTeacher.trajectoryLabel)}</td>
+          </tr>
+        </table>
+
+        <!-- TABEL KOMPARASI 12 INDIKATOR GURU -->
+        <div class="section-header">III. KOMPARASI DETAIL 12 INDIKATOR OBSERVASI KELAS (SIKLUS I VS SIKLUS II)</div>
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th style="width:5%;">No</th>
+              <th style="width:45%;">Indikator Observasi Kurikulum Merdeka</th>
+              <th style="width:15%;">Siklus I (1-4)</th>
+              <th style="width:15%;">Siklus II (1-4)</th>
+              <th style="width:20%;">Pertumbuhan (&Delta;)</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${OBSERVATION_INDICATORS.map((ind) => {
+              const deltaInfo = selectedTeacher.indicatorDeltas[ind.id] || { cycle1: 0, cycle2: 0, delta: 0 };
+              const isPositive = deltaInfo.delta > 0;
+              return `
+                <tr style="${isPositive ? 'background-color:#f0fdf4;' : ''}">
+                  <td class="text-center">${ind.id}</td>
+                  <td><strong>${escapeHtml(ind.title)}</strong><br><span style="font-size:8pt; color:#475569;">${escapeHtml(ind.description)}</span></td>
+                  <td class="text-center bold">${deltaInfo.cycle1.toFixed(1)}</td>
+                  <td class="text-center bold" style="color:#15803d;">${deltaInfo.cycle2.toFixed(1)}</td>
+                  <td class="text-center bold" style="color:${isPositive ? '#15803d' : '#475569'};">
+                    ${isPositive ? '+' : ''}${deltaInfo.delta.toFixed(1)}
+                  </td>
+                </tr>
+              `;
+            }).join('')}
+          </tbody>
+        </table>
+
+        <!-- INTERVENSI DAN REKOMENDASI -->
+        <div class="section-header">IV. INTERVENSI KLINIS YANG DITERAPKAN &amp; REKOMENDASI LANJUTAN</div>
+        <table class="data-table">
+          <tr>
+            <td style="width:30%; font-weight:bold;">Intervensi Pasca Siklus I</td>
+            <td style="width:70%;">
+              <ul>
+                ${selectedTeacher.interventionsApplied.map((intv) => `<li>${escapeHtml(intv)}</li>`).join('')}
+              </ul>
+            </td>
+          </tr>
+          <tr>
+            <td style="font-weight:bold;">Rekomendasi Lanjutan Pengawas</td>
+            <td style="font-weight:bold; color:#1e293b;">${escapeHtml(selectedTeacher.postCycleRecommendation)}</td>
+          </tr>
+        </table>
+      `
+          : `
+        <!-- DAFTAR PERTUMBUHAN SELURUH GURU -->
+        <div class="section-header">II. MATRIKS PERKEMBANGAN GURU BINAAN (SIKLUS I KE SIKLUS II)</div>
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th style="width:4%;">No</th>
+              <th style="width:24%;">Nama Guru &amp; NIP</th>
+              <th style="width:16%;">Mata Pelajaran</th>
+              <th style="width:18%;">Satuan Pendidikan</th>
+              <th style="width:10%;">Siklus I</th>
+              <th style="width:10%;">Siklus II</th>
+              <th style="width:9%;">Pertumbuhan (&Delta;)</th>
+              <th style="width:9%;">Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${comparisons
+              .map(
+                (c, i) => `
+              <tr>
+                <td class="text-center">${i + 1}</td>
+                <td><strong>${escapeHtml(c.teacherName)}</strong><br><span style="font-size:8pt; color:#475569;">NIP: ${escapeHtml(c.nip)}</span></td>
+                <td>${escapeHtml(c.mapel)}</td>
+                <td>${escapeHtml(c.satuanPendidikan)}</td>
+                <td class="text-center">${c.scoreCycle1}%</td>
+                <td class="text-center bold" style="color:#15803d;">${c.scoreCycle2}%</td>
+                <td class="text-center bold" style="color:#15803d;">+${c.deltaScore} pt</td>
+                <td class="bold" style="font-size:8pt;">${escapeHtml(c.trajectory)}</td>
+              </tr>
+            `
+              )
+              .join('')}
+          </tbody>
+        </table>
+      `
+      }
+
+      <!-- LEMBAR PENGESAHAN DOKUMEN -->
+      <br>
+      <table style="width:100%; border:none; margin-top:20px; font-size:10pt;">
+        <tr>
+          <td style="width:50%; text-align:left; vertical-align:top; border:none;">
+            Mengetahui,<br>
+            Kepala Satuan Pendidikan Binaan<br>
+            <div style="height:70px;"></div>
+            <strong><u>${escapeHtml(selectedTeacher?.satuanPendidikan.includes('SMP Negeri 1') ? 'Dra. Hj. Nurhasanah, M.Pd.' : settings.pengawasPembinaName || 'Kepala Sekolah')}</u></strong><br>
+            NIP: ${escapeHtml(selectedTeacher?.satuanPendidikan.includes('SMP Negeri 1') ? '19720815 199802 2 003' : '-')}
+          </td>
+          <td style="width:50%; text-align:left; vertical-align:top; border:none; padding-left:40px;">
+            ${escapeHtml(settings.schoolCity || 'Kota Pendidikan')}, ${currentDate}<br>
+            Pengawas Sekolah Pembina,<br>
+            <div style="height:70px;"></div>
+            <strong><u>${escapeHtml(settings.supervisorName)}</u></strong><br>
+            NIP. ${escapeHtml(settings.supervisorNip)}
           </td>
         </tr>
       </table>

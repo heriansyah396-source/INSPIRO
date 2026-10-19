@@ -16,7 +16,8 @@ import {
   Printer,
   Plus,
   BookOpenCheck,
-  KeyRound
+  KeyRound,
+  Compass
 } from 'lucide-react';
 import { SupervisionRecord, Teacher } from '../types/inspiro';
 
@@ -29,6 +30,8 @@ interface DashboardProps {
   onNavigateToTeachers: () => void;
   onNavigateToReports: () => void;
   onNavigateToPM?: () => void;
+  onNavigateToQualityMap?: () => void;
+  onNavigateToGrowthTracker?: () => void;
   onOpenManagePrincipals?: () => void;
   isSupervisor?: boolean;
 }
@@ -42,6 +45,8 @@ export const Dashboard: React.FC<DashboardProps> = ({
   onNavigateToTeachers,
   onNavigateToReports,
   onNavigateToPM,
+  onNavigateToQualityMap,
+  onNavigateToGrowthTracker,
   onOpenManagePrincipals,
   isSupervisor
 }) => {
@@ -129,6 +134,26 @@ export const Dashboard: React.FC<DashboardProps> = ({
             <Users className="w-4 h-4 text-cyan-300" />
             <span>Kelola Guru</span>
           </button>
+          {onNavigateToQualityMap && (
+            <button
+              onClick={onNavigateToQualityMap}
+              className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-indigo-500 via-blue-500 to-indigo-600 hover:from-indigo-400 hover:to-blue-400 text-white font-bold text-xs rounded-xl transition-all shadow-md shadow-indigo-500/25 cursor-pointer hover:scale-[1.02] active:scale-[0.98]"
+              title="Buka Peta Mutu & Komparasi Antar-Sekolah Binaan"
+            >
+              <Compass className="w-4 h-4 text-cyan-200 stroke-[2.5]" />
+              <span>Peta Mutu Binaan</span>
+            </button>
+          )}
+          {onNavigateToGrowthTracker && (
+            <button
+              onClick={onNavigateToGrowthTracker}
+              className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-600 hover:from-emerald-400 hover:to-teal-400 text-white font-bold text-xs rounded-xl transition-all shadow-md shadow-emerald-500/25 cursor-pointer hover:scale-[1.02] active:scale-[0.98]"
+              title="Buka Growth Tracker: Komparasi Siklus I vs Siklus II"
+            >
+              <TrendingUp className="w-4 h-4 text-emerald-100 stroke-[2.5]" />
+              <span>Growth Tracker Siklus</span>
+            </button>
+          )}
           {onNavigateToPM && (
             <button
               onClick={onNavigateToPM}
