@@ -1328,103 +1328,250 @@ export const GrowthTrackerView: React.FC<GrowthTrackerViewProps> = ({
 
       {/* HIDDEN PRINT CONTAINER (for isolated print / save PDF) */}
       <div id="growth-tracker-print-area" className="hidden">
-        <div style={{ padding: '20px', fontFamily: 'Times New Roman, serif', color: '#000000' }}>
-          {/* KOP RESMI */}
-          <div style={{ textAlign: 'center', borderBottom: '2.5px solid #000000', paddingBottom: '12px', marginBottom: '18px' }}>
-            <h2 style={{ margin: '0', fontSize: '15pt', textTransform: 'uppercase', fontWeight: 'bold' }}>
+        <div style={{ padding: '16px', fontFamily: 'Times New Roman, serif', color: '#000000', lineHeight: '1.35' }}>
+          {/* KOP RESMI DINAS */}
+          <div style={{ textAlign: 'center', borderBottom: '3px double #000000', paddingBottom: '10px', marginBottom: '16px' }}>
+            <h2 style={{ margin: '0', fontSize: '14pt', textTransform: 'uppercase', fontWeight: 'bold', letterSpacing: '0.5px' }}>
               PEMERINTAH DAERAH DINAS PENDIDIKAN
             </h2>
-            <h3 style={{ margin: '2px 0', fontSize: '13pt', textTransform: 'uppercase', fontWeight: 'bold' }}>
+            <h3 style={{ margin: '2px 0', fontSize: '12pt', textTransform: 'uppercase', fontWeight: 'bold' }}>
               KOORDINATOR PENGAWAS SEKOLAH MENENGAH PERTAMA
             </h3>
-            <p style={{ margin: '0', fontSize: '10pt', fontStyle: 'italic', color: '#333333' }}>
-              {settings.schoolAddress || 'Gedung Pusat Pengawas Pembina Pendidikan Terpadu'}
+            <p style={{ margin: '0', fontSize: '9pt', fontStyle: 'italic', color: '#333333' }}>
+              {settings.schoolAddress || 'Gedung Pusat Pengawas Pembina Pendidikan Terpadu'} · Kota {settings.schoolCity}
             </p>
           </div>
 
-          {/* JUDUL RESMI */}
-          <div style={{ textAlign: 'center', marginBottom: '20px' }}>
-            <h3 style={{ margin: '0', fontSize: '13pt', textDecoration: 'underline', textTransform: 'uppercase', fontWeight: 'bold' }}>
-              LAPORAN EVALUASI PERTUMBUHAN MULTI-SIKLUS GURU (SIKLUS 1, 2, 3, DAN LANJUTAN)
-            </h3>
-            <p style={{ margin: '4px 0 0', fontSize: '10pt', fontStyle: 'italic' }}>
-              Tahun Ajaran 2026/2027 · Evaluasi Berkelanjutan Berbasis 12 Indikator Kurikulum Merdeka
-            </p>
-          </div>
+          {activeSubTab === 'detail' && activeTeacherComparison ? (
+            /* PRINT LAPORAN DETAIL GURU TERPILIH DENGAN RADAR & 12 INDIKATOR */
+            <div>
+              {/* JUDUL LAPORAN */}
+              <div style={{ textAlign: 'center', marginBottom: '16px' }}>
+                <h3 style={{ margin: '0', fontSize: '12pt', textDecoration: 'underline', textTransform: 'uppercase', fontWeight: 'bold' }}>
+                  LAPORAN EVALUASI PERKEMBANGAN KOMPETENSI MULTI-SIKLUS GURU
+                </h3>
+                <p style={{ margin: '3px 0 0', fontSize: '9.5pt', fontStyle: 'italic' }}>
+                  Komparasi {activeTeacherComparison.baselineCycleName} vs {activeTeacherComparison.targetCycleName} &amp; Evolusi 4 Tahapan Siklus Supervisi
+                </p>
+              </div>
 
-          {/* IDENTITAS PENGAWAS & RINGKASAN */}
-          <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '16px', fontSize: '10pt' }}>
-            <tbody>
-              <tr>
-                <td style={{ width: '25%', fontWeight: 'bold', padding: '4px', border: '1px solid #000000' }}>Pengawas Sekolah</td>
-                <td style={{ width: '40%', padding: '4px', border: '1px solid #000000' }}>{settings.supervisorName}</td>
-                <td style={{ width: '20%', fontWeight: 'bold', padding: '4px', border: '1px solid #000000' }}>Guru Terpantau</td>
-                <td style={{ width: '15%', padding: '4px', border: '1px solid #000000', textAlign: 'center', fontWeight: 'bold' }}>{regionalGrowth.totalTrackedTeachers} Guru</td>
-              </tr>
-              <tr>
-                <td style={{ fontWeight: 'bold', padding: '4px', border: '1px solid #000000' }}>NIP Pengawas</td>
-                <td style={{ padding: '4px', border: '1px solid #000000' }}>{settings.supervisorNip}</td>
-                <td style={{ fontWeight: 'bold', padding: '4px', border: '1px solid #000000' }}>Rerata Kenaikan</td>
-                <td style={{ padding: '4px', border: '1px solid #000000', textAlign: 'center', fontWeight: 'bold' }}>+{regionalGrowth.averageGrowthDelta} Poin</td>
-              </tr>
-            </tbody>
-          </table>
+              {/* IDENTITAS GURU & PENGAWAS */}
+              <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '14px', fontSize: '9.5pt' }}>
+                <tbody>
+                  <tr>
+                    <td style={{ width: '22%', fontWeight: 'bold', padding: '4px 6px', border: '1px solid #000' }}>Nama Guru</td>
+                    <td style={{ width: '38%', padding: '4px 6px', border: '1px solid #000', fontWeight: 'bold' }}>{activeTeacherComparison.teacherName}</td>
+                    <td style={{ width: '20%', fontWeight: 'bold', padding: '4px 6px', border: '1px solid #000' }}>Pengawas Sekolah</td>
+                    <td style={{ width: '20%', padding: '4px 6px', border: '1px solid #000', fontWeight: 'bold' }}>{settings.supervisorName}</td>
+                  </tr>
+                  <tr>
+                    <td style={{ fontWeight: 'bold', padding: '4px 6px', border: '1px solid #000' }}>NIP Guru</td>
+                    <td style={{ padding: '4px 6px', border: '1px solid #000' }}>{activeTeacherComparison.nip}</td>
+                    <td style={{ fontWeight: 'bold', padding: '4px 6px', border: '1px solid #000' }}>NIP Pengawas</td>
+                    <td style={{ padding: '4px 6px', border: '1px solid #000' }}>{settings.supervisorNip}</td>
+                  </tr>
+                  <tr>
+                    <td style={{ fontWeight: 'bold', padding: '4px 6px', border: '1px solid #000' }}>Mata Pelajaran / Kelas</td>
+                    <td style={{ padding: '4px 6px', border: '1px solid #000' }}>{activeTeacherComparison.mapel} ({activeTeacherComparison.kelas})</td>
+                    <td style={{ fontWeight: 'bold', padding: '4px 6px', border: '1px solid #000' }}>Lompatan Mutu (&Delta;)</td>
+                    <td style={{ padding: '4px 6px', border: '1px solid #000', fontWeight: 'bold', color: '#15803d' }}>+{activeTeacherComparison.deltaScore} pt (+{activeTeacherComparison.growthPercentage}%)</td>
+                  </tr>
+                  <tr>
+                    <td style={{ fontWeight: 'bold', padding: '4px 6px', border: '1px solid #000' }}>Satuan Pendidikan</td>
+                    <td style={{ padding: '4px 6px', border: '1px solid #000' }}>{activeTeacherComparison.satuanPendidikan}</td>
+                    <td style={{ fontWeight: 'bold', padding: '4px 6px', border: '1px solid #000' }}>Total S1 ➔ SL</td>
+                    <td style={{ padding: '4px 6px', border: '1px solid #000', fontWeight: 'bold', color: '#15803d' }}>+{activeTeacherComparison.totalCumulativeDelta} Poin</td>
+                  </tr>
+                </tbody>
+              </table>
 
-          {/* TABEL REKAPITULASI PERTUMBUHAN SELURUH GURU LINTAS 4 SIKLUS */}
-          <h4 style={{ margin: '14px 0 6px', fontSize: '11pt', fontWeight: 'bold', textTransform: 'uppercase' }}>
-            I. Matriks Pertumbuhan Nilai Guru Lintas 4 Siklus Supervisi
-          </h4>
-          <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '16px', fontSize: '9pt' }}>
-            <thead>
-              <tr style={{ backgroundColor: '#f1f5f9' }}>
-                <th style={{ border: '1px solid #000000', padding: '5px', textAlign: 'center', width: '4%' }}>No</th>
-                <th style={{ border: '1px solid #000000', padding: '5px', width: '22%' }}>Nama Guru &amp; NIP</th>
-                <th style={{ border: '1px solid #000000', padding: '5px', width: '15%' }}>Mata Pelajaran</th>
-                <th style={{ border: '1px solid #000000', padding: '5px', width: '17%' }}>Satuan Pendidikan</th>
-                <th style={{ border: '1px solid #000000', padding: '5px', textAlign: 'center', width: '8%' }}>Siklus 1</th>
-                <th style={{ border: '1px solid #000000', padding: '5px', textAlign: 'center', width: '8%' }}>Siklus 2</th>
-                <th style={{ border: '1px solid #000000', padding: '5px', textAlign: 'center', width: '8%' }}>Siklus 3</th>
-                <th style={{ border: '1px solid #000000', padding: '5px', textAlign: 'center', width: '8%' }}>Lanjutan</th>
-                <th style={{ border: '1px solid #000000', padding: '5px', textAlign: 'center', width: '10%' }}>Delta Total</th>
-              </tr>
-            </thead>
-            <tbody>
-              {comparisons.map((c, i) => (
-                <tr key={c.teacherId}>
-                  <td style={{ border: '1px solid #000000', padding: '4px', textAlign: 'center' }}>{i + 1}</td>
-                  <td style={{ border: '1px solid #000000', padding: '4px' }}>
-                    <strong>{c.teacherName}</strong><br />
-                    <span style={{ fontSize: '8pt', color: '#475569' }}>NIP: {c.nip}</span>
-                  </td>
-                  <td style={{ border: '1px solid #000000', padding: '4px' }}>{c.mapel}</td>
-                  <td style={{ border: '1px solid #000000', padding: '4px' }}>{c.satuanPendidikan}</td>
-                  <td style={{ border: '1px solid #000000', padding: '4px', textAlign: 'center' }}>{c.cycles.s1.score}%</td>
-                  <td style={{ border: '1px solid #000000', padding: '4px', textAlign: 'center', color: '#15803d' }}>{c.cycles.s2.score}%</td>
-                  <td style={{ border: '1px solid #000000', padding: '4px', textAlign: 'center', color: '#7e22ce' }}>{c.cycles.s3.score}%</td>
-                  <td style={{ border: '1px solid #000000', padding: '4px', textAlign: 'center', fontWeight: 'bold', color: '#b45309' }}>{c.cycles.sl.score}%</td>
-                  <td style={{ border: '1px solid #000000', padding: '4px', textAlign: 'center', fontWeight: 'bold', color: '#15803d' }}>
-                    +{c.totalCumulativeDelta} pt
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+              {/* REKAPITULASI 4 SIKLUS */}
+              <h4 style={{ margin: '12px 0 6px', fontSize: '10pt', fontWeight: 'bold', textTransform: 'uppercase' }}>
+                I. Rekapitulasi Capaian Skor Guru Lintas 4 Tahapan Siklus
+              </h4>
+              <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '14px', fontSize: '9pt', textAlign: 'center' }}>
+                <thead>
+                  <tr style={{ backgroundColor: '#f1f5f9' }}>
+                    <th style={{ border: '1px solid #000', padding: '5px' }}>Tahapan Siklus</th>
+                    <th style={{ border: '1px solid #000', padding: '5px' }}>Fokus Pelaksanaan</th>
+                    <th style={{ border: '1px solid #000', padding: '5px' }}>Tanggal Pelaksanaan</th>
+                    <th style={{ border: '1px solid #000', padding: '5px' }}>Skor Akhir</th>
+                    <th style={{ border: '1px solid #000', padding: '5px' }}>Predikat Mutu</th>
+                    <th style={{ border: '1px solid #000', padding: '5px' }}>Pertumbuhan Poin</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td style={{ border: '1px solid #000', padding: '4px', fontWeight: 'bold' }}>Siklus 1</td>
+                    <td style={{ border: '1px solid #000', padding: '4px', textAlign: 'left' }}>Observasi Diagnostik Awal</td>
+                    <td style={{ border: '1px solid #000', padding: '4px' }}>{activeTeacherComparison.cycles.s1.dateStr}</td>
+                    <td style={{ border: '1px solid #000', padding: '4px', fontWeight: 'bold' }}>{activeTeacherComparison.cycles.s1.score}%</td>
+                    <td style={{ border: '1px solid #000', padding: '4px' }}>{activeTeacherComparison.cycles.s1.category}</td>
+                    <td style={{ border: '1px solid #000', padding: '4px', fontStyle: 'italic', color: '#64748b' }}>Basis Awal</td>
+                  </tr>
+                  <tr>
+                    <td style={{ border: '1px solid #000', padding: '4px', fontWeight: 'bold' }}>Siklus 2</td>
+                    <td style={{ border: '1px solid #000', padding: '4px', textAlign: 'left' }}>Evaluasi Pasca-Bimbingan</td>
+                    <td style={{ border: '1px solid #000', padding: '4px' }}>{activeTeacherComparison.cycles.s2.dateStr}</td>
+                    <td style={{ border: '1px solid #000', padding: '4px', fontWeight: 'bold', color: '#15803d' }}>{activeTeacherComparison.cycles.s2.score}%</td>
+                    <td style={{ border: '1px solid #000', padding: '4px' }}>{activeTeacherComparison.cycles.s2.category}</td>
+                    <td style={{ border: '1px solid #000', padding: '4px', fontWeight: 'bold', color: '#15803d' }}>+{Number((activeTeacherComparison.cycles.s2.score - activeTeacherComparison.cycles.s1.score).toFixed(1))} pt</td>
+                  </tr>
+                  <tr>
+                    <td style={{ border: '1px solid #000', padding: '4px', fontWeight: 'bold' }}>Siklus 3</td>
+                    <td style={{ border: '1px solid #000', padding: '4px', textAlign: 'left' }}>Konsolidasi Kombel &amp; Coaching</td>
+                    <td style={{ border: '1px solid #000', padding: '4px' }}>{activeTeacherComparison.cycles.s3.dateStr}</td>
+                    <td style={{ border: '1px solid #000', padding: '4px', fontWeight: 'bold', color: '#7e22ce' }}>{activeTeacherComparison.cycles.s3.score}%</td>
+                    <td style={{ border: '1px solid #000', padding: '4px' }}>{activeTeacherComparison.cycles.s3.category}</td>
+                    <td style={{ border: '1px solid #000', padding: '4px', fontWeight: 'bold', color: '#7e22ce' }}>+{Number((activeTeacherComparison.cycles.s3.score - activeTeacherComparison.cycles.s2.score).toFixed(1))} pt</td>
+                  </tr>
+                  <tr>
+                    <td style={{ border: '1px solid #000', padding: '4px', fontWeight: 'bold' }}>Siklus Lanjutan</td>
+                    <td style={{ border: '1px solid #000', padding: '4px', textAlign: 'left' }}>Pemantauan Khusus RTL &amp; Mandiri</td>
+                    <td style={{ border: '1px solid #000', padding: '4px' }}>{activeTeacherComparison.cycles.sl.dateStr}</td>
+                    <td style={{ border: '1px solid #000', padding: '4px', fontWeight: 'bold', color: '#b45309' }}>{activeTeacherComparison.cycles.sl.score}%</td>
+                    <td style={{ border: '1px solid #000', padding: '4px' }}>{activeTeacherComparison.cycles.sl.category}</td>
+                    <td style={{ border: '1px solid #000', padding: '4px', fontWeight: 'bold', color: '#b45309' }}>+{Number((activeTeacherComparison.cycles.sl.score - activeTeacherComparison.cycles.s3.score).toFixed(1))} pt</td>
+                  </tr>
+                </tbody>
+              </table>
 
-          {/* LEMBAR PENGESAHAN */}
-          <table style={{ width: '100%', border: 'none', marginTop: '30px', fontSize: '10pt' }}>
+              {/* TABEL KOMPARASI 12 INDIKATOR */}
+              <h4 style={{ margin: '14px 0 6px', fontSize: '10pt', fontWeight: 'bold', textTransform: 'uppercase' }}>
+                II. Komparasi Rinci 12 Indikator Observasi Kelas Lintas 4 Siklus (Skala 1.0 - 4.0)
+              </h4>
+              <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '14px', fontSize: '8.5pt' }}>
+                <thead>
+                  <tr style={{ backgroundColor: '#f1f5f9' }}>
+                    <th style={{ border: '1px solid #000', padding: '4px', textAlign: 'center', width: '4%' }}>No</th>
+                    <th style={{ border: '1px solid #000', padding: '4px', width: '42%' }}>Indikator Observasi Kurikulum Merdeka</th>
+                    <th style={{ border: '1px solid #000', padding: '4px', textAlign: 'center', width: '11%' }}>S1 (Awal)</th>
+                    <th style={{ border: '1px solid #000', padding: '4px', textAlign: 'center', width: '11%' }}>S2 (Evaluasi)</th>
+                    <th style={{ border: '1px solid #000', padding: '4px', textAlign: 'center', width: '11%' }}>S3 (Kombel)</th>
+                    <th style={{ border: '1px solid #000', padding: '4px', textAlign: 'center', width: '11%' }}>SL (RTL)</th>
+                    <th style={{ border: '1px solid #000', padding: '4px', textAlign: 'center', width: '10%' }}>Delta Total</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {OBSERVATION_INDICATORS.map((ind) => {
+                    const s1 = activeTeacherComparison.cycles.s1.scores[ind.id] || 0;
+                    const s2 = activeTeacherComparison.cycles.s2.scores[ind.id] || 0;
+                    const s3 = activeTeacherComparison.cycles.s3.scores[ind.id] || 0;
+                    const sl = activeTeacherComparison.cycles.sl.scores[ind.id] || 0;
+                    const totalDelta = sl - s1;
+                    return (
+                      <tr key={ind.id}>
+                        <td style={{ border: '1px solid #000', padding: '3px 4px', textAlign: 'center' }}>{ind.id}</td>
+                        <td style={{ border: '1px solid #000', padding: '3px 4px' }}>
+                          <strong>{ind.title}</strong>
+                        </td>
+                        <td style={{ border: '1px solid #000', padding: '3px 4px', textAlign: 'center' }}>{s1.toFixed(1)}</td>
+                        <td style={{ border: '1px solid #000', padding: '3px 4px', textAlign: 'center', color: '#15803d', fontWeight: 'bold' }}>{s2.toFixed(1)}</td>
+                        <td style={{ border: '1px solid #000', padding: '3px 4px', textAlign: 'center', color: '#7e22ce' }}>{s3.toFixed(1)}</td>
+                        <td style={{ border: '1px solid #000', padding: '3px 4px', textAlign: 'center', color: '#b45309', fontWeight: 'bold' }}>{sl.toFixed(1)}</td>
+                        <td style={{ border: '1px solid #000', padding: '3px 4px', textAlign: 'center', fontWeight: 'bold', color: totalDelta > 0 ? '#15803d' : '#000' }}>
+                          +{totalDelta.toFixed(1)}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+
+              {/* INTERVENSI & REKOMENDASI */}
+              <div style={{ pageBreakInside: 'avoid', marginTop: '12px', border: '1px solid #000', padding: '8px 10px', fontSize: '9pt' }}>
+                <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>Rekomendasi Bimbingan Klinis Pengawas Pembina:</div>
+                <div style={{ color: '#1e293b' }}>{activeTeacherComparison.postCycleRecommendation}</div>
+              </div>
+            </div>
+          ) : (
+            /* PRINT REKAPITULASI MATRIKS SELURUH GURU */
+            <div>
+              {/* JUDUL RESMI */}
+              <div style={{ textAlign: 'center', marginBottom: '16px' }}>
+                <h3 style={{ margin: '0', fontSize: '12pt', textDecoration: 'underline', textTransform: 'uppercase', fontWeight: 'bold' }}>
+                  LAPORAN EVALUASI PERTUMBUHAN MULTI-SIKLUS GURU (SIKLUS 1, 2, 3, DAN LANJUTAN)
+                </h3>
+                <p style={{ margin: '3px 0 0', fontSize: '9.5pt', fontStyle: 'italic' }}>
+                  Tahun Ajaran 2026/2027 · Evaluasi Berkelanjutan Berbasis 12 Indikator Kurikulum Merdeka
+                </p>
+              </div>
+
+              {/* IDENTITAS PENGAWAS & RINGKASAN */}
+              <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '14px', fontSize: '9.5pt' }}>
+                <tbody>
+                  <tr>
+                    <td style={{ width: '25%', fontWeight: 'bold', padding: '4px 6px', border: '1px solid #000000' }}>Pengawas Sekolah</td>
+                    <td style={{ width: '40%', padding: '4px 6px', border: '1px solid #000000', fontWeight: 'bold' }}>{settings.supervisorName}</td>
+                    <td style={{ width: '20%', fontWeight: 'bold', padding: '4px 6px', border: '1px solid #000000' }}>Guru Terpantau</td>
+                    <td style={{ width: '15%', padding: '4px 6px', border: '1px solid #000000', textAlign: 'center', fontWeight: 'bold' }}>{regionalGrowth.totalTrackedTeachers} Guru</td>
+                  </tr>
+                  <tr>
+                    <td style={{ fontWeight: 'bold', padding: '4px 6px', border: '1px solid #000000' }}>NIP Pengawas</td>
+                    <td style={{ padding: '4px 6px', border: '1px solid #000000' }}>{settings.supervisorNip}</td>
+                    <td style={{ fontWeight: 'bold', padding: '4px 6px', border: '1px solid #000000' }}>Rerata Kenaikan</td>
+                    <td style={{ padding: '4px 6px', border: '1px solid #000000', textAlign: 'center', fontWeight: 'bold', color: '#15803d' }}>+{regionalGrowth.averageGrowthDelta} Poin</td>
+                  </tr>
+                </tbody>
+              </table>
+
+              {/* TABEL REKAPITULASI PERTUMBUHAN SELURUH GURU LINTAS 4 SIKLUS */}
+              <h4 style={{ margin: '14px 0 6px', fontSize: '10.5pt', fontWeight: 'bold', textTransform: 'uppercase' }}>
+                I. Matriks Pertumbuhan Nilai Guru Lintas 4 Siklus Supervisi
+              </h4>
+              <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '14px', fontSize: '9pt' }}>
+                <thead>
+                  <tr style={{ backgroundColor: '#f1f5f9' }}>
+                    <th style={{ border: '1px solid #000000', padding: '5px', textAlign: 'center', width: '4%' }}>No</th>
+                    <th style={{ border: '1px solid #000000', padding: '5px', width: '24%' }}>Nama Guru &amp; NIP</th>
+                    <th style={{ border: '1px solid #000000', padding: '5px', width: '15%' }}>Mata Pelajaran</th>
+                    <th style={{ border: '1px solid #000000', padding: '5px', width: '17%' }}>Satuan Pendidikan</th>
+                    <th style={{ border: '1px solid #000000', padding: '5px', textAlign: 'center', width: '8%' }}>Siklus 1</th>
+                    <th style={{ border: '1px solid #000000', padding: '5px', textAlign: 'center', width: '8%' }}>Siklus 2</th>
+                    <th style={{ border: '1px solid #000000', padding: '5px', textAlign: 'center', width: '8%' }}>Siklus 3</th>
+                    <th style={{ border: '1px solid #000000', padding: '5px', textAlign: 'center', width: '8%' }}>Lanjutan</th>
+                    <th style={{ border: '1px solid #000000', padding: '5px', textAlign: 'center', width: '10%' }}>Delta Total</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {comparisons.map((c, i) => (
+                    <tr key={c.teacherId}>
+                      <td style={{ border: '1px solid #000000', padding: '4px', textAlign: 'center' }}>{i + 1}</td>
+                      <td style={{ border: '1px solid #000000', padding: '4px' }}>
+                        <strong>{c.teacherName}</strong><br />
+                        <span style={{ fontSize: '8pt', color: '#475569' }}>NIP: {c.nip}</span>
+                      </td>
+                      <td style={{ border: '1px solid #000000', padding: '4px' }}>{c.mapel}</td>
+                      <td style={{ border: '1px solid #000000', padding: '4px' }}>{c.satuanPendidikan}</td>
+                      <td style={{ border: '1px solid #000000', padding: '4px', textAlign: 'center' }}>{c.cycles.s1.score}%</td>
+                      <td style={{ border: '1px solid #000000', padding: '4px', textAlign: 'center', color: '#15803d' }}>{c.cycles.s2.score}%</td>
+                      <td style={{ border: '1px solid #000000', padding: '4px', textAlign: 'center', color: '#7e22ce' }}>{c.cycles.s3.score}%</td>
+                      <td style={{ border: '1px solid #000000', padding: '4px', textAlign: 'center', fontWeight: 'bold', color: '#b45309' }}>{c.cycles.sl.score}%</td>
+                      <td style={{ border: '1px solid #000000', padding: '4px', textAlign: 'center', fontWeight: 'bold', color: '#15803d' }}>
+                        +{c.totalCumulativeDelta} pt
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          {/* LEMBAR PENGESAHAN DUA KOLOM */}
+          <table style={{ width: '100%', border: 'none', marginTop: '24px', fontSize: '9.5pt', pageBreakInside: 'avoid' }}>
             <tbody>
               <tr>
                 <td style={{ width: '50%', textAlign: 'left', verticalAlign: 'top', border: 'none' }}>
                   Mengetahui,<br />
                   Koordinator Pengawas / Kepala Dinas Pendidikan<br />
-                  <div style={{ height: '65px' }} />
+                  <div style={{ height: '60px' }} />
                   <strong><u>{settings.pengawasPembinaName || 'Dr. Hj. Endang Sulastri, M.Pd.'}</u></strong><br />
                   NIP. {settings.pengawasPembinaNip || '19650410 199103 2 001'}
                 </td>
                 <td style={{ width: '50%', textAlign: 'left', verticalAlign: 'top', border: 'none', paddingLeft: '40px' }}>
                   {settings.schoolCity || 'Kota Pendidikan'}, {new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}<br />
                   Pengawas Sekolah Pembina,<br />
-                  <div style={{ height: '65px' }} />
+                  <div style={{ height: '60px' }} />
                   <strong><u>{settings.supervisorName}</u></strong><br />
                   NIP. {settings.supervisorNip}
                 </td>

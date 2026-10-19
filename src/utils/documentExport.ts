@@ -31,6 +31,21 @@ export function printDocumentElement(elementId: string, documentTitle?: string):
     return false;
   }
 
+  // Clone target element and thoroughly remove hidden states
+  const clonedTarget = targetElem.cloneNode(true) as HTMLElement;
+  clonedTarget.classList.remove('hidden');
+  clonedTarget.removeAttribute('hidden');
+  clonedTarget.style.display = 'block';
+  clonedTarget.style.visibility = 'visible';
+  clonedTarget.style.opacity = '1';
+
+  clonedTarget.querySelectorAll('.hidden, [hidden]').forEach((el) => {
+    (el as HTMLElement).classList.remove('hidden');
+    (el as HTMLElement).removeAttribute('hidden');
+    (el as HTMLElement).style.display = 'block';
+    (el as HTMLElement).style.visibility = 'visible';
+  });
+
   // Create an isolated hidden iframe
   const iframe = document.createElement('iframe');
   iframe.id = 'inspiro-print-iframe';
@@ -71,56 +86,79 @@ export function printDocumentElement(elementId: string, documentTitle?: string):
       <style>
         @page {
           size: A4 portrait;
-          margin: 1.2cm 1cm 1.2cm 1cm;
+          margin: 1.5cm 1.2cm 1.5cm 1.2cm;
         }
         *, *::before, *::after {
           box-sizing: border-box !important;
         }
         html, body {
           background: #ffffff !important;
-          color: #000000 !important;
-          font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif !important;
+          color: #0f172a !important;
+          font-family: 'Times New Roman', 'Liberation Serif', Times, serif !important;
+          font-size: 10pt !important;
+          line-height: 1.4 !important;
           margin: 0 !important;
           padding: 0 !important;
           width: 100% !important;
-          min-height: auto !important;
           height: auto !important;
           overflow: visible !important;
           -webkit-print-color-adjust: exact !important;
           print-color-adjust: exact !important;
         }
+        .hidden, [class*="hidden"] {
+          display: block !important;
+          visibility: visible !important;
+        }
         .no-print, button, .hidden-in-print {
           display: none !important;
         }
-        .print-page {
+        .print-page, .print-container {
           width: 100% !important;
           max-width: 100% !important;
           margin: 0 !important;
-          padding: 8px !important;
+          padding: 0 !important;
           box-shadow: none !important;
           border: none !important;
           background: #ffffff !important;
+          display: block !important;
+          visibility: visible !important;
         }
         table {
           width: 100% !important;
           border-collapse: collapse !important;
           page-break-inside: auto !important;
+          margin-bottom: 12px !important;
         }
         tr {
           page-break-inside: avoid !important;
           page-break-after: auto !important;
         }
         th, td {
+          border: 1px solid #1e293b !important;
+          padding: 5px 7px !important;
+          font-size: 9pt !important;
+          vertical-align: middle !important;
           -webkit-print-color-adjust: exact !important;
           print-color-adjust: exact !important;
+        }
+        th {
+          background-color: #f1f5f9 !important;
+          color: #0f172a !important;
+          font-weight: bold !important;
         }
         .print-avoid-break {
           page-break-inside: avoid !important;
         }
+        svg {
+          display: block !important;
+          margin-left: auto !important;
+          margin-right: auto !important;
+          max-width: 100% !important;
+        }
       </style>
     </head>
     <body>
-      ${targetElem.outerHTML}
+      ${clonedTarget.outerHTML}
     </body>
     </html>
   `);
@@ -132,17 +170,15 @@ export function printDocumentElement(elementId: string, documentTitle?: string):
       iframe.contentWindow?.focus();
       iframe.contentWindow?.print();
     } catch {
-      // Fallback
       window.print();
     } finally {
-      // Clean up iframe safely after dialog closes
       setTimeout(() => {
         if (document.body.contains(iframe)) {
           document.body.removeChild(iframe);
         }
-      }, 3000);
+      }, 2500);
     }
-  }, 400);
+  }, 450);
 
   return true;
 }

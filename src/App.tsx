@@ -138,6 +138,17 @@ export default function App() {
       // 1. Sync Settings from Cloud
       const cloudSettings = await fetchCloudSettings();
       if (cloudSettings) {
+        if (
+          !cloudSettings.supervisorName ||
+          cloudSettings.supervisorName.toLowerCase().includes('rustina') ||
+          cloudSettings.supervisorName.toLowerCase().includes('suryanto') ||
+          cloudSettings.supervisorNip?.replace(/\s+/g, '') === '196812311995122017'
+        ) {
+          cloudSettings.supervisorName = 'Heriansyah., S.Si., S.Pd., M.Pd';
+          cloudSettings.supervisorNip = '19820415 200801 1 007';
+          cloudSettings.supervisorRole = 'Pengawas Sekolah';
+          syncSettingsToCloud(cloudSettings).catch(() => {});
+        }
         setSettings(cloudSettings);
         saveSettings(cloudSettings);
       }

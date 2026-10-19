@@ -321,7 +321,19 @@ export async function fetchCloudSettings(): Promise<AppSettings | null> {
   try {
     const snap = await getDoc(doc(db, 'settings', 'app_config'));
     if (snap.exists()) {
-      return snap.data() as AppSettings;
+      const data = snap.data() as AppSettings;
+      if (
+        !data.supervisorName ||
+        data.supervisorName.toLowerCase().includes('rustina') ||
+        data.supervisorName.toLowerCase().includes('suryanto') ||
+        data.supervisorNip?.replace(/\s+/g, '') === '196812311995122017'
+      ) {
+        data.supervisorName = 'Heriansyah., S.Si., S.Pd., M.Pd';
+        data.supervisorNip = '19820415 200801 1 007';
+        data.supervisorRole = 'Pengawas Sekolah';
+        setDoc(doc(db, 'settings', 'app_config'), data).catch(() => {});
+      }
+      return data;
     }
     return null;
   } catch (error) {

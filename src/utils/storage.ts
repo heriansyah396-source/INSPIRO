@@ -145,25 +145,21 @@ export function deleteSupervisionRecord(id: string): boolean {
 // 3. Settings
 export function getSettings(): AppSettings {
   const current = safeParse<AppSettings>(SETTINGS_KEY, DEFAULT_SETTINGS);
-  // Auto-migrate legacy placeholder name or role
-  if (
-    current.supervisorName === 'Drs. H. Suryanto, M.Pd.' ||
-    current.supervisorRole === 'Kepala Sekolah / Supervisor Akademik'
-  ) {
+  // Auto-migrate legacy placeholder name or incorrect supervisor name/NIP
+  const isRustinaOrLegacy =
+    !current.supervisorName ||
+    current.supervisorName.toLowerCase().includes('rustina') ||
+    current.supervisorName.toLowerCase().includes('suryanto') ||
+    current.supervisorNip.replace(/\s+/g, '') === '196812311995122017' ||
+    current.supervisorNip.replace(/\s+/g, '') === '196805121994121002' ||
+    current.supervisorRole === 'Kepala Sekolah / Supervisor Akademik';
+
+  if (isRustinaOrLegacy) {
     const updated: AppSettings = {
       ...current,
-      supervisorName:
-        current.supervisorName === 'Drs. H. Suryanto, M.Pd.'
-          ? 'Heriansyah., S.Si., S.Pd., M.Pd'
-          : current.supervisorName,
-      supervisorRole:
-        current.supervisorRole === 'Kepala Sekolah / Supervisor Akademik'
-          ? 'Pengawas Sekolah'
-          : current.supervisorRole,
-      supervisorNip:
-        current.supervisorNip === '19680512 199412 1 002'
-          ? '19820415 200801 1 007'
-          : current.supervisorNip
+      supervisorName: 'Heriansyah., S.Si., S.Pd., M.Pd',
+      supervisorRole: 'Pengawas Sekolah',
+      supervisorNip: '19820415 200801 1 007'
     };
     saveSettings(updated);
     return updated;
@@ -180,11 +176,14 @@ export function saveSettings(settings: AppSettings): void {
     if (supervisions.length > 0) {
       let changed = false;
       const updated = supervisions.map((s) => {
-        if (
+        const isLegacySupervisor =
           !s.identity.namaSupervisor ||
           s.identity.namaSupervisor === 'Drs. H. Suryanto, M.Pd.' ||
-          s.identity.namaSupervisor === settings.supervisorName
-        ) {
+          s.identity.namaSupervisor.toLowerCase().includes('rustina') ||
+          s.identity.nipSupervisor?.replace(/\s+/g, '') === '196812311995122017' ||
+          s.identity.namaSupervisor === settings.supervisorName;
+
+        if (isLegacySupervisor) {
           changed = true;
           return {
             ...s,
@@ -493,13 +492,28 @@ export function getManagedAccounts(): ManagedAccount[] {
     return DEFAULT_ACCOUNTS;
   }
 
-  // Ensure the primary Pengawas account has the updated password (19081983)
+  // Ensure the primary Pengawas account has the updated name, NIP, and password
   const pengawasIdx = accounts.findIndex(
     (a) => a.email.toLowerCase() === 'heriansyah396@gmail.com' || a.role === 'pengawas'
   );
   if (pengawasIdx !== -1) {
+    let changed = false;
     if (accounts[pengawasIdx].password === 'pengawas123') {
       accounts[pengawasIdx].password = '19081983';
+      changed = true;
+    }
+    if (
+      accounts[pengawasIdx].name.toLowerCase().includes('rustina') ||
+      accounts[pengawasIdx].name.toLowerCase().includes('suryanto') ||
+      accounts[pengawasIdx].nip?.replace(/\s+/g, '') === '196812311995122017' ||
+      accounts[pengawasIdx].name !== 'Heriansyah., S.Si., S.Pd., M.Pd'
+    ) {
+      accounts[pengawasIdx].name = 'Heriansyah., S.Si., S.Pd., M.Pd';
+      accounts[pengawasIdx].nip = '19820415 200801 1 007';
+      accounts[pengawasIdx].email = 'heriansyah396@gmail.com';
+      changed = true;
+    }
+    if (changed) {
       saveManagedAccounts(accounts);
     }
   } else {
