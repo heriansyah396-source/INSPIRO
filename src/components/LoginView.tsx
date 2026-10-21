@@ -578,7 +578,7 @@ export const LoginView: React.FC<LoginViewProps> = ({
             © 2026 INSPIRO · Standar Supervisi Akademik Kurikulum Merdeka
           </p>
           <p className="text-slate-400 text-[10.5px]">
-            Pengembang: <strong className="text-cyan-300 font-bold">Heriansyah, S.Si., S.Pd., M.Pd</strong>
+            Pengembang: <strong className="text-cyan-300 font-bold">HERIANSYAH, S.Si., S.Pd., M.Pd</strong>
           </p>
           <p className="text-slate-500 text-[10px]">
             Kementerian Pendidikan, Kebudayaan, Riset, dan Teknologi Republik Indonesia

@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Printer,
   ArrowLeft,
@@ -26,21 +26,70 @@ import {
   exportSupervisionToWord,
   printDocumentElement
 } from '../utils/documentExport';
+import { SignatoryModal } from './SignatoryModal';
+import { saveSettings } from '../utils/storage';
+import { FileSignature } from 'lucide-react';
 
 interface OfficialReportPrintProps {
   supervision: SupervisionRecord;
   settings: AppSettings;
   onBack: () => void;
+  onUpdateSettings?: (newSettings: AppSettings) => void;
 }
 
 export const OfficialReportPrint: React.FC<OfficialReportPrintProps> = ({
   supervision,
   settings,
-  onBack
+  onBack,
+  onUpdateSettings
 }) => {
   const [isExportingWord, setIsExportingWord] = useState(false);
   const [isPrinting, setIsPrinting] = useState(false);
   const [exportNotice, setExportNotice] = useState<string | null>(null);
+  const [isSignatoryModalOpen, setIsSignatoryModalOpen] = useState(false);
+
+  // Normalize settings to ensure HERIANSYAH, S.Si., S.Pd., M.Pd without typo period
+  const [localSettings, setLocalSettings] = useState<AppSettings>(() => {
+    const isNeedsCorrection =
+      !settings.supervisorName ||
+      settings.supervisorName.includes('Heriansyah.') ||
+      settings.supervisorName.toLowerCase().includes('rustina') ||
+      settings.supervisorName === 'Heriansyah, S.Si., S.Pd., M.Pd';
+
+    if (isNeedsCorrection) {
+      return {
+        ...settings,
+        supervisorName: 'HERIANSYAH, S.Si., S.Pd., M.Pd'
+      };
+    }
+    return settings;
+  });
+
+  useEffect(() => {
+    const isNeedsCorrection =
+      !settings.supervisorName ||
+      settings.supervisorName.includes('Heriansyah.') ||
+      settings.supervisorName.toLowerCase().includes('rustina') ||
+      settings.supervisorName === 'Heriansyah, S.Si., S.Pd., M.Pd';
+
+    if (isNeedsCorrection) {
+      setLocalSettings({
+        ...settings,
+        supervisorName: 'HERIANSYAH, S.Si., S.Pd., M.Pd'
+      });
+    } else {
+      setLocalSettings(settings);
+    }
+  }, [settings]);
+
+  const handleSaveSignatories = (updatedSettings: AppSettings) => {
+    setLocalSettings(updatedSettings);
+    if (onUpdateSettings) {
+      onUpdateSettings(updatedSettings);
+    } else {
+      saveSettings(updatedSettings);
+    }
+  };
 
   const handlePrint = () => {
     setIsPrinting(true);
@@ -90,6 +139,16 @@ export const OfficialReportPrint: React.FC<OfficialReportPrintProps> = ({
           </button>
 
           <div className="flex flex-wrap items-center gap-2">
+            {/* Menu Input Yang Bertanda Tangan */}
+            <button
+              onClick={() => setIsSignatoryModalOpen(true)}
+              className="flex items-center gap-1.5 px-3.5 py-2 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded-lg text-xs font-semibold shadow-2xs transition-all cursor-pointer"
+              title="Menu input pejabat yang bertanda tangan (Pengawas, Koordinator/Kepala Sekolah, Titimangsa)"
+            >
+              <FileSignature className="w-4 h-4 text-blue-600" />
+              <span>Atur Penandatangan</span>
+            </button>
+
             {/* Tombol Cetak Dokumen / Simpan PDF */}
             <button
               onClick={handlePrint}
@@ -425,7 +484,8 @@ export const OfficialReportPrint: React.FC<OfficialReportPrintProps> = ({
         {/* BAGIAN VII: LEMBAR PENGESAHAN & TANDA TANGAN */}
         <div className="print-avoid-break font-sans pt-4">
           <div className="text-right text-xs mb-4">
-            {settings.schoolCity}, {identity.hariTanggal || new Date().toLocaleDateString('id-ID')}
+            {localSettings.schoolCity || 'Kota Pendidikan'},{' '}
+            {localSettings.documentDate || identity.hariTanggal || new Date().toLocaleDateString('id-ID')}
           </div>
 
           <div className="grid grid-cols-3 gap-6 text-center text-xs">
@@ -444,28 +504,45 @@ export const OfficialReportPrint: React.FC<OfficialReportPrintProps> = ({
             <div className="flex flex-col justify-between h-36">
               <div>
                 <p className="text-slate-600 font-medium">
-                  {identity.jabatanSupervisor || 'Pengawas Sekolah'},
+                  {localSettings.supervisorRole || identity.jabatanSupervisor || 'Pengawas Sekolah Pembina'},
                 </p>
               </div>
               <div>
-                <p className="font-bold underline text-slate-950">{identity.namaSupervisor}</p>
-                <p className="text-[11px] font-mono text-slate-600">NIP: {identity.nipSupervisor || '-'}</p>
+                <p className="font-bold underline text-slate-950">{localSettings.supervisorName || identity.namaSupervisor}</p>
+                <p className="text-[11px] font-mono text-slate-600">NIP: {localSettings.supervisorNip || identity.nipSupervisor || '-'}</p>
               </div>
             </div>
 
-            {/* TTD Pengawas Pembina */}
+            {/* TTD Pengawas Pembina / Pejabat Mengetahui */}
             <div className="flex flex-col justify-between h-36">
               <div>
-                <p className="text-slate-600">Mengetahui,<br />Pengawas Pembina Sekolah,</p>
+                <p className="text-slate-600">
+                  Mengetahui,<br />
+                  {localSettings.pengawasPembinaRole || 'Pengawas Pembina Sekolah / Dinas'},
+                </p>
               </div>
               <div>
-                <p className="font-bold underline text-slate-950">{settings.pengawasPembinaName}</p>
-                <p className="text-[11px] font-mono text-slate-600">NIP: {settings.pengawasPembinaNip || '-'}</p>
+                <p className="font-bold underline text-slate-950">{localSettings.pengawasPembinaName || 'Dr. Hj. Endang Sulastri, M.Pd.'}</p>
+                <p className="text-[11px] font-mono text-slate-600">NIP: {localSettings.pengawasPembinaNip || '-'}</p>
               </div>
             </div>
           </div>
         </div>
       </div>
+
+      {/* MODAL INPUT & PENGATURAN YANG BERTANDA TANGAN */}
+      <SignatoryModal
+        isOpen={isSignatoryModalOpen}
+        onClose={() => setIsSignatoryModalOpen(false)}
+        settings={localSettings}
+        onSave={handleSaveSignatories}
+        onPrintAfterSave={() => handlePrint()}
+        teacherInfo={{
+          name: identity.namaGuru,
+          nip: identity.nipGuru || '-',
+          mapel: `${identity.mapel} (${identity.kelasSemester})`
+        }}
+      />
     </div>
   );
 };

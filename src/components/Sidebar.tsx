@@ -277,7 +277,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
           <div className="px-2 pt-1 pb-0.5 text-center text-[10px] text-slate-400">
             <span className="block text-slate-500 font-medium">Pengembang Aplikasi:</span>
-            <span className="font-bold text-cyan-300">Heriansyah, S.Si., S.Pd., M.Pd</span>
+            <span className="font-bold text-cyan-300">HERIANSYAH, S.Si., S.Pd., M.Pd</span>
           </div>
         </div>
       </aside>

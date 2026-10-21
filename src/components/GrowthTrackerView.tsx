@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   TrendingUp,
   FileDown,
@@ -27,7 +27,8 @@ import {
   Plus,
   Compass,
   Eye,
-  EyeOff
+  EyeOff,
+  FileSignature
 } from 'lucide-react';
 import {
   AppSettings,
@@ -44,13 +45,16 @@ import {
   CYCLE_META
 } from '../utils/growthTrackerUtils';
 import { exportGrowthTrackerToWord, printDocumentElement } from '../utils/documentExport';
+import { SignatoryModal } from './SignatoryModal';
+import { saveSettings } from '../utils/storage';
 
 interface GrowthTrackerViewProps {
   supervisions: SupervisionRecord[];
   teachers: Teacher[];
   settings: AppSettings;
   onNavigateToSupervision?: (teacherId?: string) => void;
-  showToast?: (type: 'success' | 'info' | 'error', message: string) => void;
+  onUpdateSettings?: (newSettings: AppSettings) => void;
+  showToast?: (titleOrType: string, descOrMsg?: string, typeOrDetail?: any) => void;
 }
 
 type GrowthSubTab = 'matrix' | 'detail' | 'schools';
@@ -60,6 +64,7 @@ export const GrowthTrackerView: React.FC<GrowthTrackerViewProps> = ({
   teachers,
   settings,
   onNavigateToSupervision,
+  onUpdateSettings,
   showToast
 }) => {
   const [activeSubTab, setActiveSubTab] = useState<GrowthSubTab>('matrix');
@@ -67,6 +72,56 @@ export const GrowthTrackerView: React.FC<GrowthTrackerViewProps> = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [trajectoryFilter, setTrajectoryFilter] = useState<string>('all');
   const [isExportingWord, setIsExportingWord] = useState(false);
+  const [isSignatoryModalOpen, setIsSignatoryModalOpen] = useState(false);
+
+  // Normalize settings to ensure HERIANSYAH, S.Si., S.Pd., M.Pd without typo period
+  const [localSettings, setLocalSettings] = useState<AppSettings>(() => {
+    const isNeedsCorrection =
+      !settings.supervisorName ||
+      settings.supervisorName.includes('Heriansyah.') ||
+      settings.supervisorName.toLowerCase().includes('rustina') ||
+      settings.supervisorName === 'Heriansyah, S.Si., S.Pd., M.Pd';
+
+    if (isNeedsCorrection) {
+      return {
+        ...settings,
+        supervisorName: 'HERIANSYAH, S.Si., S.Pd., M.Pd'
+      };
+    }
+    return settings;
+  });
+
+  useEffect(() => {
+    const isNeedsCorrection =
+      !settings.supervisorName ||
+      settings.supervisorName.includes('Heriansyah.') ||
+      settings.supervisorName.toLowerCase().includes('rustina') ||
+      settings.supervisorName === 'Heriansyah, S.Si., S.Pd., M.Pd';
+
+    if (isNeedsCorrection) {
+      setLocalSettings({
+        ...settings,
+        supervisorName: 'HERIANSYAH, S.Si., S.Pd., M.Pd'
+      });
+    } else {
+      setLocalSettings(settings);
+    }
+  }, [settings]);
+
+  // Handle saving signatory updates
+  const handleSaveSignatories = (updatedSettings: AppSettings) => {
+    setLocalSettings(updatedSettings);
+    if (onUpdateSettings) {
+      onUpdateSettings(updatedSettings);
+    } else {
+      saveSettings(updatedSettings);
+    }
+    showToast?.(
+      'success',
+      'Pejabat Penandatangan Disimpan',
+      `Dokumen akan mencantumkan Pengawas: ${updatedSettings.supervisorName}`
+    );
+  };
 
   // Radar layer visibility toggles
   const [visibleLayers, setVisibleLayers] = useState<Record<CycleKey, boolean>>({
@@ -85,8 +140,8 @@ export const GrowthTrackerView: React.FC<GrowthTrackerViewProps> = ({
 
   // Compute cycle growth analysis based on compareMode
   const { comparisons, regionalGrowth } = useMemo(() => {
-    return calculateTeacherGrowthComparisons(supervisions, teachers, settings, compareMode);
-  }, [supervisions, teachers, settings, compareMode]);
+    return calculateTeacherGrowthComparisons(supervisions, teachers, localSettings, compareMode);
+  }, [supervisions, teachers, localSettings, compareMode]);
 
   // Selected teacher for deep-dive comparison
   const [selectedTeacherId, setSelectedTeacherId] = useState<string>(() => {
@@ -124,7 +179,7 @@ export const GrowthTrackerView: React.FC<GrowthTrackerViewProps> = ({
   const handleExportWord = (teacherIdOnly?: string) => {
     setIsExportingWord(true);
     try {
-      exportGrowthTrackerToWord(comparisons, regionalGrowth, settings, teacherIdOnly);
+      exportGrowthTrackerToWord(comparisons, regionalGrowth, localSettings, teacherIdOnly);
       showToast?.('success', 'Dokumen Evaluasi Multi-Siklus (.doc) berhasil diunduh.');
     } catch (err) {
       console.error(err);
@@ -135,13 +190,22 @@ export const GrowthTrackerView: React.FC<GrowthTrackerViewProps> = ({
   };
 
   // Handle Print / PDF
-  const handlePrint = () => {
-    const success = printDocumentElement(
-      'growth-tracker-print-area',
-      'Laporan Evaluasi Pertumbuhan Multi-Siklus Supervisi'
-    );
+  const handlePrint = (orientation?: 'portrait' | 'landscape') => {
+    const printOrientation = orientation || (activeSubTab === 'matrix' ? 'landscape' : 'portrait');
+    const docTitle =
+      activeSubTab === 'detail' && activeTeacherComparison
+        ? `Laporan Evaluasi Multi-Siklus - ${activeTeacherComparison.teacherName}`
+        : 'Rekapitulasi Evaluasi Pertumbuhan Multi-Siklus Supervisi';
+
+    const success = printDocumentElement('growth-tracker-print-area', docTitle, {
+      orientation: printOrientation
+    });
     if (success) {
-      showToast?.('info', 'Membuka jendela cetak / simpan PDF...');
+      showToast?.(
+        'info',
+        'Membuka Jendela Cetak / Simpan PDF...',
+        'Gunakan opsi Save as PDF / Cetak di browser Anda.'
+      );
     }
   };
 
@@ -166,7 +230,7 @@ export const GrowthTrackerView: React.FC<GrowthTrackerViewProps> = ({
             </div>
             {/* Unboxed metadata */}
             <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500 mt-2.5 font-medium">
-              <span>Pengawas: <strong>{settings.supervisorName}</strong></span>
+              <span>Pengawas: <strong className="text-slate-800 font-semibold">{localSettings.supervisorName}</strong></span>
               <span aria-hidden="true">·</span>
               <span>{regionalGrowth.totalTrackedTeachers} Guru Terpantau</span>
               <span aria-hidden="true">·</span>
@@ -182,6 +246,16 @@ export const GrowthTrackerView: React.FC<GrowthTrackerViewProps> = ({
 
           {/* Action Buttons */}
           <div className="flex flex-wrap items-center gap-2.5">
+            {/* Menu Input Yang Bertanda Tangan */}
+            <button
+              onClick={() => setIsSignatoryModalOpen(true)}
+              className="flex items-center gap-2 px-3.5 py-2 text-xs font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200/80 rounded-lg transition-colors shadow-2xs cursor-pointer"
+              title="Menu input pejabat yang bertanda tangan (Pengawas, Koordinator/Kepala Sekolah, Kota & Tanggal Pengesahan)"
+            >
+              <FileSignature className="w-4 h-4 text-blue-600" />
+              <span>Atur Penandatangan</span>
+            </button>
+
             <button
               onClick={() => handleExportWord(activeSubTab === 'detail' ? selectedTeacherId : undefined)}
               disabled={isExportingWord}
@@ -193,7 +267,7 @@ export const GrowthTrackerView: React.FC<GrowthTrackerViewProps> = ({
             </button>
 
             <button
-              onClick={handlePrint}
+              onClick={() => handlePrint()}
               className="flex items-center gap-2 px-4 py-2 text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg transition-colors shadow-sm shadow-emerald-600/20 cursor-pointer"
               title="Cetak format resmi atau simpan ke PDF"
             >
@@ -1331,14 +1405,14 @@ export const GrowthTrackerView: React.FC<GrowthTrackerViewProps> = ({
         <div style={{ padding: '16px', fontFamily: 'Times New Roman, serif', color: '#000000', lineHeight: '1.35' }}>
           {/* KOP RESMI DINAS */}
           <div style={{ textAlign: 'center', borderBottom: '3px double #000000', paddingBottom: '10px', marginBottom: '16px' }}>
-            <h2 style={{ margin: '0', fontSize: '14pt', textTransform: 'uppercase', fontWeight: 'bold', letterSpacing: '0.5px' }}>
+            <h2 style={{ margin: '0', fontSize: '13pt', textTransform: 'uppercase', fontWeight: 'bold', letterSpacing: '0.5px' }}>
               PEMERINTAH DAERAH DINAS PENDIDIKAN
             </h2>
-            <h3 style={{ margin: '2px 0', fontSize: '12pt', textTransform: 'uppercase', fontWeight: 'bold' }}>
+            <h3 style={{ margin: '2px 0', fontSize: '11pt', textTransform: 'uppercase', fontWeight: 'bold' }}>
               KOORDINATOR PENGAWAS SEKOLAH MENENGAH PERTAMA
             </h3>
-            <p style={{ margin: '0', fontSize: '9pt', fontStyle: 'italic', color: '#333333' }}>
-              {settings.schoolAddress || 'Gedung Pusat Pengawas Pembina Pendidikan Terpadu'} · Kota {settings.schoolCity}
+            <p style={{ margin: '0', fontSize: '8.5pt', fontStyle: 'italic', color: '#333333' }}>
+              {localSettings.schoolAddress || 'Gedung Pusat Pengawas Pembina Pendidikan Terpadu'} · Kota {localSettings.schoolCity || 'Kota Pendidikan'}
             </p>
           </div>
 
@@ -1346,29 +1420,29 @@ export const GrowthTrackerView: React.FC<GrowthTrackerViewProps> = ({
             /* PRINT LAPORAN DETAIL GURU TERPILIH DENGAN RADAR & 12 INDIKATOR */
             <div>
               {/* JUDUL LAPORAN */}
-              <div style={{ textAlign: 'center', marginBottom: '16px' }}>
+              <div style={{ textAlign: 'center', marginBottom: '14px' }}>
                 <h3 style={{ margin: '0', fontSize: '12pt', textDecoration: 'underline', textTransform: 'uppercase', fontWeight: 'bold' }}>
                   LAPORAN EVALUASI PERKEMBANGAN KOMPETENSI MULTI-SIKLUS GURU
                 </h3>
-                <p style={{ margin: '3px 0 0', fontSize: '9.5pt', fontStyle: 'italic' }}>
+                <p style={{ margin: '3px 0 0', fontSize: '9pt', fontStyle: 'italic' }}>
                   Komparasi {activeTeacherComparison.baselineCycleName} vs {activeTeacherComparison.targetCycleName} &amp; Evolusi 4 Tahapan Siklus Supervisi
                 </p>
               </div>
 
               {/* IDENTITAS GURU & PENGAWAS */}
-              <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '14px', fontSize: '9.5pt' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '12px', fontSize: '9pt' }}>
                 <tbody>
                   <tr>
                     <td style={{ width: '22%', fontWeight: 'bold', padding: '4px 6px', border: '1px solid #000' }}>Nama Guru</td>
                     <td style={{ width: '38%', padding: '4px 6px', border: '1px solid #000', fontWeight: 'bold' }}>{activeTeacherComparison.teacherName}</td>
                     <td style={{ width: '20%', fontWeight: 'bold', padding: '4px 6px', border: '1px solid #000' }}>Pengawas Sekolah</td>
-                    <td style={{ width: '20%', padding: '4px 6px', border: '1px solid #000', fontWeight: 'bold' }}>{settings.supervisorName}</td>
+                    <td style={{ width: '20%', padding: '4px 6px', border: '1px solid #000', fontWeight: 'bold' }}>{localSettings.supervisorName}</td>
                   </tr>
                   <tr>
                     <td style={{ fontWeight: 'bold', padding: '4px 6px', border: '1px solid #000' }}>NIP Guru</td>
                     <td style={{ padding: '4px 6px', border: '1px solid #000' }}>{activeTeacherComparison.nip}</td>
                     <td style={{ fontWeight: 'bold', padding: '4px 6px', border: '1px solid #000' }}>NIP Pengawas</td>
-                    <td style={{ padding: '4px 6px', border: '1px solid #000' }}>{settings.supervisorNip}</td>
+                    <td style={{ padding: '4px 6px', border: '1px solid #000' }}>{localSettings.supervisorNip}</td>
                   </tr>
                   <tr>
                     <td style={{ fontWeight: 'bold', padding: '4px 6px', border: '1px solid #000' }}>Mata Pelajaran / Kelas</td>
@@ -1385,19 +1459,19 @@ export const GrowthTrackerView: React.FC<GrowthTrackerViewProps> = ({
                 </tbody>
               </table>
 
-              {/* REKAPITULASI 4 SIKLUS */}
-              <h4 style={{ margin: '12px 0 6px', fontSize: '10pt', fontWeight: 'bold', textTransform: 'uppercase' }}>
+              {/* I. REKAPITULASI 4 SIKLUS */}
+              <h4 style={{ margin: '10px 0 5px', fontSize: '9.5pt', fontWeight: 'bold', textTransform: 'uppercase' }}>
                 I. Rekapitulasi Capaian Skor Guru Lintas 4 Tahapan Siklus
               </h4>
-              <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '14px', fontSize: '9pt', textAlign: 'center' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '12px', fontSize: '8.5pt', textAlign: 'center' }}>
                 <thead>
                   <tr style={{ backgroundColor: '#f1f5f9' }}>
-                    <th style={{ border: '1px solid #000', padding: '5px' }}>Tahapan Siklus</th>
-                    <th style={{ border: '1px solid #000', padding: '5px' }}>Fokus Pelaksanaan</th>
-                    <th style={{ border: '1px solid #000', padding: '5px' }}>Tanggal Pelaksanaan</th>
-                    <th style={{ border: '1px solid #000', padding: '5px' }}>Skor Akhir</th>
-                    <th style={{ border: '1px solid #000', padding: '5px' }}>Predikat Mutu</th>
-                    <th style={{ border: '1px solid #000', padding: '5px' }}>Pertumbuhan Poin</th>
+                    <th style={{ border: '1px solid #000', padding: '4px' }}>Tahapan Siklus</th>
+                    <th style={{ border: '1px solid #000', padding: '4px' }}>Fokus Pelaksanaan</th>
+                    <th style={{ border: '1px solid #000', padding: '4px' }}>Tanggal Pelaksanaan</th>
+                    <th style={{ border: '1px solid #000', padding: '4px' }}>Skor Akhir</th>
+                    <th style={{ border: '1px solid #000', padding: '4px' }}>Predikat Mutu</th>
+                    <th style={{ border: '1px solid #000', padding: '4px' }}>Pertumbuhan Poin</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -1436,11 +1510,139 @@ export const GrowthTrackerView: React.FC<GrowthTrackerViewProps> = ({
                 </tbody>
               </table>
 
-              {/* TABEL KOMPARASI 12 INDIKATOR */}
-              <h4 style={{ margin: '14px 0 6px', fontSize: '10pt', fontWeight: 'bold', textTransform: 'uppercase' }}>
-                II. Komparasi Rinci 12 Indikator Observasi Kelas Lintas 4 Siklus (Skala 1.0 - 4.0)
+              {/* II. VISUALISASI KURVA RADAR KOMPETENSI 5 DIMENSI */}
+              <div style={{ pageBreakInside: 'avoid', margin: '10px 0 12px', textAlign: 'center' }}>
+                <h4 style={{ margin: '0 0 6px', fontSize: '9.5pt', fontWeight: 'bold', textTransform: 'uppercase' }}>
+                  II. Visualisasi Kurva Radar Pertumbuhan Kompetensi 5 Dimensi
+                </h4>
+                <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', margin: '2px auto' }}>
+                  <svg viewBox="0 0 400 400" style={{ width: '270px', height: '270px', display: 'block', margin: '0 auto' }}>
+                    {/* Concentric grid pentagons */}
+                    {[0.2, 0.4, 0.6, 0.8, 1.0].map((level, idx) => {
+                      const r = 120 * level;
+                      const center = 200;
+                      const angles = [0, 72, 144, 216, 288].map((a) => (a - 90) * (Math.PI / 180));
+                      const pts = angles
+                        .map((angle) => {
+                          const x = center + r * Math.cos(angle);
+                          const y = center + r * Math.sin(angle);
+                          return `${x},${y}`;
+                        })
+                        .join(' ');
+
+                      return (
+                        <g key={level}>
+                          <polygon
+                            points={pts}
+                            fill={idx % 2 === 0 ? '#f8fafc' : '#ffffff'}
+                            stroke="#cbd5e1"
+                            strokeWidth="1"
+                          />
+                          <text
+                            x={center + 3}
+                            y={center - r + 9}
+                            fontSize="8"
+                            fill="#64748b"
+                            fontWeight="bold"
+                          >
+                            {Math.round(level * 100)}%
+                          </text>
+                        </g>
+                      );
+                    })}
+
+                    {/* Axis lines */}
+                    {[0, 72, 144, 216, 288].map((angleDeg, i) => {
+                      const angle = (angleDeg - 90) * (Math.PI / 180);
+                      const x2 = 200 + 120 * Math.cos(angle);
+                      const y2 = 200 + 120 * Math.sin(angle);
+                      return (
+                        <line
+                          key={i}
+                          x1="200"
+                          y1="200"
+                          x2={x2}
+                          y2={y2}
+                          stroke="#94a3b8"
+                          strokeWidth="1"
+                          strokeDasharray="2,2"
+                        />
+                      );
+                    })}
+
+                    {/* Labels */}
+                    {[
+                      { label: 'Pra-Observasi', x: 200, y: 55, anchor: 'middle' },
+                      { label: 'Pendahuluan', x: 330, y: 155, anchor: 'start' },
+                      { label: 'Kegiatan Inti', x: 285, y: 340, anchor: 'start' },
+                      { label: 'Penutup / Formatif', x: 115, y: 340, anchor: 'end' },
+                      { label: 'Refleksi & RTL', x: 70, y: 155, anchor: 'end' }
+                    ].map((dim, i) => (
+                      <text
+                        key={i}
+                        x={dim.x}
+                        y={dim.y}
+                        textAnchor={dim.anchor as any}
+                        fontSize="9"
+                        fontWeight="bold"
+                        fill="#1e293b"
+                      >
+                        {dim.label}
+                      </text>
+                    ))}
+
+                    {/* 4 Cycle Polygons */}
+                    {(['s1', 's2', 's3', 'sl'] as CycleKey[]).map((cKey) => {
+                      const colors: Record<CycleKey, { stroke: string; fill: string; width: number; dash?: string }> = {
+                        s1: { stroke: '#64748b', fill: 'rgba(100, 116, 139, 0.15)', width: 1.5, dash: '3,3' },
+                        s2: { stroke: '#16a34a', fill: 'rgba(22, 163, 74, 0.2)', width: 2 },
+                        s3: { stroke: '#9333ea', fill: 'rgba(147, 51, 234, 0.2)', width: 2 },
+                        sl: { stroke: '#d97706', fill: 'rgba(217, 119, 6, 0.25)', width: 2.5 }
+                      };
+                      const dim = activeTeacherComparison.cycles[cKey].dimensions;
+                      const values = [
+                        dim.praObservasi / 100,
+                        dim.pendahuluan / 100,
+                        dim.inti / 100,
+                        dim.penutup / 100,
+                        dim.refleksiRtl / 100
+                      ];
+                      const angles = [0, 72, 144, 216, 288].map((a) => (a - 90) * (Math.PI / 180));
+                      const pts = values
+                        .map((val, i) => {
+                          const r = 120 * Math.max(0.1, Math.min(1.0, val));
+                          const x = 200 + r * Math.cos(angles[i]);
+                          const y = 200 + r * Math.sin(angles[i]);
+                          return `${x},${y}`;
+                        })
+                        .join(' ');
+
+                      return (
+                        <polygon
+                          key={cKey}
+                          points={pts}
+                          fill={colors[cKey].fill}
+                          stroke={colors[cKey].stroke}
+                          strokeWidth={colors[cKey].width}
+                          strokeDasharray={colors[cKey].dash}
+                        />
+                      );
+                    })}
+                  </svg>
+                </div>
+                <div style={{ fontSize: '8pt', color: '#1e293b', display: 'flex', justifyContent: 'center', gap: '14px', marginTop: '4px' }}>
+                  <span><span style={{ color: '#64748b', fontWeight: 'bold' }}>--- </span> Siklus 1: Diagnostik Awal</span>
+                  <span><span style={{ color: '#16a34a', fontWeight: 'bold' }}>━━ </span> Siklus 2: Evaluasi Bimbingan</span>
+                  <span><span style={{ color: '#9333ea', fontWeight: 'bold' }}>━━ </span> Siklus 3: Konsolidasi Kombel</span>
+                  <span><span style={{ color: '#d97706', fontWeight: 'bold' }}>━━ </span> Siklus Lanjutan: Pemantauan RTL</span>
+                </div>
+              </div>
+
+              {/* III. TABEL KOMPARASI 12 INDIKATOR */}
+              <h4 style={{ margin: '10px 0 5px', fontSize: '9.5pt', fontWeight: 'bold', textTransform: 'uppercase' }}>
+                III. Komparasi Rinci 12 Indikator Observasi Kelas Lintas 4 Siklus (Skala 1.0 - 4.0)
               </h4>
-              <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '14px', fontSize: '8.5pt' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '12px', fontSize: '8pt' }}>
                 <thead>
                   <tr style={{ backgroundColor: '#f1f5f9' }}>
                     <th style={{ border: '1px solid #000', padding: '4px', textAlign: 'center', width: '4%' }}>No</th>
@@ -1478,9 +1680,9 @@ export const GrowthTrackerView: React.FC<GrowthTrackerViewProps> = ({
                 </tbody>
               </table>
 
-              {/* INTERVENSI & REKOMENDASI */}
-              <div style={{ pageBreakInside: 'avoid', marginTop: '12px', border: '1px solid #000', padding: '8px 10px', fontSize: '9pt' }}>
-                <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>Rekomendasi Bimbingan Klinis Pengawas Pembina:</div>
+              {/* IV. INTERVENSI & REKOMENDASI */}
+              <div style={{ pageBreakInside: 'avoid', marginTop: '10px', border: '1px solid #000', padding: '8px 10px', fontSize: '8.5pt' }}>
+                <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>IV. Rekomendasi Bimbingan Klinis Pengawas Pembina:</div>
                 <div style={{ color: '#1e293b' }}>{activeTeacherComparison.postCycleRecommendation}</div>
               </div>
             </div>
@@ -1488,27 +1690,27 @@ export const GrowthTrackerView: React.FC<GrowthTrackerViewProps> = ({
             /* PRINT REKAPITULASI MATRIKS SELURUH GURU */
             <div>
               {/* JUDUL RESMI */}
-              <div style={{ textAlign: 'center', marginBottom: '16px' }}>
+              <div style={{ textAlign: 'center', marginBottom: '14px' }}>
                 <h3 style={{ margin: '0', fontSize: '12pt', textDecoration: 'underline', textTransform: 'uppercase', fontWeight: 'bold' }}>
                   LAPORAN EVALUASI PERTUMBUHAN MULTI-SIKLUS GURU (SIKLUS 1, 2, 3, DAN LANJUTAN)
                 </h3>
-                <p style={{ margin: '3px 0 0', fontSize: '9.5pt', fontStyle: 'italic' }}>
+                <p style={{ margin: '3px 0 0', fontSize: '9pt', fontStyle: 'italic' }}>
                   Tahun Ajaran 2026/2027 · Evaluasi Berkelanjutan Berbasis 12 Indikator Kurikulum Merdeka
                 </p>
               </div>
 
               {/* IDENTITAS PENGAWAS & RINGKASAN */}
-              <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '14px', fontSize: '9.5pt' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '12px', fontSize: '9pt' }}>
                 <tbody>
                   <tr>
                     <td style={{ width: '25%', fontWeight: 'bold', padding: '4px 6px', border: '1px solid #000000' }}>Pengawas Sekolah</td>
-                    <td style={{ width: '40%', padding: '4px 6px', border: '1px solid #000000', fontWeight: 'bold' }}>{settings.supervisorName}</td>
+                    <td style={{ width: '40%', padding: '4px 6px', border: '1px solid #000000', fontWeight: 'bold' }}>{localSettings.supervisorName}</td>
                     <td style={{ width: '20%', fontWeight: 'bold', padding: '4px 6px', border: '1px solid #000000' }}>Guru Terpantau</td>
                     <td style={{ width: '15%', padding: '4px 6px', border: '1px solid #000000', textAlign: 'center', fontWeight: 'bold' }}>{regionalGrowth.totalTrackedTeachers} Guru</td>
                   </tr>
                   <tr>
                     <td style={{ fontWeight: 'bold', padding: '4px 6px', border: '1px solid #000000' }}>NIP Pengawas</td>
-                    <td style={{ padding: '4px 6px', border: '1px solid #000000' }}>{settings.supervisorNip}</td>
+                    <td style={{ padding: '4px 6px', border: '1px solid #000000' }}>{localSettings.supervisorNip}</td>
                     <td style={{ fontWeight: 'bold', padding: '4px 6px', border: '1px solid #000000' }}>Rerata Kenaikan</td>
                     <td style={{ padding: '4px 6px', border: '1px solid #000000', textAlign: 'center', fontWeight: 'bold', color: '#15803d' }}>+{regionalGrowth.averageGrowthDelta} Poin</td>
                   </tr>
@@ -1516,21 +1718,21 @@ export const GrowthTrackerView: React.FC<GrowthTrackerViewProps> = ({
               </table>
 
               {/* TABEL REKAPITULASI PERTUMBUHAN SELURUH GURU LINTAS 4 SIKLUS */}
-              <h4 style={{ margin: '14px 0 6px', fontSize: '10.5pt', fontWeight: 'bold', textTransform: 'uppercase' }}>
+              <h4 style={{ margin: '12px 0 5px', fontSize: '10pt', fontWeight: 'bold', textTransform: 'uppercase' }}>
                 I. Matriks Pertumbuhan Nilai Guru Lintas 4 Siklus Supervisi
               </h4>
-              <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '14px', fontSize: '9pt' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '14px', fontSize: '8.5pt' }}>
                 <thead>
                   <tr style={{ backgroundColor: '#f1f5f9' }}>
-                    <th style={{ border: '1px solid #000000', padding: '5px', textAlign: 'center', width: '4%' }}>No</th>
-                    <th style={{ border: '1px solid #000000', padding: '5px', width: '24%' }}>Nama Guru &amp; NIP</th>
-                    <th style={{ border: '1px solid #000000', padding: '5px', width: '15%' }}>Mata Pelajaran</th>
-                    <th style={{ border: '1px solid #000000', padding: '5px', width: '17%' }}>Satuan Pendidikan</th>
-                    <th style={{ border: '1px solid #000000', padding: '5px', textAlign: 'center', width: '8%' }}>Siklus 1</th>
-                    <th style={{ border: '1px solid #000000', padding: '5px', textAlign: 'center', width: '8%' }}>Siklus 2</th>
-                    <th style={{ border: '1px solid #000000', padding: '5px', textAlign: 'center', width: '8%' }}>Siklus 3</th>
-                    <th style={{ border: '1px solid #000000', padding: '5px', textAlign: 'center', width: '8%' }}>Lanjutan</th>
-                    <th style={{ border: '1px solid #000000', padding: '5px', textAlign: 'center', width: '10%' }}>Delta Total</th>
+                    <th style={{ border: '1px solid #000000', padding: '4px', textAlign: 'center', width: '4%' }}>No</th>
+                    <th style={{ border: '1px solid #000000', padding: '4px', width: '24%' }}>Nama Guru &amp; NIP</th>
+                    <th style={{ border: '1px solid #000000', padding: '4px', width: '15%' }}>Mata Pelajaran</th>
+                    <th style={{ border: '1px solid #000000', padding: '4px', width: '17%' }}>Satuan Pendidikan</th>
+                    <th style={{ border: '1px solid #000000', padding: '4px', textAlign: 'center', width: '8%' }}>Siklus 1</th>
+                    <th style={{ border: '1px solid #000000', padding: '4px', textAlign: 'center', width: '8%' }}>Siklus 2</th>
+                    <th style={{ border: '1px solid #000000', padding: '4px', textAlign: 'center', width: '8%' }}>Siklus 3</th>
+                    <th style={{ border: '1px solid #000000', padding: '4px', textAlign: 'center', width: '8%' }}>Lanjutan</th>
+                    <th style={{ border: '1px solid #000000', padding: '4px', textAlign: 'center', width: '10%' }}>Delta Total</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -1539,7 +1741,7 @@ export const GrowthTrackerView: React.FC<GrowthTrackerViewProps> = ({
                       <td style={{ border: '1px solid #000000', padding: '4px', textAlign: 'center' }}>{i + 1}</td>
                       <td style={{ border: '1px solid #000000', padding: '4px' }}>
                         <strong>{c.teacherName}</strong><br />
-                        <span style={{ fontSize: '8pt', color: '#475569' }}>NIP: {c.nip}</span>
+                        <span style={{ fontSize: '7.5pt', color: '#475569' }}>NIP: {c.nip}</span>
                       </td>
                       <td style={{ border: '1px solid #000000', padding: '4px' }}>{c.mapel}</td>
                       <td style={{ border: '1px solid #000000', padding: '4px' }}>{c.satuanPendidikan}</td>
@@ -1558,28 +1760,53 @@ export const GrowthTrackerView: React.FC<GrowthTrackerViewProps> = ({
           )}
 
           {/* LEMBAR PENGESAHAN DUA KOLOM */}
-          <table style={{ width: '100%', border: 'none', marginTop: '24px', fontSize: '9.5pt', pageBreakInside: 'avoid' }}>
+          <table style={{ width: '100%', border: 'none', marginTop: '20px', fontSize: '9pt', pageBreakInside: 'avoid' }}>
             <tbody>
               <tr>
                 <td style={{ width: '50%', textAlign: 'left', verticalAlign: 'top', border: 'none' }}>
                   Mengetahui,<br />
-                  Koordinator Pengawas / Kepala Dinas Pendidikan<br />
-                  <div style={{ height: '60px' }} />
-                  <strong><u>{settings.pengawasPembinaName || 'Dr. Hj. Endang Sulastri, M.Pd.'}</u></strong><br />
-                  NIP. {settings.pengawasPembinaNip || '19650410 199103 2 001'}
+                  {localSettings.pengawasPembinaRole || 'Koordinator Pengawas / Kepala Dinas Pendidikan'}<br />
+                  <div style={{ height: '55px' }} />
+                  <strong><u>{localSettings.pengawasPembinaName || 'Dr. Hj. Endang Sulastri, M.Pd.'}</u></strong><br />
+                  NIP. {localSettings.pengawasPembinaNip || '19650410 199103 2 001'}
                 </td>
                 <td style={{ width: '50%', textAlign: 'left', verticalAlign: 'top', border: 'none', paddingLeft: '40px' }}>
-                  {settings.schoolCity || 'Kota Pendidikan'}, {new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}<br />
-                  Pengawas Sekolah Pembina,<br />
-                  <div style={{ height: '60px' }} />
-                  <strong><u>{settings.supervisorName}</u></strong><br />
-                  NIP. {settings.supervisorNip}
+                  {localSettings.schoolCity || 'Kota Pendidikan'},{' '}
+                  {localSettings.documentDate ||
+                    new Date().toLocaleDateString('id-ID', {
+                      day: 'numeric',
+                      month: 'long',
+                      year: 'numeric'
+                    })}<br />
+                  {localSettings.supervisorRole || 'Pengawas Sekolah Pembina'},<br />
+                  <div style={{ height: '55px' }} />
+                  <strong><u>{localSettings.supervisorName}</u></strong><br />
+                  NIP. {localSettings.supervisorNip}
                 </td>
               </tr>
             </tbody>
           </table>
         </div>
       </div>
+
+      {/* MODAL INPUT & PENGATURAN YANG BERTANDA TANGAN */}
+      <SignatoryModal
+        isOpen={isSignatoryModalOpen}
+        onClose={() => setIsSignatoryModalOpen(false)}
+        settings={localSettings}
+        onSave={handleSaveSignatories}
+        onPrintAfterSave={() => handlePrint()}
+        teacherInfo={
+          activeSubTab === 'detail' && activeTeacherComparison
+            ? {
+                name: activeTeacherComparison.teacherName,
+                nip: activeTeacherComparison.nip,
+                mapel: `${activeTeacherComparison.mapel} (${activeTeacherComparison.kelas})`
+              }
+            : undefined
+        }
+      />
     </div>
   );
 };
+

@@ -109,7 +109,7 @@ export const PMManagementView: React.FC<PMManagementViewProps> = ({
       const defaultAssessorName =
         currentUser?.name ||
         settings?.supervisorName ||
-        'Heriansyah., S.Si., S.Pd., M.Pd';
+        'HERIANSYAH, S.Si., S.Pd., M.Pd';
 
       const defaultAssessorNip =
         currentUser?.nip ||

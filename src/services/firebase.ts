@@ -122,7 +122,7 @@ export async function signInWithGoogle(): Promise<UserRoleProfile> {
     const defaultProfile: UserRoleProfile = {
       uid: user.uid,
       email: user.email || '',
-      name: user.displayName || 'Heriansyah., S.Si., S.Pd., M.Pd',
+      name: user.displayName || 'HERIANSYAH, S.Si., S.Pd., M.Pd',
       role: user.email?.includes('heriansyah') ? 'pengawas' : 'kepala_sekolah',
       nip: '19820415 200801 1 007',
       schoolName: 'SMP Negeri 1 Merdeka Nusantara',
@@ -151,7 +151,7 @@ export async function loginWithEmail(email: string, pass: string): Promise<UserR
     const profile: UserRoleProfile = {
       uid: res.user.uid,
       email: res.user.email || email,
-      name: isSupervisor ? 'Heriansyah., S.Si., S.Pd., M.Pd' : email.split('@')[0],
+      name: isSupervisor ? 'HERIANSYAH, S.Si., S.Pd., M.Pd' : email.split('@')[0],
       role: isSupervisor ? 'pengawas' : 'kepala_sekolah',
       nip: isSupervisor ? '19820415 200801 1 007' : '',
       schoolName: isSupervisor ? 'Dinas Pendidikan / Seluruh Sekolah Binaan' : 'SMP Negeri 1 Merdeka Nusantara',
@@ -326,9 +326,12 @@ export async function fetchCloudSettings(): Promise<AppSettings | null> {
         !data.supervisorName ||
         data.supervisorName.toLowerCase().includes('rustina') ||
         data.supervisorName.toLowerCase().includes('suryanto') ||
+        data.supervisorName.includes('Heriansyah.') ||
+        data.supervisorName.includes('HERIANSYAH.') ||
+        data.supervisorName === 'Heriansyah, S.Si., S.Pd., M.Pd' ||
         data.supervisorNip?.replace(/\s+/g, '') === '196812311995122017'
       ) {
-        data.supervisorName = 'Heriansyah., S.Si., S.Pd., M.Pd';
+        data.supervisorName = 'HERIANSYAH, S.Si., S.Pd., M.Pd';
         data.supervisorNip = '19820415 200801 1 007';
         data.supervisorRole = 'Pengawas Sekolah';
         setDoc(doc(db, 'settings', 'app_config'), data).catch(() => {});

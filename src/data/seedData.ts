@@ -10,11 +10,12 @@ export const DEFAULT_SETTINGS: AppSettings = {
   schoolNpsn: '20108921',
   schoolCity: 'Kota Pendidikan',
   schoolAddress: 'Jl. Pemuda No. 45, Kompleks Pendidikan Terpadu',
-  supervisorName: 'Heriansyah., S.Si., S.Pd., M.Pd',
+  supervisorName: 'HERIANSYAH, S.Si., S.Pd., M.Pd',
   supervisorNip: '19820415 200801 1 007',
   supervisorRole: 'Pengawas Sekolah',
   pengawasPembinaName: 'Dr. Hj. Endang Sulastri, M.Pd.',
-  pengawasPembinaNip: '19650410 199103 2 001'
+  pengawasPembinaNip: '19650410 199103 2 001',
+  pengawasPembinaRole: 'Koordinator Pengawas / Kepala Dinas Pendidikan'
 };
 
 export const SEED_TEACHERS: Teacher[] = [
@@ -85,7 +86,7 @@ export const SEED_SUPERVISIONS: SupervisionRecord[] = [
     identity: {
       namaGuru: 'Siti Rahmawati, M.Pd.',
       nipGuru: '19881120 201101 2 015',
-      namaSupervisor: 'Heriansyah., S.Si., S.Pd., M.Pd',
+      namaSupervisor: 'HERIANSYAH, S.Si., S.Pd., M.Pd',
       nipSupervisor: '19820415 200801 1 007',
       jabatanSupervisor: 'Pengawas Sekolah',
       mapel: 'Bahasa Indonesia',
@@ -169,7 +170,7 @@ export const SEED_SUPERVISIONS: SupervisionRecord[] = [
     identity: {
       namaGuru: 'Ahmad Fauzi, S.Pd.',
       nipGuru: '19850714 201001 1 012',
-      namaSupervisor: 'Heriansyah., S.Si., S.Pd., M.Pd',
+      namaSupervisor: 'HERIANSYAH, S.Si., S.Pd., M.Pd',
       nipSupervisor: '19820415 200801 1 007',
       jabatanSupervisor: 'Pengawas Sekolah',
       mapel: 'Matematika',
@@ -253,7 +254,7 @@ export const SEED_SUPERVISIONS: SupervisionRecord[] = [
     identity: {
       namaGuru: 'Budi Santoso, S.Pd.',
       nipGuru: '19920315 201903 1 008',
-      namaSupervisor: 'Heriansyah., S.Si., S.Pd., M.Pd',
+      namaSupervisor: 'HERIANSYAH, S.Si., S.Pd., M.Pd',
       nipSupervisor: '19820415 200801 1 007',
       jabatanSupervisor: 'Pengawas Sekolah',
       mapel: 'Ilmu Pengetahuan Alam (IPA)',

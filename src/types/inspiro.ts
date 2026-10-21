@@ -121,6 +121,8 @@ export interface AppSettings {
   supervisorRole: string;
   pengawasPembinaName: string;
   pengawasPembinaNip: string;
+  pengawasPembinaRole?: string;
+  documentDate?: string;
 }
 
 export interface AnalysisBreakdown {

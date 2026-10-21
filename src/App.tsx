@@ -142,9 +142,12 @@ export default function App() {
           !cloudSettings.supervisorName ||
           cloudSettings.supervisorName.toLowerCase().includes('rustina') ||
           cloudSettings.supervisorName.toLowerCase().includes('suryanto') ||
+          cloudSettings.supervisorName.includes('Heriansyah.') ||
+          cloudSettings.supervisorName.includes('HERIANSYAH.') ||
+          cloudSettings.supervisorName === 'Heriansyah, S.Si., S.Pd., M.Pd' ||
           cloudSettings.supervisorNip?.replace(/\s+/g, '') === '196812311995122017'
         ) {
-          cloudSettings.supervisorName = 'Heriansyah., S.Si., S.Pd., M.Pd';
+          cloudSettings.supervisorName = 'HERIANSYAH, S.Si., S.Pd., M.Pd';
           cloudSettings.supervisorNip = '19820415 200801 1 007';
           cloudSettings.supervisorRole = 'Pengawas Sekolah';
           syncSettingsToCloud(cloudSettings).catch(() => {});
@@ -215,7 +218,7 @@ export default function App() {
         const profile: UserRoleProfile = {
           uid: fbUser.uid,
           email: fbUser.email || '',
-          name: fbUser.displayName || (fbUser.email?.includes('heriansyah') ? 'Heriansyah., S.Si., S.Pd., M.Pd' : 'Kepala Sekolah Binaan'),
+          name: fbUser.displayName || (fbUser.email?.includes('heriansyah') ? 'HERIANSYAH, S.Si., S.Pd., M.Pd' : 'Kepala Sekolah Binaan'),
           role: fbUser.email?.includes('heriansyah') ? 'pengawas' : 'kepala_sekolah',
           schoolName: 'SMP Negeri 1 Merdeka Nusantara',
           createdAt: new Date().toISOString()
@@ -550,6 +553,7 @@ export default function App() {
               supervision={printRecord}
               settings={settings}
               onBack={handleClosePrint}
+              onUpdateSettings={handleSaveSettings}
             />
           ) : (
             <>
@@ -659,6 +663,7 @@ export default function App() {
                   settings={settings}
                   onNavigateToSupervision={(school) => handleStartNewSupervision()}
                   onNavigateToPM={() => setCurrentTab('pm-reports')}
+                  onUpdateSettings={handleSaveSettings}
                   showToast={showToast}
                 />
               )}
@@ -670,6 +675,7 @@ export default function App() {
                   teachers={teachers}
                   settings={settings}
                   onNavigateToSupervision={(teacherId) => handleStartNewSupervision(teacherId)}
+                  onUpdateSettings={handleSaveSettings}
                   showToast={showToast}
                 />
               )}

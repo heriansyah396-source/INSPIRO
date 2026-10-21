@@ -535,7 +535,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
           <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80 space-y-1.5">
             <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block">Pengembang Sistem</span>
-            <div className="font-extrabold text-slate-900 text-sm">Heriansyah, S.Si., S.Pd., M.Pd</div>
+            <div className="font-extrabold text-slate-900 text-sm">HERIANSYAH, S.Si., S.Pd., M.Pd</div>
             <p className="text-[11px] text-slate-600 leading-relaxed">
               Pengawas Sekolah & Pengembang Aplikasi Penjaminan Mutu Supervisi Akademik Kurikulum Merdeka.
             </p>

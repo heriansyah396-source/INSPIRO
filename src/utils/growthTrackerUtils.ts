@@ -257,7 +257,7 @@ export function calculateTeacherGrowthComparisons(
         identity: {
           namaGuru: teacher.nama,
           nipGuru: teacher.nip,
-          namaSupervisor: settings?.supervisorName || 'Heriansyah., S.Si., S.Pd., M.Pd',
+          namaSupervisor: settings?.supervisorName || 'HERIANSYAH, S.Si., S.Pd., M.Pd',
           nipSupervisor: settings?.supervisorNip || '19820415 200801 1 007',
           jabatanSupervisor: 'Pengawas Sekolah',
           mapel: teacher.mapel,

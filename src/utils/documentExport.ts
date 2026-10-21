@@ -22,7 +22,13 @@ import { QualityMapAnalysis } from './qualityMapUtils';
  * Copies the designated document DOM node into an isolated iframe to bypass
  * parent flexbox wrappers, viewports, and sidebar offsets, preventing blank pages.
  */
-export function printDocumentElement(elementId: string, documentTitle?: string): boolean {
+export function printDocumentElement(
+  elementId: string,
+  documentTitle?: string,
+  options?: {
+    orientation?: 'portrait' | 'landscape';
+  }
+): boolean {
   if (typeof window === 'undefined') return false;
 
   const targetElem = document.getElementById(elementId);
@@ -52,8 +58,8 @@ export function printDocumentElement(elementId: string, documentTitle?: string):
   iframe.style.position = 'fixed';
   iframe.style.top = '-9999px';
   iframe.style.left = '-9999px';
-  iframe.style.width = '1024px';
-  iframe.style.height = '1440px';
+  iframe.style.width = options?.orientation === 'landscape' ? '1440px' : '1024px';
+  iframe.style.height = options?.orientation === 'landscape' ? '1024px' : '1440px';
   iframe.style.border = 'none';
   iframe.style.zIndex = '-9999';
   iframe.style.opacity = '0';
@@ -74,6 +80,8 @@ export function printDocumentElement(elementId: string, documentTitle?: string):
     styles += node.outerHTML;
   });
 
+  const isLandscape = options?.orientation === 'landscape';
+
   doc.open();
   doc.write(`
     <!DOCTYPE html>
@@ -85,18 +93,18 @@ export function printDocumentElement(elementId: string, documentTitle?: string):
       ${styles}
       <style>
         @page {
-          size: A4 portrait;
-          margin: 1.5cm 1.2cm 1.5cm 1.2cm;
+          size: ${isLandscape ? 'A4 landscape' : 'A4 portrait'};
+          margin: ${isLandscape ? '12mm 10mm 12mm 10mm' : '14mm 12mm 14mm 12mm'};
         }
         *, *::before, *::after {
           box-sizing: border-box !important;
         }
         html, body {
           background: #ffffff !important;
-          color: #0f172a !important;
+          color: #000000 !important;
           font-family: 'Times New Roman', 'Liberation Serif', Times, serif !important;
-          font-size: 10pt !important;
-          line-height: 1.4 !important;
+          font-size: 9.5pt !important;
+          line-height: 1.35 !important;
           margin: 0 !important;
           padding: 0 !important;
           width: 100% !important;
@@ -134,20 +142,21 @@ export function printDocumentElement(elementId: string, documentTitle?: string):
           page-break-after: auto !important;
         }
         th, td {
-          border: 1px solid #1e293b !important;
-          padding: 5px 7px !important;
-          font-size: 9pt !important;
+          border: 1px solid #000000 !important;
+          padding: 4px 6px !important;
+          font-size: 8.5pt !important;
           vertical-align: middle !important;
           -webkit-print-color-adjust: exact !important;
           print-color-adjust: exact !important;
         }
         th {
           background-color: #f1f5f9 !important;
-          color: #0f172a !important;
+          color: #000000 !important;
           font-weight: bold !important;
         }
-        .print-avoid-break {
+        .print-avoid-break, .signature-block, .avoid-break {
           page-break-inside: avoid !important;
+          break-inside: avoid !important;
         }
         svg {
           display: block !important;

@@ -90,13 +90,19 @@ export function getSupervisions(): SupervisionRecord[] {
   let migrated = false;
   const currentSettings = safeParse<AppSettings>(SETTINGS_KEY, DEFAULT_SETTINGS);
   const updated = records.map((r) => {
-    if (r.identity?.namaSupervisor === 'Drs. H. Suryanto, M.Pd.') {
+    const isLegacy =
+      r.identity?.namaSupervisor === 'Drs. H. Suryanto, M.Pd.' ||
+      r.identity?.namaSupervisor?.toLowerCase().includes('rustina') ||
+      r.identity?.namaSupervisor?.includes('Heriansyah.') ||
+      r.identity?.namaSupervisor?.includes('HERIANSYAH.');
+
+    if (isLegacy) {
       migrated = true;
       return {
         ...r,
         identity: {
           ...r.identity,
-          namaSupervisor: currentSettings.supervisorName || 'Heriansyah., S.Si., S.Pd., M.Pd',
+          namaSupervisor: currentSettings.supervisorName || 'HERIANSYAH, S.Si., S.Pd., M.Pd',
           nipSupervisor: currentSettings.supervisorNip || '19820415 200801 1 007',
           jabatanSupervisor: currentSettings.supervisorRole || 'Pengawas Sekolah'
         }
@@ -150,6 +156,9 @@ export function getSettings(): AppSettings {
     !current.supervisorName ||
     current.supervisorName.toLowerCase().includes('rustina') ||
     current.supervisorName.toLowerCase().includes('suryanto') ||
+    current.supervisorName.includes('Heriansyah.') ||
+    current.supervisorName.includes('HERIANSYAH.') ||
+    current.supervisorName === 'Heriansyah, S.Si., S.Pd., M.Pd' ||
     current.supervisorNip.replace(/\s+/g, '') === '196812311995122017' ||
     current.supervisorNip.replace(/\s+/g, '') === '196805121994121002' ||
     current.supervisorRole === 'Kepala Sekolah / Supervisor Akademik';
@@ -157,7 +166,7 @@ export function getSettings(): AppSettings {
   if (isRustinaOrLegacy) {
     const updated: AppSettings = {
       ...current,
-      supervisorName: 'Heriansyah., S.Si., S.Pd., M.Pd',
+      supervisorName: 'HERIANSYAH, S.Si., S.Pd., M.Pd',
       supervisorRole: 'Pengawas Sekolah',
       supervisorNip: '19820415 200801 1 007'
     };
@@ -457,7 +466,7 @@ export const DEFAULT_ACCOUNTS: ManagedAccount[] = [
     id: 'acc-pengawas-01',
     email: 'heriansyah396@gmail.com',
     password: '19081983',
-    name: 'Heriansyah., S.Si., S.Pd., M.Pd',
+    name: 'HERIANSYAH, S.Si., S.Pd., M.Pd',
     nip: '19820415 200801 1 007',
     role: 'pengawas',
     schoolName: 'Dinas Pendidikan / Seluruh Sekolah Binaan',
@@ -505,10 +514,13 @@ export function getManagedAccounts(): ManagedAccount[] {
     if (
       accounts[pengawasIdx].name.toLowerCase().includes('rustina') ||
       accounts[pengawasIdx].name.toLowerCase().includes('suryanto') ||
+      accounts[pengawasIdx].name.includes('Heriansyah.') ||
+      accounts[pengawasIdx].name.includes('HERIANSYAH.') ||
+      accounts[pengawasIdx].name === 'Heriansyah, S.Si., S.Pd., M.Pd' ||
       accounts[pengawasIdx].nip?.replace(/\s+/g, '') === '196812311995122017' ||
-      accounts[pengawasIdx].name !== 'Heriansyah., S.Si., S.Pd., M.Pd'
+      accounts[pengawasIdx].name !== 'HERIANSYAH, S.Si., S.Pd., M.Pd'
     ) {
-      accounts[pengawasIdx].name = 'Heriansyah., S.Si., S.Pd., M.Pd';
+      accounts[pengawasIdx].name = 'HERIANSYAH, S.Si., S.Pd., M.Pd';
       accounts[pengawasIdx].nip = '19820415 200801 1 007';
       accounts[pengawasIdx].email = 'heriansyah396@gmail.com';
       changed = true;
@@ -630,7 +642,7 @@ export const DEFAULT_PM_REPORTS: PMReport[] = [
     schoolName: 'SMP Negeri 1 Merdeka Nusantara',
     semester: 'Ganjil',
     academicYear: '2026/2027',
-    assessorName: 'Heriansyah., S.Si., S.Pd., M.Pd',
+    assessorName: 'HERIANSYAH, S.Si., S.Pd., M.Pd',
     assessorRole: 'Pengawas Sekolah',
     assessorNip: '19820415 200801 1 007',
     headmasterName: 'Dra. Hj. Nurhasanah, M.Pd.',
@@ -674,7 +686,7 @@ export const DEFAULT_PM_REPORTS: PMReport[] = [
     schoolName: 'SMP Negeri 2 Merdeka Nusantara',
     semester: 'Ganjil',
     academicYear: '2026/2027',
-    assessorName: 'Heriansyah., S.Si., S.Pd., M.Pd',
+    assessorName: 'HERIANSYAH, S.Si., S.Pd., M.Pd',
     assessorRole: 'Pengawas Sekolah',
     assessorNip: '19820415 200801 1 007',
     headmasterName: 'Drs. Bambang Irawan, M.Pd.',

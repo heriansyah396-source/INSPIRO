@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   Compass,
   FileDown,
@@ -41,6 +41,9 @@ import {
   SCHOOL_COLORS
 } from '../utils/qualityMapUtils';
 import { exportQualityMapToWord, printDocumentElement } from '../utils/documentExport';
+import { SignatoryModal } from './SignatoryModal';
+import { saveSettings } from '../utils/storage';
+import { FileSignature } from 'lucide-react';
 
 interface SchoolQualityMapViewProps {
   supervisions: SupervisionRecord[];
@@ -49,7 +52,8 @@ interface SchoolQualityMapViewProps {
   settings: AppSettings;
   onNavigateToSupervision?: (schoolName?: string) => void;
   onNavigateToPM?: () => void;
-  showToast?: (type: 'success' | 'info' | 'error', message: string) => void;
+  onUpdateSettings?: (newSettings: AppSettings) => void;
+  showToast?: (titleOrType: string, descOrMsg?: string, typeOrDetail?: any) => void;
 }
 
 type ViewSubTab = 'matrix' | 'comparison' | 'interventions';
@@ -61,12 +65,62 @@ export const SchoolQualityMapView: React.FC<SchoolQualityMapViewProps> = ({
   settings,
   onNavigateToSupervision,
   onNavigateToPM,
+  onUpdateSettings,
   showToast
 }) => {
   const [activeSubTab, setActiveSubTab] = useState<ViewSubTab>('matrix');
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [isExportingWord, setIsExportingWord] = useState(false);
+  const [isSignatoryModalOpen, setIsSignatoryModalOpen] = useState(false);
+
+  // Normalize settings to ensure HERIANSYAH, S.Si., S.Pd., M.Pd without typo period
+  const [localSettings, setLocalSettings] = useState<AppSettings>(() => {
+    const isNeedsCorrection =
+      !settings.supervisorName ||
+      settings.supervisorName.includes('Heriansyah.') ||
+      settings.supervisorName.toLowerCase().includes('rustina') ||
+      settings.supervisorName === 'Heriansyah, S.Si., S.Pd., M.Pd';
+
+    if (isNeedsCorrection) {
+      return {
+        ...settings,
+        supervisorName: 'HERIANSYAH, S.Si., S.Pd., M.Pd'
+      };
+    }
+    return settings;
+  });
+
+  useEffect(() => {
+    const isNeedsCorrection =
+      !settings.supervisorName ||
+      settings.supervisorName.includes('Heriansyah.') ||
+      settings.supervisorName.toLowerCase().includes('rustina') ||
+      settings.supervisorName === 'Heriansyah, S.Si., S.Pd., M.Pd';
+
+    if (isNeedsCorrection) {
+      setLocalSettings({
+        ...settings,
+        supervisorName: 'HERIANSYAH, S.Si., S.Pd., M.Pd'
+      });
+    } else {
+      setLocalSettings(settings);
+    }
+  }, [settings]);
+
+  const handleSaveSignatories = (updatedSettings: AppSettings) => {
+    setLocalSettings(updatedSettings);
+    if (onUpdateSettings) {
+      onUpdateSettings(updatedSettings);
+    } else {
+      saveSettings(updatedSettings);
+    }
+    showToast?.(
+      'success',
+      'Pejabat Penandatangan Disimpan',
+      `Dokumen akan mencantumkan Pengawas: ${updatedSettings.supervisorName}`
+    );
+  };
 
   // Compute full analysis
   const analysis: QualityMapAnalysis = useMemo(() => {
@@ -112,7 +166,7 @@ export const SchoolQualityMapView: React.FC<SchoolQualityMapViewProps> = ({
   const handleExportWord = () => {
     setIsExportingWord(true);
     try {
-      exportQualityMapToWord(analysis, settings);
+      exportQualityMapToWord(analysis, localSettings);
       showToast?.('success', 'Dokumen Laporan Peta Mutu (.doc) berhasil diunduh.');
     } catch (err) {
       console.error('Export error:', err);
@@ -126,7 +180,8 @@ export const SchoolQualityMapView: React.FC<SchoolQualityMapViewProps> = ({
   const handlePrint = () => {
     const success = printDocumentElement(
       'quality-map-print-area',
-      'Laporan Peta Mutu & Komparasi Antar-Sekolah Binaan'
+      'Laporan Peta Mutu & Komparasi Antar-Sekolah Binaan',
+      { orientation: 'landscape' }
     );
     if (success) {
       showToast?.('info', 'Membuka jendela cetak / simpan PDF...');
@@ -170,6 +225,16 @@ export const SchoolQualityMapView: React.FC<SchoolQualityMapViewProps> = ({
 
           {/* Action Buttons: Print & Word Export */}
           <div className="flex flex-wrap items-center gap-2.5">
+            {/* Menu Input Yang Bertanda Tangan */}
+            <button
+              onClick={() => setIsSignatoryModalOpen(true)}
+              className="flex items-center gap-2 px-3.5 py-2 text-xs font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200/80 rounded-lg transition-colors shadow-2xs cursor-pointer"
+              title="Menu input pejabat yang bertanda tangan (Pengawas, Koordinator/Kepala Sekolah, Titimangsa)"
+            >
+              <FileSignature className="w-4 h-4 text-blue-600" />
+              <span>Atur Penandatangan</span>
+            </button>
+
             <button
               onClick={handleExportWord}
               disabled={isExportingWord}
@@ -1128,28 +1193,43 @@ export const SchoolQualityMapView: React.FC<SchoolQualityMapViewProps> = ({
           </table>
 
           {/* TANDA TANGAN */}
-          <table style={{ width: '100%', border: 'none', marginTop: '30px', fontSize: '10pt' }}>
+          <table style={{ width: '100%', border: 'none', marginTop: '24px', fontSize: '9.5pt', pageBreakInside: 'avoid' }}>
             <tbody>
               <tr>
                 <td style={{ width: '50%', textAlign: 'left', verticalAlign: 'top', border: 'none' }}>
                   Mengetahui,<br />
-                  Koordinator Pengawas / Kepala Dinas Pendidikan<br />
-                  <div style={{ height: '65px' }} />
-                  <strong><u>{settings.pengawasPembinaName || 'Dr. Hj. Endang Sulastri, M.Pd.'}</u></strong><br />
-                  NIP. {settings.pengawasPembinaNip || '19650410 199103 2 001'}
+                  {localSettings.pengawasPembinaRole || 'Koordinator Pengawas / Kepala Dinas Pendidikan'}<br />
+                  <div style={{ height: '60px' }} />
+                  <strong><u>{localSettings.pengawasPembinaName || 'Dr. Hj. Endang Sulastri, M.Pd.'}</u></strong><br />
+                  NIP. {localSettings.pengawasPembinaNip || '19650410 199103 2 001'}
                 </td>
                 <td style={{ width: '50%', textAlign: 'left', verticalAlign: 'top', border: 'none', paddingLeft: '40px' }}>
-                  {settings.schoolCity || 'Kota Pendidikan'}, {new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}<br />
-                  Pengawas Sekolah Pembina,<br />
-                  <div style={{ height: '65px' }} />
-                  <strong><u>{settings.supervisorName}</u></strong><br />
-                  NIP. {settings.supervisorNip}
+                  {localSettings.schoolCity || 'Kota Pendidikan'},{' '}
+                  {localSettings.documentDate ||
+                    new Date().toLocaleDateString('id-ID', {
+                      day: 'numeric',
+                      month: 'long',
+                      year: 'numeric'
+                    })}<br />
+                  {localSettings.supervisorRole || 'Pengawas Sekolah Pembina'},<br />
+                  <div style={{ height: '60px' }} />
+                  <strong><u>{localSettings.supervisorName}</u></strong><br />
+                  NIP. {localSettings.supervisorNip}
                 </td>
               </tr>
             </tbody>
           </table>
         </div>
       </div>
+
+      {/* MODAL INPUT & PENGATURAN YANG BERTANDA TANGAN */}
+      <SignatoryModal
+        isOpen={isSignatoryModalOpen}
+        onClose={() => setIsSignatoryModalOpen(false)}
+        settings={localSettings}
+        onSave={handleSaveSignatories}
+        onPrintAfterSave={() => handlePrint()}
+      />
     </div>
   );
 };
