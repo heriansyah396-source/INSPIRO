@@ -293,7 +293,113 @@ export function exportQuadrantReportToWord(
       </tr>
     </table>
 
-    <table>
+    <!-- I. DIAGRAM KOORDINAT MATRIKS 4 KUADRAN GURU -->
+    <div style="margin-top: 14px; margin-bottom: 20px; page-break-inside: avoid;">
+      <div style="font-size: 11pt; font-weight: bold; text-transform: uppercase; margin-bottom: 8px; border-bottom: 1.5px solid #000; padding-bottom: 4px;">
+        I. DIAGRAM KOORDINAT MATRIKS 4 KUADRAN GURU (MODEL CARL D. GLICKMAN)
+      </div>
+
+      <div style="text-align: center; font-size: 9pt; font-weight: bold; color: #1e293b; margin-bottom: 4px;">
+        ▲ SUMBU Y: TINGKAT ABSTRAKSI PEDAGOGIS (KOMPETENSI MENGAJAR) &mdash; SKOR 0 s.d. 100 (GARIS TENGAH: 75.0) ▲
+      </div>
+
+      <table style="width: 100%; border-collapse: collapse; border: 2px solid #0f172a; margin-bottom: 6px;">
+        <tr>
+          <!-- KUADRAN II: Kiri Atas -->
+          <td style="width: 50%; padding: 12px; vertical-align: top; background-color: #f5f3ff; border: 1px solid #94a3b8; border-right: 2px dashed #334155; border-bottom: 2px dashed #334155;">
+            <div style="font-weight: bold; font-size: 11pt; color: #3730a3; text-transform: uppercase; border-bottom: 1px solid #c4b5fd; padding-bottom: 3px;">
+              KUADRAN II: GURU ANALITIS / TEORETIS (${q2.length} Guru)
+            </div>
+            <div style="font-size: 8.5pt; color: #4338ca; margin: 4px 0 6px 0;">
+              <strong>Karakteristik:</strong> Abstraksi Tinggi (&ge;75) &middot; Komitmen Rendah (&lt;75)
+            </div>
+            <div style="background-color: #ffffff; border: 1px solid #ddd6fe; padding: 5px 8px; font-size: 8.5pt; margin-bottom: 8px; border-radius: 4px;">
+              <strong>Resep Supervisi:</strong> Pendekatan Kolaboratif - Negosiatif &amp; Jurnal Coaching Alur TIRTA
+            </div>
+            <div style="font-size: 8.5pt;">
+              <strong>Sebaran Guru Terpetakan:</strong>
+              ${q2.length === 0 ? '<p style="color:#64748b;margin:3px 0;font-style:italic;">Tidak ada guru pada kuadran ini</p>' : `
+              <ul style="margin: 4px 0 0 16px; padding: 0;">
+                ${q2.map(g => `<li style="margin-bottom: 2px;"><b>${g.teacherName}</b> (${g.mapel}) &mdash; Abs: <b>${g.abstractionScore}</b>, Kom: <b>${g.commitmentScore}</b></li>`).join('')}
+              </ul>`}
+            </div>
+          </td>
+
+          <!-- KUADRAN I: Kanan Atas -->
+          <td style="width: 50%; padding: 12px; vertical-align: top; background-color: #f0fdf4; border: 1px solid #94a3b8; border-bottom: 2px dashed #334155;">
+            <div style="font-weight: bold; font-size: 11pt; color: #065f46; text-transform: uppercase; border-bottom: 1px solid #a7f3d0; padding-bottom: 3px;">
+              KUADRAN I: GURU PROFESIONAL MANDIRI (${q1.length} Guru)
+            </div>
+            <div style="font-size: 8.5pt; color: #047857; margin: 4px 0 6px 0;">
+              <strong>Karakteristik:</strong> Abstraksi Tinggi (&ge;75) &middot; Komitmen Tinggi (&ge;75)
+            </div>
+            <div style="background-color: #ffffff; border: 1px solid #bbf7d0; padding: 5px 8px; font-size: 8.5pt; margin-bottom: 8px; border-radius: 4px;">
+              <strong>Resep Supervisi:</strong> Pendekatan Non-Direktif &amp; Pendelegasian (Master Teacher / Mentor Kombel)
+            </div>
+            <div style="font-size: 8.5pt;">
+              <strong>Sebaran Guru Terpetakan:</strong>
+              ${q1.length === 0 ? '<p style="color:#64748b;margin:3px 0;font-style:italic;">Tidak ada guru pada kuadran ini</p>' : `
+              <ul style="margin: 4px 0 0 16px; padding: 0;">
+                ${q1.map(g => `<li style="margin-bottom: 2px;"><b>${g.teacherName}</b> (${g.mapel}) &mdash; Abs: <b>${g.abstractionScore}</b>, Kom: <b>${g.commitmentScore}</b></li>`).join('')}
+              </ul>`}
+            </div>
+          </td>
+        </tr>
+
+        <tr>
+          <!-- KUADRAN IV: Kiri Bawah -->
+          <td style="width: 50%; padding: 12px; vertical-align: top; background-color: #fffbeb; border: 1px solid #94a3b8; border-right: 2px dashed #334155;">
+            <div style="font-weight: bold; font-size: 11pt; color: #92400e; text-transform: uppercase; border-bottom: 1px solid #fde68a; padding-bottom: 3px;">
+              KUADRAN IV: BUTUH BIMBINGAN INTENSIF (${q4.length} Guru)
+            </div>
+            <div style="font-size: 8.5pt; color: #b45309; margin: 4px 0 6px 0;">
+              <strong>Karakteristik:</strong> Abstraksi Rendah (&lt;75) &middot; Komitmen Rendah (&lt;75)
+            </div>
+            <div style="background-color: #ffffff; border: 1px solid #fef08a; padding: 5px 8px; font-size: 8.5pt; margin-bottom: 8px; border-radius: 4px;">
+              <strong>Resep Supervisi:</strong> Pendekatan Direktif Kontrol, Standar Minimal Kinerja &amp; Konseling
+            </div>
+            <div style="font-size: 8.5pt;">
+              <strong>Sebaran Guru Terpetakan:</strong>
+              ${q4.length === 0 ? '<p style="color:#64748b;margin:3px 0;font-style:italic;">Tidak ada guru pada kuadran ini</p>' : `
+              <ul style="margin: 4px 0 0 16px; padding: 0;">
+                ${q4.map(g => `<li style="margin-bottom: 2px;"><b>${g.teacherName}</b> (${g.mapel}) &mdash; Abs: <b>${g.abstractionScore}</b>, Kom: <b>${g.commitmentScore}</b></li>`).join('')}
+              </ul>`}
+            </div>
+          </td>
+
+          <!-- KUADRAN III: Kanan Bawah -->
+          <td style="width: 50%; padding: 12px; vertical-align: top; background-color: #eff6ff; border: 1px solid #94a3b8;">
+            <div style="font-weight: bold; font-size: 11pt; color: #1e40af; text-transform: uppercase; border-bottom: 1px solid #bfdbfe; padding-bottom: 3px;">
+              KUADRAN III: PEKERJA KERAS ANTUSIAS (${q3.length} Guru)
+            </div>
+            <div style="font-size: 8.5pt; color: #2563eb; margin: 4px 0 6px 0;">
+              <strong>Karakteristik:</strong> Abstraksi Rendah (&lt;75) &middot; Komitmen Tinggi (&ge;75)
+            </div>
+            <div style="background-color: #ffffff; border: 1px solid #dbeafe; padding: 5px 8px; font-size: 8.5pt; margin-bottom: 8px; border-radius: 4px;">
+              <strong>Resep Supervisi:</strong> Pendekatan Direktif Informatif, Contoh Nyata (Modeling) &amp; Peer Tutoring
+            </div>
+            <div style="font-size: 8.5pt;">
+              <strong>Sebaran Guru Terpetakan:</strong>
+              ${q3.length === 0 ? '<p style="color:#64748b;margin:3px 0;font-style:italic;">Tidak ada guru pada kuadran ini</p>' : `
+              <ul style="margin: 4px 0 0 16px; padding: 0;">
+                ${q3.map(g => `<li style="margin-bottom: 2px;"><b>${g.teacherName}</b> (${g.mapel}) &mdash; Abs: <b>${g.abstractionScore}</b>, Kom: <b>${g.commitmentScore}</b></li>`).join('')}
+              </ul>`}
+            </div>
+          </td>
+        </tr>
+      </table>
+
+      <div style="text-align: center; font-size: 9pt; font-weight: bold; color: #1e293b;">
+        ◄ KOMITMEN RENDAH (&lt;75) &nbsp;|&nbsp; <strong>SUMBU X: TINGKAT KOMITMEN &amp; DAYA USAHA (TITIK TENGAH: 75.0)</strong> &nbsp;|&nbsp; KOMITMEN TINGGI (&ge;75) ►
+      </div>
+    </div>
+
+    <!-- II. TABEL REKAPITULASI PEMETAAN INDIVIDUAL GURU -->
+    <div style="font-size: 11pt; font-weight: bold; text-transform: uppercase; margin: 20px 0 8px 0; border-bottom: 1.5px solid #000; padding-bottom: 4px;">
+      II. TABEL REKAPITULASI PEMETAAN INDIVIDUAL GURU &amp; STRATEGI PEMBINAAN
+    </div>
+
+    <table style="width: 100%; border-collapse: collapse; font-size: 9pt; margin-bottom: 24px;">
       <thead>
         <tr>
           <th style="width: 4%;">No</th>

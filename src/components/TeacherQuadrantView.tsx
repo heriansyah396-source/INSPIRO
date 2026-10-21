@@ -149,6 +149,11 @@ export const TeacherQuadrantView: React.FC<TeacherQuadrantViewProps> = ({
     return { q1, q2, q3, q4, total };
   }, [filteredProfiles]);
 
+  const printQ1 = useMemo(() => filteredProfiles.filter((p) => p.quadrant === 'kuadran_1'), [filteredProfiles]);
+  const printQ2 = useMemo(() => filteredProfiles.filter((p) => p.quadrant === 'kuadran_2'), [filteredProfiles]);
+  const printQ3 = useMemo(() => filteredProfiles.filter((p) => p.quadrant === 'kuadran_3'), [filteredProfiles]);
+  const printQ4 = useMemo(() => filteredProfiles.filter((p) => p.quadrant === 'kuadran_4'), [filteredProfiles]);
+
   // Open Adjust Modal
   const handleOpenAdjustModal = (prof: TeacherQuadrantProfile) => {
     setAdjustingTeacher(prof);
@@ -967,6 +972,199 @@ export const TeacherQuadrantView: React.FC<TeacherQuadrantViewProps> = ({
               </tr>
             </tbody>
           </table>
+
+          {/* I. DIAGRAM KOORDINAT MATRIKS 4 KUADRAN GURU (CARL GLICKMAN) */}
+          <div style={{ marginTop: '14px', marginBottom: '22px', pageBreakInside: 'avoid' }}>
+            <div style={{ fontSize: '11pt', fontWeight: 'bold', textTransform: 'uppercase', marginBottom: '6px', borderBottom: '1.5px solid #000', paddingBottom: '3px' }}>
+              I. DIAGRAM KOORDINAT MATRIKS 4 KUADRAN GURU (MODEL CARL D. GLICKMAN)
+            </div>
+
+            {/* Sumbu Y Top Label */}
+            <div style={{ textAlign: 'center', fontSize: '9pt', fontWeight: 'bold', color: '#1e293b', marginBottom: '4px' }}>
+              ▲ SUMBU Y: TINGKAT ABSTRAKSI PEDAGOGIS (KOMPETENSI MENGAJAR) &mdash; SKOR 0 s.d. 100 (GARIS TENGAH: 75.0) ▲
+            </div>
+
+            {/* Vector SVG Coordinate Chart for Crisp Print / PDF */}
+            <div style={{ width: '100%', border: '2px solid #0f172a', borderRadius: '6px', overflow: 'hidden', backgroundColor: '#ffffff', marginBottom: '8px' }}>
+              <svg viewBox="0 0 800 340" style={{ width: '100%', height: 'auto', display: 'block', fontFamily: 'Times New Roman, serif' }}>
+                {/* 4 Quadrant Backgrounds */}
+                {/* Q2: Kiri Atas */}
+                <rect x="0" y="0" width="400" height="170" fill="#f5f3ff" />
+                {/* Q1: Kanan Atas */}
+                <rect x="400" y="0" width="400" height="170" fill="#f0fdf4" />
+                {/* Q4: Kiri Bawah */}
+                <rect x="0" y="170" width="400" height="170" fill="#fffbeb" />
+                {/* Q3: Kanan Bawah */}
+                <rect x="400" y="170" width="400" height="170" fill="#eff6ff" />
+
+                {/* Center Crosshair Midpoint Lines */}
+                <line x1="400" y1="0" x2="400" y2="340" stroke="#475569" strokeWidth="2" strokeDasharray="5,4" />
+                <line x1="0" y1="170" x2="800" y2="170" stroke="#475569" strokeWidth="2" strokeDasharray="5,4" />
+
+                {/* Midpoint Axis Badges */}
+                <rect x="365" y="4" width="70" height="18" rx="4" fill="#334155" />
+                <text x="400" y="17" fill="#ffffff" fontSize="9.5" fontWeight="bold" textAnchor="middle">Midpoint 75.0</text>
+
+                <rect x="4" y="159" width="70" height="18" rx="4" fill="#334155" />
+                <text x="39" y="172" fill="#ffffff" fontSize="9.5" fontWeight="bold" textAnchor="middle">Midpoint 75.0</text>
+
+                {/* Quadrant Titles & Subtitles */}
+                {/* Q2 (Top-Left) */}
+                <text x="14" y="24" fill="#3730a3" fontSize="12" fontWeight="bold">
+                  KUADRAN II: ANALITIS / TEORETIS ({counts.q2} Guru)
+                </text>
+                <text x="14" y="38" fill="#4338ca" fontSize="9.5" fontStyle="italic">
+                  Abstraksi Tinggi (≥75) · Komitmen Rendah (&lt;75) | Pendekatan: Kolaboratif &amp; Alur TIRTA
+                </text>
+
+                {/* Q1 (Top-Right) */}
+                <text x="786" y="24" fill="#065f46" fontSize="12" fontWeight="bold" textAnchor="end">
+                  KUADRAN I: PROFESIONAL MANDIRI ({counts.q1} Guru)
+                </text>
+                <text x="786" y="38" fill="#047857" fontSize="9.5" fontStyle="italic" textAnchor="end">
+                  Abstraksi Tinggi (≥75) · Komitmen Tinggi (≥75) | Pendekatan: Non-Direktif &amp; Pendelegasian
+                </text>
+
+                {/* Q4 (Bottom-Left) */}
+                <text x="14" y="318" fill="#92400e" fontSize="12" fontWeight="bold">
+                  KUADRAN IV: BUTUH BIMBINGAN INTENSIF ({counts.q4} Guru)
+                </text>
+                <text x="14" y="332" fill="#b45309" fontSize="9.5" fontStyle="italic">
+                  Abstraksi Rendah (&lt;75) · Komitmen Rendah (&lt;75) | Pendekatan: Direktif Kontrol &amp; Konseling
+                </text>
+
+                {/* Q3 (Bottom-Right) */}
+                <text x="786" y="318" fill="#1e40af" fontSize="12" fontWeight="bold" textAnchor="end">
+                  KUADRAN III: PEKERJA KERAS ANTUSIAS ({counts.q3} Guru)
+                </text>
+                <text x="786" y="332" fill="#2563eb" fontSize="9.5" fontStyle="italic" textAnchor="end">
+                  Abstraksi Rendah (&lt;75) · Komitmen Tinggi (≥75) | Pendekatan: Direktif Informatif &amp; Modeling
+                </text>
+
+                {/* Plotted Teacher Nodes */}
+                {filteredProfiles.map((p) => {
+                  const minScore = 50;
+                  const maxScore = 100;
+                  const x = 70 + ((Math.max(50, Math.min(100, p.commitmentScore)) - minScore) / (maxScore - minScore)) * 660;
+                  const y = 290 - ((Math.max(50, Math.min(100, p.abstractionScore)) - minScore) / (maxScore - minScore)) * 240;
+
+                  const color =
+                    p.quadrant === 'kuadran_1'
+                      ? '#059669'
+                      : p.quadrant === 'kuadran_2'
+                      ? '#4f46e5'
+                      : p.quadrant === 'kuadran_3'
+                      ? '#2563eb'
+                      : '#d97706';
+
+                  return (
+                    <g key={p.teacherId}>
+                      <circle cx={x} cy={y} r="8" fill={color} stroke="#ffffff" strokeWidth="2.5" />
+                      <rect
+                        x={x + 10 > 670 ? x - 120 : x + 10}
+                        y={y - 10}
+                        width="115"
+                        height="20"
+                        rx="3"
+                        fill="#ffffff"
+                        stroke={color}
+                        strokeWidth="1"
+                        opacity="0.94"
+                      />
+                      <text
+                        x={x + 10 > 670 ? x - 115 : x + 14}
+                        y={y + 4}
+                        fontSize="8.5"
+                        fontWeight="bold"
+                        fill="#0f172a"
+                      >
+                        {p.teacherName.length > 18 ? p.teacherName.slice(0, 16) + '..' : p.teacherName}
+                      </text>
+                    </g>
+                  );
+                })}
+              </svg>
+            </div>
+
+            {/* Sumbu X Bottom Label */}
+            <div style={{ textAlign: 'center', fontSize: '9pt', fontWeight: 'bold', color: '#1e293b', marginBottom: '10px' }}>
+              ◄ KOMITMEN RENDAH (&lt;75) &nbsp;|&nbsp; <strong>SUMBU X: TINGKAT KOMITMEN &amp; DAYA USAHA (TITIK TENGAH: 75.0)</strong> &nbsp;|&nbsp; KOMITMEN TINGGI (&ge;75) ►
+            </div>
+
+            {/* Summary Cards Table Per Kuadran */}
+            <table style={{ width: '100%', borderCollapse: 'collapse', border: '1px solid #cbd5e1', marginBottom: '8px' }}>
+              <tbody>
+                <tr>
+                  <td style={{ width: '50%', padding: '8px 10px', verticalAlign: 'top', backgroundColor: '#f5f3ff', border: '1px solid #cbd5e1', borderRight: '2px dashed #64748b', borderBottom: '2px dashed #64748b' }}>
+                    <div style={{ fontWeight: 'bold', fontSize: '9.5pt', color: '#3730a3', textTransform: 'uppercase' }}>
+                      KUADRAN II: GURU ANALITIS / TEORETIS ({counts.q2} Guru)
+                    </div>
+                    <div style={{ fontSize: '8pt', color: '#4338ca', marginBottom: '3px' }}>
+                      <em>Abstraksi Tinggi (&ge;75) &middot; Komitmen Rendah (&lt;75)</em>
+                    </div>
+                    <div style={{ fontSize: '8pt', backgroundColor: '#ffffff', padding: '4px 6px', border: '1px solid #ddd6fe', marginBottom: '5px', borderRadius: '3px' }}>
+                      <strong>Resep Supervisi:</strong> Pendekatan Kolaboratif - Negosiatif &amp; Jurnal Coaching Alur TIRTA
+                    </div>
+                    <div style={{ fontSize: '8pt' }}>
+                      <strong>Daftar Guru:</strong> {printQ2.length === 0 ? '-' : printQ2.map(g => `${g.teacherName} (${g.mapel}) [Abs: ${g.abstractionScore}, Kom: ${g.commitmentScore}]`).join('; ')}
+                    </div>
+                  </td>
+
+                  <td style={{ width: '50%', padding: '8px 10px', verticalAlign: 'top', backgroundColor: '#f0fdf4', border: '1px solid #cbd5e1', borderBottom: '2px dashed #64748b' }}>
+                    <div style={{ fontWeight: 'bold', fontSize: '9.5pt', color: '#065f46', textTransform: 'uppercase' }}>
+                      KUADRAN I: GURU PROFESIONAL MANDIRI ({counts.q1} Guru)
+                    </div>
+                    <div style={{ fontSize: '8pt', color: '#047857', marginBottom: '3px' }}>
+                      <em>Abstraksi Tinggi (&ge;75) &middot; Komitmen Tinggi (&ge;75)</em>
+                    </div>
+                    <div style={{ fontSize: '8pt', backgroundColor: '#ffffff', padding: '4px 6px', border: '1px solid #bbf7d0', marginBottom: '5px', borderRadius: '3px' }}>
+                      <strong>Resep Supervisi:</strong> Pendekatan Non-Direktif &amp; Pendelegasian (Master Teacher / Mentor)
+                    </div>
+                    <div style={{ fontSize: '8pt' }}>
+                      <strong>Daftar Guru:</strong> {printQ1.length === 0 ? '-' : printQ1.map(g => `${g.teacherName} (${g.mapel}) [Abs: ${g.abstractionScore}, Kom: ${g.commitmentScore}]`).join('; ')}
+                    </div>
+                  </td>
+                </tr>
+
+                <tr>
+                  <td style={{ width: '50%', padding: '8px 10px', verticalAlign: 'top', backgroundColor: '#fffbeb', border: '1px solid #cbd5e1', borderRight: '2px dashed #64748b' }}>
+                    <div style={{ fontWeight: 'bold', fontSize: '9.5pt', color: '#92400e', textTransform: 'uppercase' }}>
+                      KUADRAN IV: BUTUH BIMBINGAN INTENSIF ({counts.q4} Guru)
+                    </div>
+                    <div style={{ fontSize: '8pt', color: '#b45309', marginBottom: '3px' }}>
+                      <em>Abstraksi Rendah (&lt;75) &middot; Komitmen Rendah (&lt;75)</em>
+                    </div>
+                    <div style={{ fontSize: '8pt', backgroundColor: '#ffffff', padding: '4px 6px', border: '1px solid #fef08a', marginBottom: '5px', borderRadius: '3px' }}>
+                      <strong>Resep Supervisi:</strong> Pendekatan Direktif Kontrol, Standar Minimal Kinerja &amp; Konseling
+                    </div>
+                    <div style={{ fontSize: '8pt' }}>
+                      <strong>Daftar Guru:</strong> {printQ4.length === 0 ? '-' : printQ4.map(g => `${g.teacherName} (${g.mapel}) [Abs: ${g.abstractionScore}, Kom: ${g.commitmentScore}]`).join('; ')}
+                    </div>
+                  </td>
+
+                  <td style={{ width: '50%', padding: '8px 10px', verticalAlign: 'top', backgroundColor: '#eff6ff', border: '1px solid #cbd5e1' }}>
+                    <div style={{ fontWeight: 'bold', fontSize: '9.5pt', color: '#1e40af', textTransform: 'uppercase' }}>
+                      KUADRAN III: PEKERJA KERAS ANTUSIAS ({counts.q3} Guru)
+                    </div>
+                    <div style={{ fontSize: '8pt', color: '#2563eb', marginBottom: '3px' }}>
+                      <em>Abstraksi Rendah (&lt;75) &middot; Komitmen Tinggi (&ge;75)</em>
+                    </div>
+                    <div style={{ fontSize: '8pt', backgroundColor: '#ffffff', padding: '4px 6px', border: '1px solid #dbeafe', marginBottom: '5px', borderRadius: '3px' }}>
+                      <strong>Resep Supervisi:</strong> Pendekatan Direktif Informatif, Contoh Nyata (Modeling) &amp; Peer Tutoring
+                    </div>
+                    <div style={{ fontSize: '8pt' }}>
+                      <strong>Daftar Guru:</strong> {printQ3.length === 0 ? '-' : printQ3.map(g => `${g.teacherName} (${g.mapel}) [Abs: ${g.abstractionScore}, Kom: ${g.commitmentScore}]`).join('; ')}
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          {/* II. TABEL REKAPITULASI PEMETAAN INDIVIDUAL GURU */}
+          <div style={{ fontSize: '11pt', fontWeight: 'bold', textTransform: 'uppercase', marginBottom: '8px', borderBottom: '1.5px solid #000', paddingBottom: '3px' }}>
+            II. TABEL REKAPITULASI PEMETAAN INDIVIDUAL GURU &amp; STRATEGI PEMBINAAN
+          </div>
 
           {/* Tabel Matriks */}
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '9pt', marginBottom: '24px' }}>
