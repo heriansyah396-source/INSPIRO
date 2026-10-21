@@ -25,6 +25,7 @@ import { SchoolQualityMapView } from './components/SchoolQualityMapView';
 import { GrowthTrackerView } from './components/GrowthTrackerView';
 import { SupervisionCalendarView } from './components/SupervisionCalendarView';
 import { TirtaCoachingView } from './components/TirtaCoachingView';
+import { TeacherQuadrantView } from './components/TeacherQuadrantView';
 import {
   AppSettings,
   SupervisionRecord,
@@ -51,7 +52,8 @@ import {
   savePMReports,
   deletePMReport,
   getManagedAccounts,
-  saveManagedAccounts
+  saveManagedAccounts,
+  getCoachingRecords
 } from './utils/storage';
 import {
   auth,
@@ -574,6 +576,7 @@ export default function App() {
                   onNavigateToGrowthTracker={() => setCurrentTab('growth-tracker')}
                   onNavigateToCalendar={() => setCurrentTab('calendar')}
                   onNavigateToCoaching={() => setCurrentTab('coaching')}
+                  onNavigateToQuadrant={() => setCurrentTab('teacher-quadrant')}
                   onOpenManagePrincipals={() => setIsManagePrincipalsOpen(true)}
                   isSupervisor={currentUser?.role === 'pengawas'}
                 />
@@ -627,6 +630,20 @@ export default function App() {
                   teachers={teachers}
                   supervisions={supervisions}
                   settings={settings}
+                  onUpdateSettings={handleSaveSettings}
+                  showToast={showToast}
+                />
+              )}
+
+              {/* Tab: Matriks 4 Kuadran Guru (Supervisi Perkembangan Carl Glickman) */}
+              {currentTab === 'teacher-quadrant' && (
+                <TeacherQuadrantView
+                  teachers={teachers}
+                  supervisions={supervisions}
+                  coachingRecords={getCoachingRecords()}
+                  settings={settings}
+                  onStartSupervision={(teacherId) => handleStartNewSupervision(teacherId)}
+                  onNavigateToCoaching={() => setCurrentTab('coaching')}
                   onUpdateSettings={handleSaveSettings}
                   showToast={showToast}
                 />

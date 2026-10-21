@@ -44,6 +44,10 @@ const TAB_TITLES: Record<NavTab, { title: string; subtitle: string }> = {
     title: 'Jurnal Coaching Dialogis Alur TIRTA',
     subtitle: 'Pendampingan klinis reflektif: Tujuan, Identifikasi, Rencana Aksi, dan Tanggung Jawab'
   },
+  'teacher-quadrant': {
+    title: 'Matriks 4 Kuadran Guru (Supervisi Perkembangan Glickman)',
+    subtitle: 'Pemetaan tipologi guru, tingkat abstraksi & komitmen, serta diferensiasi resep pembinaan'
+  },
   results: {
     title: 'Hasil Supervisi',
     subtitle: 'Skor akhir, analisis kelebihan, dan rekomendasi tindak lanjut'

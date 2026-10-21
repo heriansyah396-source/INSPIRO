@@ -22,10 +22,12 @@ import {
   Calendar,
   Building,
   PlayCircle,
-  HeartHandshake
+  HeartHandshake,
+  Grid2X2
 } from 'lucide-react';
 import { SupervisionRecord, Teacher, VISIT_TYPE_LABELS } from '../types/inspiro';
-import { getVisitAgendas } from '../utils/storage';
+import { getVisitAgendas, getCoachingRecords } from '../utils/storage';
+import { computeTeacherQuadrants } from '../utils/quadrantUtils';
 
 interface DashboardProps {
   teachers: Teacher[];
@@ -40,6 +42,7 @@ interface DashboardProps {
   onNavigateToGrowthTracker?: () => void;
   onNavigateToCalendar?: () => void;
   onNavigateToCoaching?: () => void;
+  onNavigateToQuadrant?: () => void;
   onOpenManagePrincipals?: () => void;
   isSupervisor?: boolean;
 }
@@ -57,6 +60,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
   onNavigateToGrowthTracker,
   onNavigateToCalendar,
   onNavigateToCoaching,
+  onNavigateToQuadrant,
   onOpenManagePrincipals,
   isSupervisor
 }) => {
@@ -114,6 +118,22 @@ export const Dashboard: React.FC<DashboardProps> = ({
       .filter((a) => a.date >= todayStr || a.status === 'berlangsung')
       .slice(0, 3);
   }, [visitAgendas]);
+
+  // 4 Quadrants Summary (Model Carl Glickman)
+  const quadrantProfiles = useMemo(() => {
+    const coaching = getCoachingRecords();
+    return computeTeacherQuadrants(teachers, supervisions, coaching);
+  }, [teachers, supervisions]);
+
+  const qCounts = useMemo(() => {
+    return {
+      q1: quadrantProfiles.filter((p) => p.quadrant === 'kuadran_1').length,
+      q2: quadrantProfiles.filter((p) => p.quadrant === 'kuadran_2').length,
+      q3: quadrantProfiles.filter((p) => p.quadrant === 'kuadran_3').length,
+      q4: quadrantProfiles.filter((p) => p.quadrant === 'kuadran_4').length,
+      total: quadrantProfiles.length
+    };
+  }, [quadrantProfiles]);
 
   return (
     <div className="space-y-6">
@@ -174,7 +194,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
             </span>
           </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-3">
             {/* Tile 1: Kalender & Agenda Kunjungan */}
             <button
               onClick={onNavigateToCalendar}
@@ -217,7 +237,28 @@ export const Dashboard: React.FC<DashboardProps> = ({
               </div>
             </button>
 
-            {/* Tile 3: Peta Mutu Binaan */}
+            {/* Tile 3: 4 Kuadran Guru (Matriks Glickman) */}
+            <button
+              onClick={onNavigateToQuadrant}
+              className="group text-left p-3.5 rounded-xl bg-white/6 hover:bg-white/12 border border-white/10 hover:border-purple-400/40 transition-all duration-200 cursor-pointer flex flex-col justify-between"
+            >
+              <div className="flex items-center justify-between mb-2">
+                <div className="w-8 h-8 rounded-lg bg-purple-500/20 text-purple-300 flex items-center justify-center border border-purple-400/30 group-hover:scale-105 transition-transform">
+                  <Grid2X2 className="w-4 h-4" />
+                </div>
+                <ArrowRight className="w-3.5 h-3.5 text-white/40 group-hover:text-purple-300 group-hover:translate-x-0.5 transition-all" />
+              </div>
+              <div>
+                <p className="text-xs font-bold text-white group-hover:text-purple-200 transition-colors">
+                  4 Kuadran Guru
+                </p>
+                <p className="text-[11px] text-purple-200/70 mt-0.5 line-clamp-1">
+                  Matriks Glickman
+                </p>
+              </div>
+            </button>
+
+            {/* Tile 4: Peta Mutu Binaan */}
             <button
               onClick={onNavigateToQualityMap}
               className="group text-left p-3.5 rounded-xl bg-white/6 hover:bg-white/12 border border-white/10 hover:border-blue-400/40 transition-all duration-200 cursor-pointer flex flex-col justify-between"
@@ -750,6 +791,129 @@ export const Dashboard: React.FC<DashboardProps> = ({
             })}
           </div>
         )}
+      </div>
+
+      {/* Peta Tipologi 4 Kuadran Guru (Matriks Supervisi Perkembangan Glickman) */}
+      <div className="bg-white rounded-xl border border-slate-200 shadow-2xs overflow-hidden">
+        <div className="p-4 sm:p-5 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center shrink-0 border border-purple-200">
+              <Grid2X2 className="w-5 h-5" />
+            </div>
+            <div>
+              <h3 className="text-sm sm:text-base font-bold text-slate-900 flex items-center gap-2">
+                <span>Distribusi 4 Kuadran Guru &amp; Diferensiasi Pembinaan</span>
+                <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-purple-100 text-purple-800">
+                  Model Carl Glickman
+                </span>
+              </h3>
+              <p className="text-xs text-slate-500">
+                Pemetaan tipologi {qCounts.total} guru binaan berdasarkan Abstraksi Pedagogis dan Komitmen
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={onNavigateToQuadrant}
+            className="text-xs font-bold text-purple-600 hover:text-purple-800 flex items-center gap-1 transition-colors cursor-pointer self-start sm:self-auto"
+          >
+            <span>Buka Matriks Kuadran Lengkap</span>
+            <ArrowRight className="w-3.5 h-3.5" />
+          </button>
+        </div>
+
+        <div className="p-4 sm:p-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+          {/* Card Kuadran 1 */}
+          <div className="p-3.5 rounded-xl border border-emerald-200 bg-emerald-50/60 flex flex-col justify-between">
+            <div>
+              <div className="flex items-center justify-between mb-1.5">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-800 bg-emerald-100/80 px-2 py-0.5 rounded">
+                  Kuadran I
+                </span>
+                <span className="text-lg font-black text-emerald-700">{qCounts.q1} Guru</span>
+              </div>
+              <h4 className="text-xs font-bold text-emerald-950">Profesional Mandiri</h4>
+              <p className="text-[11px] text-emerald-800/80 mt-1">
+                Abstraksi Tinggi · Komitmen Tinggi
+              </p>
+              <div className="mt-2 text-[10px] bg-white/80 p-2 rounded-lg border border-emerald-200/60 text-emerald-900 font-medium leading-relaxed">
+                <strong>Pendekatan:</strong> Non-Direktif &amp; Pendelegasian (Master / Mentor)
+              </div>
+            </div>
+            <div className="mt-3 pt-2 border-t border-emerald-200/60 flex items-center justify-between text-[11px] text-emerald-700">
+              <span>Rasio: {qCounts.total > 0 ? Math.round((qCounts.q1 / qCounts.total) * 100) : 0}%</span>
+              <span className="font-semibold cursor-pointer hover:underline" onClick={onNavigateToQuadrant}>Detail →</span>
+            </div>
+          </div>
+
+          {/* Card Kuadran 2 */}
+          <div className="p-3.5 rounded-xl border border-indigo-200 bg-indigo-50/60 flex flex-col justify-between">
+            <div>
+              <div className="flex items-center justify-between mb-1.5">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-800 bg-indigo-100/80 px-2 py-0.5 rounded">
+                  Kuadran II
+                </span>
+                <span className="text-lg font-black text-indigo-700">{qCounts.q2} Guru</span>
+              </div>
+              <h4 className="text-xs font-bold text-indigo-950">Analitis / Kritikus</h4>
+              <p className="text-[11px] text-indigo-800/80 mt-1">
+                Abstraksi Tinggi · Komitmen Rendah
+              </p>
+              <div className="mt-2 text-[10px] bg-white/80 p-2 rounded-lg border border-indigo-200/60 text-indigo-900 font-medium leading-relaxed">
+                <strong>Pendekatan:</strong> Kolaboratif &amp; Coaching Alur TIRTA
+              </div>
+            </div>
+            <div className="mt-3 pt-2 border-t border-indigo-200/60 flex items-center justify-between text-[11px] text-indigo-700">
+              <span>Rasio: {qCounts.total > 0 ? Math.round((qCounts.q2 / qCounts.total) * 100) : 0}%</span>
+              <span className="font-semibold cursor-pointer hover:underline" onClick={onNavigateToQuadrant}>Detail →</span>
+            </div>
+          </div>
+
+          {/* Card Kuadran 3 */}
+          <div className="p-3.5 rounded-xl border border-blue-200 bg-blue-50/60 flex flex-col justify-between">
+            <div>
+              <div className="flex items-center justify-between mb-1.5">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-blue-800 bg-blue-100/80 px-2 py-0.5 rounded">
+                  Kuadran III
+                </span>
+                <span className="text-lg font-black text-blue-700">{qCounts.q3} Guru</span>
+              </div>
+              <h4 className="text-xs font-bold text-blue-950">Pekerja Keras Antusias</h4>
+              <p className="text-[11px] text-blue-800/80 mt-1">
+                Abstraksi Rendah · Komitmen Tinggi
+              </p>
+              <div className="mt-2 text-[10px] bg-white/80 p-2 rounded-lg border border-blue-200/60 text-blue-900 font-medium leading-relaxed">
+                <strong>Pendekatan:</strong> Direktif Informatif, Modeling &amp; Peer-Tutoring
+              </div>
+            </div>
+            <div className="mt-3 pt-2 border-t border-blue-200/60 flex items-center justify-between text-[11px] text-blue-700">
+              <span>Rasio: {qCounts.total > 0 ? Math.round((qCounts.q3 / qCounts.total) * 100) : 0}%</span>
+              <span className="font-semibold cursor-pointer hover:underline" onClick={onNavigateToQuadrant}>Detail →</span>
+            </div>
+          </div>
+
+          {/* Card Kuadran 4 */}
+          <div className="p-3.5 rounded-xl border border-amber-200 bg-amber-50/60 flex flex-col justify-between">
+            <div>
+              <div className="flex items-center justify-between mb-1.5">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-amber-800 bg-amber-100/80 px-2 py-0.5 rounded">
+                  Kuadran IV
+                </span>
+                <span className="text-lg font-black text-amber-700">{qCounts.q4} Guru</span>
+              </div>
+              <h4 className="text-xs font-bold text-amber-950">Butuh Bimbingan Intensif</h4>
+              <p className="text-[11px] text-amber-800/80 mt-1">
+                Abstraksi Rendah · Komitmen Rendah
+              </p>
+              <div className="mt-2 text-[10px] bg-white/80 p-2 rounded-lg border border-amber-200/60 text-amber-900 font-medium leading-relaxed">
+                <strong>Pendekatan:</strong> Direktif Kontrol, Standar Ketat &amp; Konseling
+              </div>
+            </div>
+            <div className="mt-3 pt-2 border-t border-amber-200/60 flex items-center justify-between text-[11px] text-amber-700">
+              <span>Rasio: {qCounts.total > 0 ? Math.round((qCounts.q4 / qCounts.total) * 100) : 0}%</span>
+              <span className="font-semibold cursor-pointer hover:underline" onClick={onNavigateToQuadrant}>Detail →</span>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Recent Supervisions Table */}

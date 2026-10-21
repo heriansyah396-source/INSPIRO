@@ -885,5 +885,150 @@ export const COACHING_CONTEXT_LABELS: Record<CoachingContext, { label: string; b
   }
 };
 
+// ==========================================
+// PETA 4 KUADRAN GURU (MODEL GLICKMAN)
+// ==========================================
+
+export type TeacherQuadrantType = 'kuadran_1' | 'kuadran_2' | 'kuadran_3' | 'kuadran_4';
+
+export interface QuadrantInfo {
+  id: TeacherQuadrantType;
+  title: string;
+  nameIndo: string;
+  tagline: string;
+  abstractionLevel: 'Tinggi' | 'Rendah';
+  commitmentLevel: 'Tinggi' | 'Rendah';
+  supervisoryApproach: string;
+  approachShort: string;
+  characteristics: string;
+  supervisorRole: string;
+  keyInterventions: string[];
+  themeColor: string;
+  bgColor: string;
+  borderColor: string;
+  badgeBg: string;
+  badgeText: string;
+}
+
+export interface TeacherQuadrantProfile {
+  teacherId: string;
+  teacherName: string;
+  teacherNip: string;
+  schoolName: string;
+  mapel: string;
+  abstractionScore: number; // 0 - 100 (Kompetensi Pedagogis)
+  commitmentScore: number; // 0 - 100 (Tingkat Komitmen & Dedikasi)
+  quadrant: TeacherQuadrantType;
+  supervisoryApproach: string;
+  characteristics: string;
+  recommendedActions: string[];
+  notes?: string;
+  customOverrides?: {
+    abstraction?: number;
+    commitment?: number;
+    notes?: string;
+  };
+  lastUpdated: string;
+}
+
+export const QUADRANT_DEFINITIONS: Record<TeacherQuadrantType, QuadrantInfo> = {
+  kuadran_1: {
+    id: 'kuadran_1',
+    title: 'Kuadran I: Guru Profesional / Penggerak',
+    nameIndo: 'Profesional Mandiri (Master Teacher)',
+    tagline: 'Abstraksi Tinggi · Komitmen Tinggi',
+    abstractionLevel: 'Tinggi',
+    commitmentLevel: 'Tinggi',
+    supervisoryApproach: 'Pendekatan Non-Direktif & Pendelegasian (Non-Directive & Delegating)',
+    approachShort: 'Non-Direktif & Delegatif',
+    characteristics:
+      'Memiliki penguasaan pedagogi mendalam, inovatif dalam diferensiasi, mandiri mencari solusi pembelajaran, reflektif, dan berdedikasi tinggi terhadap kemajuan murid.',
+    supervisorRole: 'Fasilitator, Rekan Dialog Kritis (Peer Colleague), dan Pemberi Otonomi Penuh.',
+    keyInterventions: [
+      'Beri ruang otonomi kreatif dan hindari instruksi yang terlalu mendikte.',
+      'Dorong dan libatkan sebagai Guru Penggerak / Mentor bagi rekan sejawat di Kombel.',
+      'Libatkan dalam tim pengembang kurikulum sekolah (KOSP) dan penyusun modul ajar rujukan.',
+      'Fasilitasi desiminasi praktik baik tingkat gugus atau antar-sekolah binaan.'
+    ],
+    themeColor: 'emerald',
+    bgColor: 'bg-emerald-50/80',
+    borderColor: 'border-emerald-300',
+    badgeBg: 'bg-emerald-100',
+    badgeText: 'text-emerald-800'
+  },
+  kuadran_2: {
+    id: 'kuadran_2',
+    title: 'Kuadran II: Guru Analitis / Kritikus',
+    nameIndo: 'Analitis / Teoretis (The Analytical Thinker)',
+    tagline: 'Abstraksi Tinggi · Komitmen Rendah',
+    abstractionLevel: 'Tinggi',
+    commitmentLevel: 'Rendah',
+    supervisoryApproach: 'Pendekatan Kolaboratif - Negosiatif (Collaborative Approach)',
+    approachShort: 'Kolaboratif & Negosiatif',
+    characteristics:
+      'Cerdas, wawasan teori sangat luas, kritis, banyak gagasan pembaruan, namun enggan mengeksekusi secara nyata di kelas (sering mengeluh hambatan fasilitas atau menunda tugas).',
+    supervisorRole: 'Mitra Negosiasi, Penantang Solusi, dan Peneguh Kontrak Komitmen.',
+    keyInterventions: [
+      'Gunakan Coaching Alur TIRTA untuk menantang ide-idenya menjadi rencana aksi konkret.',
+      'Sepakati target capaian jangka pendek yang terukur dengan batas waktu tegas.',
+      'Ajak coachee memimpin proyek inovasi kecil agar rasa kepemilikan (ownership) tumbuh.',
+      'Lakukan pemantauan berkala terhadap realisasi komitmen yang telah ditandatangani.'
+    ],
+    themeColor: 'indigo',
+    bgColor: 'bg-indigo-50/80',
+    borderColor: 'border-indigo-300',
+    badgeBg: 'bg-indigo-100',
+    badgeText: 'text-indigo-800'
+  },
+  kuadran_3: {
+    id: 'kuadran_3',
+    title: 'Kuadran III: Guru Pekerja Keras / Antusias',
+    nameIndo: 'Pekerja Keras Antusias (The Enthusiastic Worker)',
+    tagline: 'Abstraksi Rendah · Komitmen Tinggi',
+    abstractionLevel: 'Rendah',
+    commitmentLevel: 'Tinggi',
+    supervisoryApproach: 'Pendekatan Direktif Informatif & Modeling (Directive Informational)',
+    approachShort: 'Direktif Informatif & Modeling',
+    characteristics:
+      'Sangat rajin, disiplin hadir paling pagi, tulus menyayangi murid, patuh instruksi dinas, tetapi bingung merancang strategi diferensiasi yang tepat atau kesulitan memecahkan dinamika kelas rumit.',
+    supervisorRole: 'Pembimbing Teknis, Penyedia Contoh Konkret (Modeler), dan Pemandu Langkah.',
+    keyInterventions: [
+      'Berikan alternatif solusi konkret (bukan membiarkan mencari sendiri tanpa panduan).',
+      'Lakukan modeling (contoh langsung praktik mengajar di kelas) atau tontonkan video inspiratif.',
+      'Sandingkan dalam program pendampingan sejawat (peer tutoring) bersama guru Kuadran I.',
+      'Apresiasi dedikasinya secara terbuka agar kepercayaan dirinya terus terpelihara.'
+    ],
+    themeColor: 'blue',
+    bgColor: 'bg-blue-50/80',
+    borderColor: 'border-blue-300',
+    badgeBg: 'bg-blue-100',
+    badgeText: 'text-blue-800'
+  },
+  kuadran_4: {
+    id: 'kuadran_4',
+    title: 'Kuadran IV: Guru Perlu Bimbingan Khusus',
+    nameIndo: 'Butuh Bimbingan Intensif (The Unfocused / Struggling)',
+    tagline: 'Abstraksi Rendah · Komitmen Rendah',
+    abstractionLevel: 'Rendah',
+    commitmentLevel: 'Rendah',
+    supervisoryApproach: 'Pendekatan Direktif Kontrol & Konseling (Directive Control Approach)',
+    approachShort: 'Direktif Kontrol & Konseling',
+    characteristics:
+      'Kompetensi mengajar masih terbatas dan motivasi kerja menurun. Pembelajaran cenderung monoton ceramah searah, administrasi terlambat, serta pasif dalam kegiatan pengembangan diri.',
+    supervisorRole: 'Instruktur Tegas, Pengawas Prosedural, dan Konselor Pemulih Motivasi.',
+    keyInterventions: [
+      'Gunakan komunikasi tegas namun empatik: tetapkan standar minimal kinerja yang wajib dipenuhi.',
+      'Berikan penugasan spesifik berstruktur langkah 1-2-3 dengan batas waktu ketat.',
+      'Lakukan konseling personal bersama Kepala Sekolah untuk menggali kendala psikologis/pribadi.',
+      'Jadwalkan supervisi klinis siklus berulang dan pantau setiap kemajuan kecil secara disiplin.'
+    ],
+    themeColor: 'amber',
+    bgColor: 'bg-amber-50/80',
+    borderColor: 'border-amber-300',
+    badgeBg: 'bg-amber-100',
+    badgeText: 'text-amber-800'
+  }
+};
+
 
 

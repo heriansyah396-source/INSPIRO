@@ -20,7 +20,8 @@ import {
   Compass,
   TrendingUp,
   Calendar,
-  HeartHandshake
+  HeartHandshake,
+  Grid2X2
 } from 'lucide-react';
 import { SupervisionRecord, PMReport } from '../types/inspiro';
 import { RadarChartWidget } from './RadarChartWidget';
@@ -31,6 +32,7 @@ export type NavTab =
   | 'teachers'
   | 'supervision'
   | 'coaching'
+  | 'teacher-quadrant'
   | 'results'
   | 'reports'
   | 'pm-reports'
@@ -102,6 +104,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
       label: 'Coaching Alur TIRTA',
       icon: HeartHandshake,
       badge: 'Refleksi Klinis'
+    },
+    {
+      id: 'teacher-quadrant' as NavTab,
+      label: '4 Kuadran Guru',
+      icon: Grid2X2,
+      badge: 'Matriks Glickman'
     },
     {
       id: 'results' as NavTab,
