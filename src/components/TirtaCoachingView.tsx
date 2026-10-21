@@ -1411,7 +1411,7 @@ export const TirtaCoachingView: React.FC<TirtaCoachingViewProps> = ({
             {/* Kop Surat Dinas */}
             <div style={{ textAlign: 'center', borderBottom: '3px double #000', paddingBottom: '10px', marginBottom: '16px' }}>
               <h3 style={{ margin: 0, fontSize: '13pt', textTransform: 'uppercase', fontWeight: 'bold' }}>
-                PEMERINTAH DAERAH PROVINSI / KABUPATEN / KOTA
+                {settings.governmentAgency || 'PEMERINTAH KABUPATEN SIDENRENG RAPPANG'}
               </h3>
               <h2 style={{ margin: '3px 0', fontSize: '15pt', textTransform: 'uppercase', fontWeight: 'bold' }}>
                 DINAS PENDIDIKAN DAN KEBUDAYAAN

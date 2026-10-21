@@ -6,10 +6,11 @@
 import { AppSettings, SupervisionRecord, Teacher } from '../types/inspiro';
 
 export const DEFAULT_SETTINGS: AppSettings = {
-  schoolName: 'SMP Negeri 1 Merdeka Nusantara',
+  governmentAgency: 'PEMERINTAH KABUPATEN SIDENRENG RAPPANG',
+  schoolName: 'SMP Negeri 1 Sidenreng Rappang',
   schoolNpsn: '20108921',
-  schoolCity: 'Kota Pendidikan',
-  schoolAddress: 'Jl. Pemuda No. 45, Kompleks Pendidikan Terpadu',
+  schoolCity: 'Kabupaten Sidenreng Rappang',
+  schoolAddress: 'Jl. Harapan Baru Blok C No. 22, Pangkajene, Kecamatan Watang Pulu, Kabupaten Sidenreng Rappang, Sulawesi Selatan 91611',
   supervisorName: 'HERIANSYAH, S.Si., S.Pd., M.Pd',
   supervisorNip: '19820415 200801 1 007',
   supervisorRole: 'Pengawas Sekolah',

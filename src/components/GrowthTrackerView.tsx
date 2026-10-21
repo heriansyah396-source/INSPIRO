@@ -1406,7 +1406,10 @@ export const GrowthTrackerView: React.FC<GrowthTrackerViewProps> = ({
           {/* KOP RESMI DINAS */}
           <div style={{ textAlign: 'center', borderBottom: '3px double #000000', paddingBottom: '10px', marginBottom: '16px' }}>
             <h2 style={{ margin: '0', fontSize: '13pt', textTransform: 'uppercase', fontWeight: 'bold', letterSpacing: '0.5px' }}>
-              PEMERINTAH DAERAH DINAS PENDIDIKAN
+              {localSettings.governmentAgency || 'PEMERINTAH KABUPATEN SIDENRENG RAPPANG'}
+            </h2>
+            <h2 style={{ margin: '3px 0', fontSize: '14pt', textTransform: 'uppercase', fontWeight: 'bold' }}>
+              DINAS PENDIDIKAN DAN KEBUDAYAAN
             </h2>
             <h3 style={{ margin: '2px 0', fontSize: '11pt', textTransform: 'uppercase', fontWeight: 'bold' }}>
               KOORDINATOR PENGAWAS SEKOLAH MENENGAH PERTAMA

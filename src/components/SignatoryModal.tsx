@@ -63,7 +63,10 @@ export const SignatoryModal: React.FC<SignatoryModalProps> = ({
     settings.pengawasPembinaRole || 'Koordinator Pengawas / Kepala Dinas Pendidikan'
   );
 
-  const [schoolCity, setSchoolCity] = useState(settings.schoolCity || 'Kota Pendidikan');
+  const [governmentAgency, setGovernmentAgency] = useState(
+    settings.governmentAgency || 'PEMERINTAH KABUPATEN SIDENRENG RAPPANG'
+  );
+  const [schoolCity, setSchoolCity] = useState(settings.schoolCity || 'Kabupaten Sidenreng Rappang');
   const [useTodayDate, setUseTodayDate] = useState(!settings.documentDate);
   const [customDate, setCustomDate] = useState(
     settings.documentDate ||
@@ -94,7 +97,12 @@ export const SignatoryModal: React.FC<SignatoryModalProps> = ({
       setPengawasPembinaRole(
         settings.pengawasPembinaRole || 'Koordinator Pengawas / Kepala Dinas Pendidikan'
       );
-      setSchoolCity(settings.schoolCity || 'Kota Pendidikan');
+      setGovernmentAgency(settings.governmentAgency || 'PEMERINTAH KABUPATEN SIDENRENG RAPPANG');
+      setSchoolCity(
+        settings.schoolCity === 'Kota Pendidikan'
+          ? 'Kabupaten Sidenreng Rappang'
+          : (settings.schoolCity || 'Kabupaten Sidenreng Rappang')
+      );
       setUseTodayDate(!settings.documentDate);
       setCustomDate(
         settings.documentDate ||
@@ -127,7 +135,8 @@ export const SignatoryModal: React.FC<SignatoryModalProps> = ({
     setPengawasPembinaName('Dr. Hj. Endang Sulastri, M.Pd.');
     setPengawasPembinaNip('19650410 199103 2 001');
     setPengawasPembinaRole('Koordinator Pengawas / Kepala Dinas Pendidikan');
-    setSchoolCity('Kota Pendidikan');
+    setGovernmentAgency('PEMERINTAH KABUPATEN SIDENRENG RAPPANG');
+    setSchoolCity('Kabupaten Sidenreng Rappang');
     setUseTodayDate(true);
     setCustomDate(todayFormatted);
     if (teacherInfo) setIncludeTeacherSignature(true);
@@ -136,6 +145,7 @@ export const SignatoryModal: React.FC<SignatoryModalProps> = ({
   const getUpdatedSettings = (): AppSettings => {
     return {
       ...settings,
+      governmentAgency: governmentAgency.trim() || 'PEMERINTAH KABUPATEN SIDENRENG RAPPANG',
       supervisorName: supervisorName.trim() || 'HERIANSYAH, S.Si., S.Pd., M.Pd',
       supervisorNip: supervisorNip.trim() || '19820415 200801 1 007',
       supervisorRole: supervisorRole.trim() || 'Pengawas Sekolah Pembina',
@@ -143,7 +153,7 @@ export const SignatoryModal: React.FC<SignatoryModalProps> = ({
       pengawasPembinaNip: pengawasPembinaNip.trim() || '19650410 199103 2 001',
       pengawasPembinaRole:
         pengawasPembinaRole.trim() || 'Koordinator Pengawas / Kepala Dinas Pendidikan',
-      schoolCity: schoolCity.trim() || 'Kota Pendidikan',
+      schoolCity: schoolCity.trim() || 'Kabupaten Sidenreng Rappang',
       documentDate: useTodayDate ? '' : customDate.trim()
     };
   };
@@ -360,19 +370,33 @@ export const SignatoryModal: React.FC<SignatoryModalProps> = ({
               <span>{teacherInfo ? '4' : '3'}. Tempat &amp; Titimangsa Pengesahan Dokumen</span>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="space-y-3">
               <div>
                 <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  Kota Penetapan
+                  Pemerintah Daerah / Instansi Pembina (Kop Surat Resmi)
                 </label>
                 <input
                   type="text"
-                  value={schoolCity}
-                  onChange={(e) => setSchoolCity(e.target.value)}
-                  placeholder="Kota Balikpapan / Kota Samarinda / Kota Pendidikan"
-                  className="w-full px-3 py-2 text-xs rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                  value={governmentAgency}
+                  onChange={(e) => setGovernmentAgency(e.target.value)}
+                  placeholder="PEMERINTAH KABUPATEN SIDENRENG RAPPANG"
+                  className="w-full px-3 py-2 text-xs rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white font-bold"
                 />
               </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                    Kabupaten / Kota Penetapan Dokumen
+                  </label>
+                  <input
+                    type="text"
+                    value={schoolCity}
+                    onChange={(e) => setSchoolCity(e.target.value)}
+                    placeholder="Kabupaten Sidenreng Rappang"
+                    className="w-full px-3 py-2 text-xs rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                  />
+                </div>
 
               <div>
                 <label className="block text-xs font-semibold text-slate-700 mb-1">
@@ -416,6 +440,7 @@ export const SignatoryModal: React.FC<SignatoryModalProps> = ({
               </div>
             </div>
           </div>
+        </div>
 
           {/* Live Visual Preview of Signature Block */}
           <div className="border border-slate-200 rounded-xl p-4 bg-white space-y-2">

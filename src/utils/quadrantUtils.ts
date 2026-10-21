@@ -263,7 +263,7 @@ export function exportQuadrantReportToWord(
   </head>
   <body>
     <div class="kop">
-      <h3>PEMERINTAH DAERAH PROVINSI / KABUPATEN / KOTA</h3>
+      <h3>${settings.governmentAgency || 'PEMERINTAH KABUPATEN SIDENRENG RAPPANG'}</h3>
       <h2>DINAS PENDIDIKAN DAN KEBUDAYAAN</h2>
       <p style="font-weight:bold;">KANTOR PENGAWAS SEKOLAH PEMBINA SATUAN PENDIDIKAN</p>
       <p style="font-size: 8.5pt; color: #444;">${settings.schoolAddress || 'Kompleks Perkantoran Pendidikan Terpadu'} | Telepon / Pos-el Resmi Kedinasan</p>

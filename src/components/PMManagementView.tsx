@@ -437,12 +437,15 @@ export const PMManagementView: React.FC<PMManagementViewProps> = ({
         >
           {/* Official Header */}
           <div className="text-center border-b-2 border-slate-900 pb-4 mb-6">
-            <h3 className="text-sm font-bold uppercase tracking-wider">
-              PEMERINTAH DAERAH DINAS PENDIDIKAN KABUPATEN / KOTA
+            <h3 className="text-xs sm:text-sm font-bold uppercase tracking-wider">
+              {settings.governmentAgency || 'PEMERINTAH KABUPATEN SIDENRENG RAPPANG'}
             </h3>
-            <h2 className="text-base font-extrabold uppercase mt-0.5">
-              KOORDINATOR PENGAWAS SEKOLAH JENJANG PENDIDIKAN DASAR & MENENGAH
+            <h2 className="text-sm sm:text-base font-extrabold uppercase mt-0.5">
+              DINAS PENDIDIKAN DAN KEBUDAYAAN
             </h2>
+            <h3 className="text-xs font-bold uppercase mt-0.5">
+              KOORDINATOR PENGAWAS SEKOLAH JENJANG PENDIDIKAN DASAR &amp; MENENGAH
+            </h3>
             <p className="text-xs mt-1 font-sans text-slate-600">
               Sekretariat Pembina Sekolah Binaan Kurikulum Merdeka · Tahun Ajaran {selectedReportForView.academicYear}
             </p>

@@ -697,8 +697,9 @@ export function exportPMReportToWord(report: PMReport, settings: AppSettings): v
     </head>
     <body>
       <div class="header-kop">
-        <div style="font-size:10pt;font-weight:bold;">PEMERINTAH DAERAH DINAS PENDIDIKAN KABUPATEN / KOTA ${(settings.schoolCity || 'KOTA').toUpperCase()}</div>
-        <div style="font-size:13pt;font-weight:bold;margin:4px 0;">KOORDINATOR PENGAWAS SEKOLAH JENJANG DIKDASMEN</div>
+        <div style="font-size:10pt;font-weight:bold;">${escapeHtml((settings.governmentAgency || 'PEMERINTAH KABUPATEN SIDENRENG RAPPANG').toUpperCase())}</div>
+        <div style="font-size:11.5pt;font-weight:bold;margin:2px 0;">DINAS PENDIDIKAN DAN KEBUDAYAAN</div>
+        <div style="font-size:12pt;font-weight:bold;margin:2px 0;">KOORDINATOR PENGAWAS SEKOLAH JENJANG DIKDASMEN</div>
         <div style="font-size:9pt;color:#555;">Sekretariat Pembina Sekolah Binaan Kurikulum Merdeka · Tahun Ajaran ${report.academicYear}</div>
       </div>
 
@@ -921,9 +922,9 @@ export function exportQualityMapToWord(
     </head>
     <body>
       <!-- KOP DINAS PENGAWAS SEKOLAH -->
-      <div class="header-title">PEMERINTAH DAERAH DINAS PENDIDIKAN</div>
-      <div class="header-title">KOORDINATOR PENGAWAS SEKOLAH MENENGAH PERTAMA</div>
-      <div class="header-sub">WILAYAH BINAAN KABUPATEN / KOTA PENDIDIKAN</div>
+      <div class="header-title">${escapeHtml((settings.governmentAgency || 'PEMERINTAH KABUPATEN SIDENRENG RAPPANG').toUpperCase())}</div>
+      <div class="header-title">DINAS PENDIDIKAN DAN KEBUDAYAAN</div>
+      <div class="header-sub">KOORDINATOR PENGAWAS SEKOLAH MENENGAH PERTAMA</div>
       <div class="header-address">
         Sekretariat: ${escapeHtml(settings.schoolAddress || 'Gedung Pusat Pengawas Pembina Pendidikan Terpadu')}
       </div>
@@ -1258,9 +1259,9 @@ export function exportGrowthTrackerToWord(
     </head>
     <body>
       <!-- KOP DINAS -->
-      <div class="header-title">PEMERINTAH DAERAH DINAS PENDIDIKAN</div>
-      <div class="header-title">KOORDINATOR PENGAWAS SEKOLAH MENENGAH PERTAMA</div>
-      <div class="header-sub">PROGRAM SUPERVISI KLINIS BERKELANJUTAN KURIKULUM MERDEKA</div>
+      <div class="header-title">${escapeHtml((settings.governmentAgency || 'PEMERINTAH KABUPATEN SIDENRENG RAPPANG').toUpperCase())}</div>
+      <div class="header-title">DINAS PENDIDIKAN DAN KEBUDAYAAN</div>
+      <div class="header-sub">KOORDINATOR PENGAWAS SEKOLAH MENENGAH PERTAMA</div>
       <div class="header-address">
         Sekretariat: ${escapeHtml(settings.schoolAddress || 'Gedung Pusat Pengawas Pembina Pendidikan Terpadu')}
       </div>

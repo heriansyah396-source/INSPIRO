@@ -112,6 +112,7 @@ export interface SupervisionRecord {
 }
 
 export interface AppSettings {
+  governmentAgency?: string;
   schoolName: string;
   schoolNpsn: string;
   schoolCity: string;

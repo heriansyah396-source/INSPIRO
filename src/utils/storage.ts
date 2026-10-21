@@ -169,9 +169,21 @@ export function getSettings(): AppSettings {
     current.supervisorNip.replace(/\s+/g, '') === '196805121994121002' ||
     current.supervisorRole === 'Kepala Sekolah / Supervisor Akademik';
 
-  if (isRustinaOrLegacy) {
+  const needsGovMigrate =
+    !current.governmentAgency ||
+    current.governmentAgency.includes('PROVINSI / KABUPATEN / KOTA') ||
+    current.schoolCity === 'Kota Pendidikan';
+
+  if (isRustinaOrLegacy || needsGovMigrate) {
     const updated: AppSettings = {
       ...current,
+      governmentAgency: current.governmentAgency && !current.governmentAgency.includes('PROVINSI / KABUPATEN / KOTA')
+        ? current.governmentAgency
+        : 'PEMERINTAH KABUPATEN SIDENRENG RAPPANG',
+      schoolCity: current.schoolCity === 'Kota Pendidikan' ? 'Kabupaten Sidenreng Rappang' : (current.schoolCity || 'Kabupaten Sidenreng Rappang'),
+      schoolAddress: current.schoolAddress?.includes('Jl. Pemuda')
+        ? 'Jl. Harapan Baru Blok C No. 22, Pangkajene, Watang Pulu, Kab. Sidenreng Rappang'
+        : (current.schoolAddress || 'Jl. Harapan Baru Blok C No. 22, Pangkajene, Watang Pulu, Kab. Sidenreng Rappang'),
       supervisorName: 'HERIANSYAH, S.Si., S.Pd., M.Pd',
       supervisorRole: 'Pengawas Sekolah',
       supervisorNip: '19820415 200801 1 007'

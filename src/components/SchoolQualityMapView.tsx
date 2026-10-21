@@ -1076,10 +1076,13 @@ export const SchoolQualityMapView: React.FC<SchoolQualityMapViewProps> = ({
         <div style={{ padding: '20px', fontFamily: 'Times New Roman, serif', color: '#000000' }}>
           {/* KOP SURAT RESMI PENGAWAS */}
           <div style={{ textAlign: 'center', borderBottom: '2.5px solid #000000', paddingBottom: '12px', marginBottom: '20px' }}>
-            <h2 style={{ margin: '0', fontSize: '15pt', textTransform: 'uppercase', fontWeight: 'bold' }}>
-              PEMERINTAH DAERAH DINAS PENDIDIKAN
+            <h2 style={{ margin: '0', fontSize: '13pt', textTransform: 'uppercase', fontWeight: 'bold' }}>
+              {settings.governmentAgency || 'PEMERINTAH KABUPATEN SIDENRENG RAPPANG'}
             </h2>
-            <h3 style={{ margin: '2px 0', fontSize: '13pt', textTransform: 'uppercase', fontWeight: 'bold' }}>
+            <h2 style={{ margin: '3px 0', fontSize: '15pt', textTransform: 'uppercase', fontWeight: 'bold' }}>
+              DINAS PENDIDIKAN DAN KEBUDAYAAN
+            </h2>
+            <h3 style={{ margin: '2px 0', fontSize: '11pt', textTransform: 'uppercase', fontWeight: 'bold' }}>
               KOORDINATOR PENGAWAS SEKOLAH MENENGAH PERTAMA
             </h3>
             <p style={{ margin: '0', fontSize: '10pt', fontStyle: 'italic', color: '#333333' }}>
