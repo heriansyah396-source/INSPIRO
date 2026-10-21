@@ -18,15 +18,19 @@ import {
   BookOpenCheck,
   KeyRound,
   Compass,
-  TrendingUp
+  TrendingUp,
+  Calendar,
+  HeartHandshake
 } from 'lucide-react';
 import { SupervisionRecord, PMReport } from '../types/inspiro';
 import { RadarChartWidget } from './RadarChartWidget';
 
 export type NavTab =
   | 'dashboard'
+  | 'calendar'
   | 'teachers'
   | 'supervision'
+  | 'coaching'
   | 'results'
   | 'reports'
   | 'pm-reports'
@@ -76,6 +80,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
       badge: undefined
     },
     {
+      id: 'calendar' as NavTab,
+      label: 'Kalender & Agenda',
+      icon: Calendar,
+      badge: 'Jadwal Kunjungan'
+    },
+    {
       id: 'teachers' as NavTab,
       label: 'Data Guru',
       icon: Users,
@@ -86,6 +96,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
       label: 'Supervisi Akademik',
       icon: ClipboardCheck,
       badge: 'Baru'
+    },
+    {
+      id: 'coaching' as NavTab,
+      label: 'Coaching Alur TIRTA',
+      icon: HeartHandshake,
+      badge: 'Refleksi Klinis'
     },
     {
       id: 'results' as NavTab,

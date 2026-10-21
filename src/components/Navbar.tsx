@@ -28,6 +28,10 @@ const TAB_TITLES: Record<NavTab, { title: string; subtitle: string }> = {
     title: 'Dashboard Supervisi',
     subtitle: 'Ikhtisar capaian dan profil pembelajaran Kurikulum Merdeka'
   },
+  calendar: {
+    title: 'Kalender Supervisi & Agenda Kunjungan Sekolah',
+    subtitle: 'Jadwal observasi kelas, bimbingan manajerial, monev sekolah, dan ekspor kalender'
+  },
   teachers: {
     title: 'Data Guru',
     subtitle: 'Daftar pendidik, identitas NIP, dan alokasi mata pelajaran'
@@ -35,6 +39,10 @@ const TAB_TITLES: Record<NavTab, { title: string; subtitle: string }> = {
   supervision: {
     title: 'Supervisi Akademik',
     subtitle: 'Instrumen observasi 12 indikator, pra-observasi, dan RTL'
+  },
+  coaching: {
+    title: 'Jurnal Coaching Dialogis Alur TIRTA',
+    subtitle: 'Pendampingan klinis reflektif: Tujuan, Identifikasi, Rencana Aksi, dan Tanggung Jawab'
   },
   results: {
     title: 'Hasil Supervisi',

@@ -23,6 +23,8 @@ import { ManagePrincipalsModal } from './components/ManagePrincipalsModal';
 import { PMManagementView } from './components/PMManagementView';
 import { SchoolQualityMapView } from './components/SchoolQualityMapView';
 import { GrowthTrackerView } from './components/GrowthTrackerView';
+import { SupervisionCalendarView } from './components/SupervisionCalendarView';
+import { TirtaCoachingView } from './components/TirtaCoachingView';
 import {
   AppSettings,
   SupervisionRecord,
@@ -570,8 +572,22 @@ export default function App() {
                   onNavigateToPM={() => setCurrentTab('pm-reports')}
                   onNavigateToQualityMap={() => setCurrentTab('quality-map')}
                   onNavigateToGrowthTracker={() => setCurrentTab('growth-tracker')}
+                  onNavigateToCalendar={() => setCurrentTab('calendar')}
+                  onNavigateToCoaching={() => setCurrentTab('coaching')}
                   onOpenManagePrincipals={() => setIsManagePrincipalsOpen(true)}
                   isSupervisor={currentUser?.role === 'pengawas'}
+                />
+              )}
+
+              {/* Tab: Kalender Supervisi & Agenda Kunjungan Sekolah */}
+              {currentTab === 'calendar' && (
+                <SupervisionCalendarView
+                  teachers={teachers}
+                  supervisions={supervisions}
+                  settings={settings}
+                  onStartSupervision={(teacherId) => handleStartNewSupervision(teacherId)}
+                  onUpdateSettings={handleSaveSettings}
+                  showToast={showToast}
                 />
               )}
 
@@ -602,6 +618,17 @@ export default function App() {
                   onSaveDraft={handleSaveDraft}
                   onCompleteSupervision={handleCompleteSupervision}
                   onCancel={handleCancelWizard}
+                />
+              )}
+
+              {/* Tab: Jurnal Coaching Dialogis Alur TIRTA */}
+              {currentTab === 'coaching' && (
+                <TirtaCoachingView
+                  teachers={teachers}
+                  supervisions={supervisions}
+                  settings={settings}
+                  onUpdateSettings={handleSaveSettings}
+                  showToast={showToast}
                 />
               )}
 

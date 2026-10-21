@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import {
   Users,
   ClipboardCheck,
@@ -17,9 +17,15 @@ import {
   Plus,
   BookOpenCheck,
   KeyRound,
-  Compass
+  Compass,
+  CalendarDays,
+  Calendar,
+  Building,
+  PlayCircle,
+  HeartHandshake
 } from 'lucide-react';
-import { SupervisionRecord, Teacher } from '../types/inspiro';
+import { SupervisionRecord, Teacher, VISIT_TYPE_LABELS } from '../types/inspiro';
+import { getVisitAgendas } from '../utils/storage';
 
 interface DashboardProps {
   teachers: Teacher[];
@@ -32,6 +38,8 @@ interface DashboardProps {
   onNavigateToPM?: () => void;
   onNavigateToQualityMap?: () => void;
   onNavigateToGrowthTracker?: () => void;
+  onNavigateToCalendar?: () => void;
+  onNavigateToCoaching?: () => void;
   onOpenManagePrincipals?: () => void;
   isSupervisor?: boolean;
 }
@@ -47,6 +55,8 @@ export const Dashboard: React.FC<DashboardProps> = ({
   onNavigateToPM,
   onNavigateToQualityMap,
   onNavigateToGrowthTracker,
+  onNavigateToCalendar,
+  onNavigateToCoaching,
   onOpenManagePrincipals,
   isSupervisor
 }) => {
@@ -95,6 +105,15 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
   // Recent 5 supervisions
   const recentSupervisions = [...supervisions].slice(0, 5);
+
+  // Upcoming School Visit Agendas
+  const visitAgendas = useMemo(() => getVisitAgendas(), []);
+  const todayStr = '2026-10-21';
+  const upcomingVisits = useMemo(() => {
+    return visitAgendas
+      .filter((a) => a.date >= todayStr || a.status === 'berlangsung')
+      .slice(0, 3);
+  }, [visitAgendas]);
 
   return (
     <div className="space-y-6">
@@ -155,20 +174,62 @@ export const Dashboard: React.FC<DashboardProps> = ({
             </span>
           </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            {/* Tile 1: Peta Mutu Binaan */}
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+            {/* Tile 1: Kalender & Agenda Kunjungan */}
             <button
-              onClick={onNavigateToQualityMap}
-              className="group text-left p-3.5 rounded-xl bg-white/6 hover:bg-white/12 border border-white/10 hover:border-blue-400/40 transition-all duration-200 cursor-pointer flex flex-col justify-between"
+              onClick={onNavigateToCalendar}
+              className="group text-left p-3.5 rounded-xl bg-white/6 hover:bg-white/12 border border-white/10 hover:border-cyan-400/40 transition-all duration-200 cursor-pointer flex flex-col justify-between"
             >
               <div className="flex items-center justify-between mb-2">
-                <div className="w-8 h-8 rounded-lg bg-blue-500/20 text-cyan-300 flex items-center justify-center border border-blue-400/30 group-hover:scale-105 transition-transform">
-                  <Compass className="w-4 h-4" />
+                <div className="w-8 h-8 rounded-lg bg-cyan-500/20 text-cyan-300 flex items-center justify-center border border-cyan-400/30 group-hover:scale-105 transition-transform">
+                  <CalendarDays className="w-4 h-4" />
                 </div>
                 <ArrowRight className="w-3.5 h-3.5 text-white/40 group-hover:text-cyan-300 group-hover:translate-x-0.5 transition-all" />
               </div>
               <div>
                 <p className="text-xs font-bold text-white group-hover:text-cyan-200 transition-colors">
+                  Kalender &amp; Agenda
+                </p>
+                <p className="text-[11px] text-cyan-200/70 mt-0.5 line-clamp-1">
+                  Jadwal kunjungan
+                </p>
+              </div>
+            </button>
+
+            {/* Tile 2: Jurnal Coaching Alur TIRTA */}
+            <button
+              onClick={onNavigateToCoaching}
+              className="group text-left p-3.5 rounded-xl bg-white/6 hover:bg-white/12 border border-white/10 hover:border-rose-400/40 transition-all duration-200 cursor-pointer flex flex-col justify-between"
+            >
+              <div className="flex items-center justify-between mb-2">
+                <div className="w-8 h-8 rounded-lg bg-rose-500/20 text-rose-300 flex items-center justify-center border border-rose-400/30 group-hover:scale-105 transition-transform">
+                  <HeartHandshake className="w-4 h-4" />
+                </div>
+                <ArrowRight className="w-3.5 h-3.5 text-white/40 group-hover:text-rose-300 group-hover:translate-x-0.5 transition-all" />
+              </div>
+              <div>
+                <p className="text-xs font-bold text-white group-hover:text-rose-200 transition-colors">
+                  Coaching TIRTA
+                </p>
+                <p className="text-[11px] text-rose-200/70 mt-0.5 line-clamp-1">
+                  Refleksi klinis guru
+                </p>
+              </div>
+            </button>
+
+            {/* Tile 3: Peta Mutu Binaan */}
+            <button
+              onClick={onNavigateToQualityMap}
+              className="group text-left p-3.5 rounded-xl bg-white/6 hover:bg-white/12 border border-white/10 hover:border-blue-400/40 transition-all duration-200 cursor-pointer flex flex-col justify-between"
+            >
+              <div className="flex items-center justify-between mb-2">
+                <div className="w-8 h-8 rounded-lg bg-blue-500/20 text-blue-300 flex items-center justify-center border border-blue-400/30 group-hover:scale-105 transition-transform">
+                  <Compass className="w-4 h-4" />
+                </div>
+                <ArrowRight className="w-3.5 h-3.5 text-white/40 group-hover:text-blue-300 group-hover:translate-x-0.5 transition-all" />
+              </div>
+              <div>
+                <p className="text-xs font-bold text-white group-hover:text-blue-200 transition-colors">
                   Peta Mutu Binaan
                 </p>
                 <p className="text-[11px] text-blue-200/70 mt-0.5 line-clamp-1">
@@ -177,7 +238,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
               </div>
             </button>
 
-            {/* Tile 2: Growth Tracker Siklus */}
+            {/* Tile 3: Growth Tracker Siklus */}
             <button
               onClick={onNavigateToGrowthTracker}
               className="group text-left p-3.5 rounded-xl bg-white/6 hover:bg-white/12 border border-white/10 hover:border-emerald-400/40 transition-all duration-200 cursor-pointer flex flex-col justify-between"
@@ -198,7 +259,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
               </div>
             </button>
 
-            {/* Tile 3: Pengelolaan PM */}
+            {/* Tile 4: Pengelolaan PM */}
             <button
               onClick={onNavigateToPM}
               className="group text-left p-3.5 rounded-xl bg-white/6 hover:bg-white/12 border border-white/10 hover:border-teal-400/40 transition-all duration-200 cursor-pointer flex flex-col justify-between"
@@ -219,7 +280,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
               </div>
             </button>
 
-            {/* Tile 4: Akun Kepsek Binaan atau Laporan Resmi */}
+            {/* Tile 5: Akun Kepsek Binaan atau Laporan Resmi */}
             {isSupervisor && onOpenManagePrincipals ? (
               <button
                 onClick={onOpenManagePrincipals}
@@ -568,6 +629,127 @@ export const Dashboard: React.FC<DashboardProps> = ({
             <span className="font-semibold text-blue-600">Skala 1 – 4 (Maks. 48)</span>
           </div>
         </div>
+      </div>
+
+      {/* Agenda Kunjungan & Kalender Supervisi Mendatang (Live Pulse) */}
+      <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
+        <div className="p-4 sm:p-5 border-b border-slate-200 flex items-center justify-between bg-gradient-to-r from-blue-50/60 via-slate-50 to-indigo-50/40">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-lg bg-blue-600 text-white flex items-center justify-center shadow-xs">
+              <CalendarDays className="w-4.5 h-4.5" />
+            </div>
+            <div>
+              <h3 className="text-sm sm:text-base font-bold text-slate-900">
+                Agenda Kunjungan &amp; Supervisi Sekolah Mendatang
+              </h3>
+              <p className="text-xs text-slate-500">
+                Jadwal observasi kelas, bimbingan manajerial, dan pendampingan sekolah binaan
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={onNavigateToCalendar}
+            className="text-xs font-bold text-blue-600 hover:text-blue-800 flex items-center gap-1 transition-colors cursor-pointer"
+          >
+            <span>Buka Kalender Lengkap</span>
+            <ArrowRight className="w-3.5 h-3.5" />
+          </button>
+        </div>
+
+        {upcomingVisits.length === 0 ? (
+          <div className="p-6 text-center text-slate-500 text-xs">
+            Semua agenda kunjungan telah terlaksana. Buka Kalender untuk menambahkan agenda baru.
+          </div>
+        ) : (
+          <div className="divide-y divide-slate-100">
+            {upcomingVisits.map((item) => {
+              const typeCfg = VISIT_TYPE_LABELS[item.visitType] || VISIT_TYPE_LABELS.supervisi_akademik;
+              const isToday = item.date === todayStr;
+              const firstTeacherId = item.targetTeacherIds && item.targetTeacherIds.length > 0 ? item.targetTeacherIds[0] : undefined;
+
+              return (
+                <div
+                  key={item.id}
+                  className={`p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-slate-50/80 transition-colors ${
+                    isToday ? 'bg-amber-50/40' : ''
+                  }`}
+                >
+                  <div className="flex items-start gap-3.5">
+                    <div
+                      className={`w-12 h-12 rounded-xl flex flex-col items-center justify-center shrink-0 border ${
+                        isToday
+                          ? 'bg-amber-500 text-white border-amber-600 font-bold'
+                          : 'bg-blue-50 text-blue-800 border-blue-200'
+                      }`}
+                    >
+                      <span className="text-[9px] uppercase font-bold">
+                        {new Date(item.date).toLocaleDateString('id-ID', { month: 'short' })}
+                      </span>
+                      <span className="text-base font-black leading-none">
+                        {new Date(item.date).getDate()}
+                      </span>
+                      <span className="text-[8px] font-medium">
+                        {isToday ? 'HARI INI' : new Date(item.date).toLocaleDateString('id-ID', { weekday: 'short' })}
+                      </span>
+                    </div>
+
+                    <div className="space-y-1">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${typeCfg.bg} ${typeCfg.color}`}>
+                          {typeCfg.shortLabel}
+                        </span>
+                        {isToday && (
+                          <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-200">
+                            Hari Ini
+                          </span>
+                        )}
+                        <span className="text-xs font-bold text-slate-900">{item.title}</span>
+                      </div>
+
+                      <div className="flex flex-wrap items-center gap-2 text-xs text-slate-600">
+                        <span className="flex items-center gap-1 font-semibold text-slate-800">
+                          <Building className="w-3.5 h-3.5 text-blue-600" />
+                          {item.schoolName}
+                        </span>
+                        <span>·</span>
+                        <span className="flex items-center gap-1 text-slate-500">
+                          <Clock className="w-3.5 h-3.5" />
+                          {item.startTime || '08:00'} - {item.endTime || '12:00'} WIB
+                        </span>
+                        {item.targetTeacherNames && item.targetTeacherNames.length > 0 && (
+                          <>
+                            <span>·</span>
+                            <span className="text-indigo-700 font-medium">
+                              Sasaran: {item.targetTeacherNames.join(', ')}
+                            </span>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2 shrink-0 self-end sm:self-center">
+                    {item.visitType === 'supervisi_akademik' && (
+                      <button
+                        onClick={() => onStartSupervision(firstTeacherId)}
+                        className="flex items-center gap-1 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold transition-all cursor-pointer shadow-xs"
+                      >
+                        <PlayCircle className="w-3.5 h-3.5" />
+                        <span>Mulai Observasi</span>
+                      </button>
+                    )}
+                    <button
+                      onClick={onNavigateToCalendar}
+                      className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-semibold transition-colors cursor-pointer"
+                    >
+                      Detail
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       {/* Recent Supervisions Table */}

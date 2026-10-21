@@ -688,4 +688,202 @@ export interface RegionalGrowthAnalysis {
   }[];
 }
 
+// ==========================================
+// KALENDER SUPERVISI & AGENDA KUNJUNGAN
+// ==========================================
+
+export type VisitType =
+  | 'supervisi_akademik'
+  | 'supervisi_manajerial'
+  | 'pendampingan_pm'
+  | 'kombel_pbd'
+  | 'verifikasi_kosp'
+  | 'refleksi_klinis'
+  | 'monev_asesmen'
+  | 'rapat_koordinasi';
+
+export type VisitStatus = 'terjadwal' | 'berlangsung' | 'selesai' | 'ditunda';
+
+export interface VisitAgenda {
+  id: string;
+  title: string;
+  schoolName: string;
+  date: string; // Format: YYYY-MM-DD
+  startTime: string; // HH:mm e.g. "08:00"
+  endTime: string; // HH:mm e.g. "12:00"
+  visitType: VisitType;
+  targetTeacherIds?: string[];
+  targetTeacherNames?: string[];
+  purposeAndTargets: string;
+  notes?: string;
+  status: VisitStatus;
+  completionNotes?: string;
+  signedAt?: string;
+  supervisorName?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export const VISIT_TYPE_LABELS: Record<VisitType, { label: string; shortLabel: string; color: string; bg: string; border: string }> = {
+  supervisi_akademik: {
+    label: 'Supervisi Akademik (Observasi Kelas)',
+    shortLabel: 'Supervisi Kelas',
+    color: 'text-blue-700',
+    bg: 'bg-blue-50',
+    border: 'border-blue-200'
+  },
+  supervisi_manajerial: {
+    label: 'Supervisi Manajerial & Tata Kelola',
+    shortLabel: 'Manajerial',
+    color: 'text-indigo-700',
+    bg: 'bg-indigo-50',
+    border: 'border-indigo-200'
+  },
+  pendampingan_pm: {
+    label: 'Pendampingan Pengelolaan PM (Praktik Pedagogis)',
+    shortLabel: 'Praktik PM',
+    color: 'text-teal-700',
+    bg: 'bg-teal-50',
+    border: 'border-teal-200'
+  },
+  kombel_pbd: {
+    label: 'Pendampingan Kombel & PBD (Rapor Pendidikan)',
+    shortLabel: 'Kombel & PBD',
+    color: 'text-emerald-700',
+    bg: 'bg-emerald-50',
+    border: 'border-emerald-200'
+  },
+  verifikasi_kosp: {
+    label: 'Verifikasi & Validasi Dokumen KOSP / Modul',
+    shortLabel: 'Verval KOSP',
+    color: 'text-amber-700',
+    bg: 'bg-amber-50',
+    border: 'border-amber-200'
+  },
+  refleksi_klinis: {
+    label: 'Refleksi Klinis Pasca-Observasi & RTL',
+    shortLabel: 'Refleksi Klinis',
+    color: 'text-purple-700',
+    bg: 'bg-purple-50',
+    border: 'border-purple-200'
+  },
+  monev_asesmen: {
+    label: 'Monev Asesmen / ANBK / Ujian Sekolah',
+    shortLabel: 'Monev ANBK',
+    color: 'text-rose-700',
+    bg: 'bg-rose-50',
+    border: 'border-rose-200'
+  },
+  rapat_koordinasi: {
+    label: 'Rapat Koordinasi / MKKS / Temu Pengawas',
+    shortLabel: 'Rakor MKKS',
+    color: 'text-slate-700',
+    bg: 'bg-slate-100',
+    border: 'border-slate-300'
+  }
+};
+
+// ==========================================
+// JURNAL COACHING DIALOGIS ALUR TIRTA
+// ==========================================
+
+export type CoachingContext =
+  | 'pasca_observasi'
+  | 'pra_observasi'
+  | 'penguatan_diferensiasi'
+  | 'penguatan_asesmen'
+  | 'disiplin_positif'
+  | 'pengembangan_diri';
+
+export type CoachingCommitmentStatus = 'dalam_proses' | 'tercapai' | 'perlu_tinjauan';
+
+export interface TirtaCoachingRecord {
+  id: string;
+  teacherId: string;
+  teacherName: string;
+  teacherNip: string;
+  schoolName: string;
+  subject: string;
+  date: string; // YYYY-MM-DD
+  time: string; // HH:mm
+  context: CoachingContext;
+  supervisionId?: string;
+
+  // ALUR TIRTA
+  tujuan: {
+    topikPercakapan: string;
+    tujuanAkhir: string;
+    ukuranKeberhasilan: string;
+  };
+
+  identifikasi: {
+    potensiDanKekuatan: string;
+    faktaDanTantangan: string;
+    akarMasalah: string;
+    peluangTersedia: string;
+  };
+
+  rencanaAksi: {
+    strategiUtama: string;
+    langkahKonkret: string[];
+    waktuDanLiniMasa: string;
+    dukunganDibutuhkan: string;
+  };
+
+  tanggungJawab: {
+    komitmenGuru: string;
+    pihakYangMembantu: string;
+    jadwalTindakLanjut: string;
+    statusKomitmen: CoachingCommitmentStatus;
+    catatanTindakLanjut?: string;
+  };
+
+  supervisorName: string;
+  supervisorNip: string;
+  supervisorRole: string;
+  coachFeedback?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export const COACHING_CONTEXT_LABELS: Record<CoachingContext, { label: string; badge: string; color: string; bg: string }> = {
+  pasca_observasi: {
+    label: 'Refleksi Klinis Pasca-Observasi Kelas',
+    badge: 'Pasca-Observasi',
+    color: 'text-blue-700',
+    bg: 'bg-blue-50'
+  },
+  pra_observasi: {
+    label: 'Pematangan Modul Ajar & Pra-Observasi',
+    badge: 'Pra-Observasi',
+    color: 'text-indigo-700',
+    bg: 'bg-indigo-50'
+  },
+  penguatan_diferensiasi: {
+    label: 'Inovasi Pembelajaran Berdiferensiasi',
+    badge: 'Diferensiasi',
+    color: 'text-emerald-700',
+    bg: 'bg-emerald-50'
+  },
+  penguatan_asesmen: {
+    label: 'Pengembangan Asesmen Formatif & Portofolio',
+    badge: 'Asesmen Formatif',
+    color: 'text-teal-700',
+    bg: 'bg-teal-50'
+  },
+  disiplin_positif: {
+    label: 'Budaya Disiplin Positif & Integrasi KSE',
+    badge: 'Disiplin & KSE',
+    color: 'text-amber-700',
+    bg: 'bg-amber-50'
+  },
+  pengembangan_diri: {
+    label: 'Pengembangan Diri & Komunitas Belajar (Kombel)',
+    badge: 'Kombel & PMM',
+    color: 'text-purple-700',
+    bg: 'bg-purple-50'
+  }
+};
+
+
 

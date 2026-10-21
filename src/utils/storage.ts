@@ -4,6 +4,8 @@
  */
 
 import { DEFAULT_SETTINGS, SEED_SUPERVISIONS, SEED_TEACHERS } from '../data/seedData';
+import { SEED_VISIT_AGENDAS } from '../data/seedAgendas';
+import { SEED_COACHING_RECORDS } from '../data/seedCoaching';
 import {
   AppSettings,
   ManagedAccount,
@@ -12,12 +14,16 @@ import {
   SupervisionCategory,
   SupervisionRecord,
   Teacher,
-  PMReport
+  PMReport,
+  VisitAgenda,
+  TirtaCoachingRecord
 } from '../types/inspiro';
 
 const TEACHERS_KEY = 'inspiro_teachers';
 const SUPERVISIONS_KEY = 'inspiro_supervisions';
 const SETTINGS_KEY = 'inspiro_settings';
+const VISIT_AGENDAS_KEY = 'inspiro_visit_agendas';
+const COACHING_RECORDS_KEY = 'inspiro_coaching_records';
 
 // Helper to safely parse JSON from localStorage
 function safeParse<T>(key: string, fallback: T): T {
@@ -767,6 +773,94 @@ export function deletePMReport(id: string): boolean {
 
 export function getPMReportById(id: string): PMReport | null {
   const current = getPMReports();
+  return current.find((r) => r.id === id) || null;
+}
+
+// 7. Visit Agendas CRUD (Kalender Supervisi & Agenda Kunjungan)
+export function getVisitAgendas(): VisitAgenda[] {
+  const agendas = safeParse<VisitAgenda[]>(VISIT_AGENDAS_KEY, []);
+  if (agendas.length === 0) {
+    saveVisitAgendas(SEED_VISIT_AGENDAS);
+    return SEED_VISIT_AGENDAS;
+  }
+  return agendas;
+}
+
+export function saveVisitAgendas(agendas: VisitAgenda[]): void {
+  try {
+    localStorage.setItem(VISIT_AGENDAS_KEY, JSON.stringify(agendas));
+  } catch (e) {
+    console.error('Error saving visit agendas:', e);
+  }
+}
+
+export function saveVisitAgenda(agenda: VisitAgenda): void {
+  const current = getVisitAgendas();
+  const index = current.findIndex((a) => a.id === agenda.id);
+  let updated: VisitAgenda[];
+  if (index >= 0) {
+    updated = [...current];
+    updated[index] = { ...agenda, updatedAt: new Date().toISOString() };
+  } else {
+    updated = [{ ...agenda, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }, ...current];
+  }
+  saveVisitAgendas(updated);
+}
+
+export function deleteVisitAgenda(id: string): boolean {
+  const current = getVisitAgendas();
+  const filtered = current.filter((a) => a.id !== id);
+  if (filtered.length === current.length) return false;
+  saveVisitAgendas(filtered);
+  return true;
+}
+
+export function getVisitAgendaById(id: string): VisitAgenda | null {
+  const current = getVisitAgendas();
+  return current.find((a) => a.id === id) || null;
+}
+
+// 8. Jurnal Coaching Dialogis Alur TIRTA CRUD
+export function getCoachingRecords(): TirtaCoachingRecord[] {
+  const records = safeParse<TirtaCoachingRecord[]>(COACHING_RECORDS_KEY, []);
+  if (records.length === 0) {
+    saveCoachingRecords(SEED_COACHING_RECORDS);
+    return SEED_COACHING_RECORDS;
+  }
+  return records;
+}
+
+export function saveCoachingRecords(records: TirtaCoachingRecord[]): void {
+  try {
+    localStorage.setItem(COACHING_RECORDS_KEY, JSON.stringify(records));
+  } catch (e) {
+    console.error('Error saving coaching records:', e);
+  }
+}
+
+export function saveCoachingRecord(record: TirtaCoachingRecord): void {
+  const current = getCoachingRecords();
+  const index = current.findIndex((r) => r.id === record.id);
+  let updated: TirtaCoachingRecord[];
+  if (index >= 0) {
+    updated = [...current];
+    updated[index] = { ...record, updatedAt: new Date().toISOString() };
+  } else {
+    updated = [{ ...record, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }, ...current];
+  }
+  saveCoachingRecords(updated);
+}
+
+export function deleteCoachingRecord(id: string): boolean {
+  const current = getCoachingRecords();
+  const filtered = current.filter((r) => r.id !== id);
+  if (filtered.length === current.length) return false;
+  saveCoachingRecords(filtered);
+  return true;
+}
+
+export function getCoachingRecordById(id: string): TirtaCoachingRecord | null {
+  const current = getCoachingRecords();
   return current.find((r) => r.id === id) || null;
 }
 
