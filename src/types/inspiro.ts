@@ -1031,5 +1031,515 @@ export const QUADRANT_DEFINITIONS: Record<TeacherQuadrantType, QuadrantInfo> = {
   }
 };
 
+// ========================================================================
+// PROGRAM PENGELOLAAN PEMBELAJARAN MENDALAM (PM) - ELEMEN LINGKUNGAN BELAJAR
+// Fokus: Iklim Psikologis (Keamanan Emosional) & Efisiensi Waktu Belajar
+// ========================================================================
+
+export type PMLearningEnvMaturity =
+  | 'Level 1: Terbatas'
+  | 'Level 2: Berkembang'
+  | 'Level 3: Matang'
+  | 'Level 4: Membudaya';
+
+export interface PsychologicalSafetyChecklist {
+  expressWithoutFear: boolean; // Murid bebas bertanya/berpendapat tanpa cemas ditertawakan
+  mistakesAsLearning: boolean; // Kesalahan dipandang sebagai proses belajar (growth mindset)
+  noBullyingSarcasm: boolean; // Suasana bebas sindiran kaku / intimidasi antar murid maupun guru
+  kseEmotionalRegulation: boolean; // Integrasi KSE (jeda emosi, teknik STOP, apresiasi perasaan)
+  mutualSupport: boolean; // Budaya empati dan saling bantu dalam interaksi kelas
+}
+
+export interface TimeEfficiencyTracker {
+  totalLessonDuration: number; // Total alokasi jam tatap muka (misal: 80 menit untuk 2 JP)
+  activeLearningMinutes: number; // Murid aktif (diskusi, pemecahan masalah, kreasi karya)
+  teacherTalkMinutes: number; // Guru ceramah satu arah / monolog instruksi
+  transitionAdminMinutes: number; // Transisi antar sesi / pembagian kelompok / presensi
+  deadTimeMinutes: number; // Jeda hampa / distraksi / menunggu tanpa instruksi
+  activeTimeRatioPct: number; // (activeLearningMinutes / totalLessonDuration) * 100
+  pacingSmoothness: 'Tersendat' | 'Cukup Lancar' | 'Sangat Mulus & Dinamis';
+}
+
+export interface AgencyIndicators {
+  voiceAndChoice: boolean; // Murid memiliki pilihan dalam memilih bentuk tugas/sumber belajar
+  selfGoalSetting: boolean; // Murid dilibatkan menyusun tujuan dan kriteria keberhasilan belajar
+  metacognitiveReflection: boolean; // Refleksi reguler terhadap apa yang dipelajari dan strategi perbaikan
+}
+
+export interface SpatialFlexibility {
+  flexibleSeating: boolean; // Susunan bangku dapat diubah dinamis untuk kolaborasi kelompok
+  accessibleResources: boolean; // Sumber dan alat belajar mudah diakses murid secara mandiri
+  beyondClassroom: boolean; // Pemanfaatan ruang luar kelas, lingkungan nyata, atau fasilitas sekolah
+}
+
+export interface PMLearningEnvRecord {
+  id: string;
+  schoolName: string;
+  teacherId: string;
+  teacherName: string;
+  teacherNip: string;
+  subject: string;
+  gradeClass: string;
+  topic: string;
+  date: string; // YYYY-MM-DD
+  assessorName: string;
+  assessorRole: string; // 'Pengawas Sekolah' | 'Kepala Sekolah'
+  assessorNip: string;
+  headmasterName: string;
+  headmasterNip: string;
+
+  // Dimensi 1: Iklim Psikologis & Keamanan Emosional (25 Poin)
+  dim1Psychological: {
+    score: number; // 1 - 4
+    level: 'Terbatas' | 'Berkembang' | 'Matang' | 'Membudaya';
+    checklist: PsychologicalSafetyChecklist;
+    notes: string;
+    evidenceNotes: string;
+  };
+
+  // Dimensi 2: Efisiensi Alokasi Waktu Belajar & Ritme Kelas (25 Poin)
+  dim2TimeEfficiency: {
+    score: number; // 1 - 4
+    level: 'Terbatas' | 'Berkembang' | 'Matang' | 'Membudaya';
+    tracker: TimeEfficiencyTracker;
+    notes: string;
+    evidenceNotes: string;
+  };
+
+  // Dimensi 3: Kultur Agensi, Suara & Kepemilikan Murid (25 Poin)
+  dim3StudentAgency: {
+    score: number; // 1 - 4
+    level: 'Terbatas' | 'Berkembang' | 'Matang' | 'Membudaya';
+    indicators: AgencyIndicators;
+    notes: string;
+    evidenceNotes: string;
+  };
+
+  // Dimensi 4: Fleksibilitas Tata Ruang & Pemanfaatan Lingkungan (25 Poin)
+  dim4PhysicalSpatial: {
+    score: number; // 1 - 4
+    level: 'Terbatas' | 'Berkembang' | 'Matang' | 'Membudaya';
+    spatial: SpatialFlexibility;
+    notes: string;
+    evidenceNotes: string;
+  };
+
+  // Kalkulasi Skor Agregat & Diagnostik
+  totalScore: number; // 0 - 100
+  maturityLevel: PMLearningEnvMaturity;
+  timeEfficiencyCategory: 'Sangat Efisien (Optimal)' | 'Cukup Efisien' | 'Kurang Efisien (Butuh Pemangkasan Ceramah)';
+  psychologicalClimateCategory: 'Sangat Aman & Kondusif' | 'Cukup Nyaman' | 'Perlu Penguatan Rasa Aman';
+  keyStrengths: string[];
+  keyGrowthAreas: string[];
+  supervisoryRecommendations: string[];
+  status: 'draft' | 'final';
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface PMLearningEnvRubric {
+  id: string;
+  number: number;
+  title: string;
+  shortTitle: string;
+  description: string;
+  levels: {
+    1: { label: 'Terbatas'; points: 6.25; criteria: string };
+    2: { label: 'Berkembang'; points: 12.5; criteria: string };
+    3: { label: 'Matang'; points: 18.75; criteria: string };
+    4: { label: 'Membudaya'; points: 25.0; criteria: string };
+  };
+}
+
+export const PM_LEARNING_ENV_RUBRICS: PMLearningEnvRubric[] = [
+  {
+    id: 'env_dim1',
+    number: 1,
+    title: 'Iklim Psikologis Kelas & Keamanan Emosional Murid',
+    shortTitle: 'Keamanan Emosional & Iklim Psikologis',
+    description:
+      'Tingkat rasa aman murid dalam berekspresi, berani mengambil risiko belajar, bebas dari rasa takut dihakimi, ketiadaan sarkasme, serta pembiasaan regulasi emosi positif (KSE).',
+    levels: {
+      1: {
+        label: 'Terbatas',
+        points: 6.25,
+        criteria:
+          'Kelas kaku dan didominasi rasa cemas. Murid enggan bertanya karena takut salah atau dicemooh. Belum ada pembiasaan empati atau kesepakatan kelas yang mengayomi.'
+      },
+      2: {
+        label: 'Berkembang',
+        points: 12.5,
+        criteria:
+          'Kelas cukup tertib, namun murid masih ragu berpendapat spontan. Guru menegur dengan baik, namun integrasi afirmasi emosional atau rehat KSE belum konsisten diterapkan.'
+      },
+      3: {
+        label: 'Matang',
+        points: 18.75,
+        criteria:
+          'Atmosfer hangat dan terbuka. Murid merasa nyaman berdiskusi, perbedaan pendapat dihargai, dan guru memvalidasi usaha murid secara suportif saat menghadapi kebuntuan.'
+      },
+      4: {
+        label: 'Membudaya',
+        points: 25.0,
+        criteria:
+          'Keamanan psikologis sangat kokoh. Budaya saling mengapresiasi dan growth mindset hidup alami. Kesalahan dianggap batu loncatan belajar, murid saling mendukung dengan empati tinggi.'
+      }
+    }
+  },
+  {
+    id: 'env_dim2',
+    number: 2,
+    title: 'Efisiensi Alokasi Waktu Belajar & Manajemen Ritme Kelas',
+    shortTitle: 'Efisiensi Waktu & Ritme Belajar',
+    description:
+      'Optimalisasi waktu belajar aktif murid (active learning time ratio >= 70%), kelancaran transisi antar sesi, manajemen instruksi efektif, dan ketiadaan jeda hampa (dead time).',
+    levels: {
+      1: {
+        label: 'Terbatas',
+        points: 6.25,
+        criteria:
+          'Alokasi waktu didominasi ceramah guru (> 65% durasi tatap muka). Transisi lambat, instruksi bertele-tele, dan banyak jeda kosong murid menunggu giliran tanpa aktivitas bermakna.'
+      },
+      2: {
+        label: 'Berkembang',
+        points: 12.5,
+        criteria:
+          'Waktu belajar aktif murid berkisar 50-60%. Alur mulai terstruktur, namun durasi transisi kelompok atau penyiapan media masih menyita waktu pembelajaran esensial.'
+      },
+      3: {
+        label: 'Matang',
+        points: 18.75,
+        criteria:
+          'Pemanfaatan waktu efektif, murid aktif berkegiatan 65-75% waktu. Transisi berlangsung mulus dengan aba-aba jelas, guru memantau alokasi waktu tiap tahapan dengan disiplin.'
+      },
+      4: {
+        label: 'Membudaya',
+        points: 25.0,
+        criteria:
+          'Ritme sangat dinamis dan terkelola presisi. Rasio belajar aktif murid > 75%, transisi otomatis tanpa jeda hampa, manajemen waktu fleksibel sesuai ritme pemahaman murid.'
+      }
+    }
+  },
+  {
+    id: 'env_dim3',
+    number: 3,
+    title: 'Kultur Agensi, Suara (Voice) & Kepemilikan (Ownership) Murid',
+    shortTitle: 'Kultur Agensi & Suara Murid',
+    description:
+      'Pemberian ruang bagi murid untuk menyuarakan gagasan, memilih strategi/produk belajar (voice & choice), menetapkan target, serta melakukan metakognisi mandiri.',
+    levels: {
+      1: {
+        label: 'Terbatas',
+        points: 6.25,
+        criteria:
+          'Pembelajaran seragam dan satu arah. Murid hanya menjalankan instruksi kaku tanpa opsi memilih tugas, cara belajar, maupun kesempatan mengevaluasi pemahamannya sendiri.'
+      },
+      2: {
+        label: 'Berkembang',
+        points: 12.5,
+        criteria:
+          'Guru mulai memberi pilihan kecil (misal: memilih anggota kelompok atau urutan soal), tetapi kepemilikan tujuan belajar masih sepenuhnya diarahkan guru.'
+      },
+      3: {
+        label: 'Matang',
+        points: 18.75,
+        criteria:
+          'Murid aktif diajak menentukan cara menunjukkan pemahaman (diferensiasi produk), terlibat menyepakati kriteria tugas, dan melakukan refleksi diri di akhir sesi.'
+      },
+      4: {
+        label: 'Membudaya',
+        points: 25.0,
+        criteria:
+          'Agensi murid terwujud penuh. Murid merancang lintasan belajarnya, menyuarakan ide orisinal secara mandiri, memantau kemajuannya, dan melakukan evaluasi diri metakognitif yang matang.'
+      }
+    }
+  },
+  {
+    id: 'env_dim4',
+    number: 4,
+    title: 'Fleksibilitas Tata Ruang & Pemanfaatan Sumber Daya Lingkungan',
+    shortTitle: 'Fleksibilitas Ruang & Sumber Daya',
+    description:
+      'Penataan fisik kelas yang mudah dimodifikasi untuk beragam moda interaksi kolaboratif, akses mandiri sumber belajar, dan perluasan ruang belajar melampaui dinding kelas.',
+    levels: {
+      1: {
+        label: 'Terbatas',
+        points: 6.25,
+        criteria:
+          'Susunan bangku kaku berbaris searah papan tulis. Ruang gerak sempit, minim variasi penataan untuk diskusi kelompok, dan sumber belajar hanya buku teks tunggal.'
+      },
+      2: {
+        label: 'Berkembang',
+        points: 12.5,
+        criteria:
+          'Bangku ditata berkelompok, namun perpindahan antar moda belajar masih memicu kegaduhan. Akses alat dan sumber belajar mulai terbuka meski belum terkelola mandiri.'
+      },
+      3: {
+        label: 'Matang',
+        points: 18.75,
+        criteria:
+          'Tata ruang fleksibel dan ergonomis, memfasilitasi rotasi kelompok dan bimbingan mandiri dengan lancar. Tersedia pojok belajar kaya sumber bacaan dan alat peraga.'
+      },
+      4: {
+        label: 'Membudaya',
+        points: 25.0,
+        criteria:
+          'Lingkungan belajar melampaui sekat kelas konvensional. Penataan ruang sangat adaptif, terintegrasi dengan lingkungan sekolah/luar kelas dan sumber belajar digital nyata.'
+      }
+    }
+  }
+];
+
+// ========================================================================
+// PROGRAM PENGELOLAAN PEMBELAJARAN MENDALAM (PM) - ELEMEN PEMANFAATAN DIGITAL
+// Fokus: Leveraging Digital for Deep Learning & Evaluasi SAMR
+// ========================================================================
+
+export type SAMRLevel = 'Substitution' | 'Augmentation' | 'Modification' | 'Redefinition';
+
+export type PMDigitalMaturity =
+  | 'Level 1: Terbatas (Substitution)'
+  | 'Level 2: Berkembang (Augmentation)'
+  | 'Level 3: Matang (Modification)'
+  | 'Level 4: Membudaya (Redefinition)';
+
+export interface DigitalChecklist {
+  createsDigitalArtifacts: boolean; // Murid berkarya (infografis Canva/video/simulasi PhET/podcast/coding), bukan pasif
+  realtimeCollaboration: boolean; // Kolaborasi cloud bersama (Google Docs/Slides terbagi, Padlet, Jamboard)
+  adaptiveAssessmentFeedback: boolean; // Asesmen formatif adaptif (Quizizz/Kahoot/Forms) dengan analisis data instan
+  digitalEthicsAndAi: boolean; // Literasi etika digital, hak cipta, dan pemanfaatan AI yang bijak & bertanggung jawab
+  authenticAudience: boolean; // Karya dipublikasikan ke audiens nyata (komunitas sekolah/orang tua/jejaring belajar)
+}
+
+export interface DigitalToolUsage {
+  toolsUsed: string[]; // Canva, PhET, Quizizz, Google Workspace, PMM, GeoGebra, Scratch, Wordwall, dll.
+  deviceType: 'Chromebook / Laptop' | 'Smartphone / Tablet' | 'Laboratorium Komputer' | 'Hybrid / Multi-device';
+  studentHandsOnDuration: number; // Menit murid aktif mengoperasikan perangkat secara mandiri
+  totalLessonDuration: number; // Total alokasi jam tatap muka (misal: 80 menit)
+  studentHandsOnRatioPct: number; // (studentHandsOnDuration / totalLessonDuration) * 100
+  samrLevel: SAMRLevel;
+}
+
+export interface PMDigitalRecord {
+  id: string;
+  schoolName: string;
+  teacherId: string;
+  teacherName: string;
+  teacherNip: string;
+  subject: string;
+  gradeClass: string;
+  topic: string;
+  date: string; // YYYY-MM-DD
+  assessorName: string;
+  assessorRole: string; // 'Pengawas Sekolah' | 'Kepala Sekolah'
+  assessorNip: string;
+  headmasterName: string;
+  headmasterNip: string;
+
+  // Dimensi 1: Peran Murid sebagai Kreator Konten Digital Otentik (25 Poin)
+  dim1CreatorRole: {
+    score: number; // 1 - 4
+    level: 'Terbatas' | 'Berkembang' | 'Matang' | 'Membudaya';
+    artifactsCreated: string; // Bentuk karya digital murid
+    notes: string;
+    evidenceNotes: string;
+  };
+
+  // Dimensi 2: Kolaborasi & Komunikasi Digital Lintas Ruang (25 Poin)
+  dim2Collaboration: {
+    score: number; // 1 - 4
+    level: 'Terbatas' | 'Berkembang' | 'Matang' | 'Membudaya';
+    platforms: string; // Platform kolaborasi yang dipakai
+    notes: string;
+    evidenceNotes: string;
+  };
+
+  // Dimensi 3: Asesmen Formatif Adaptif & Umpan Balik Instan (25 Poin)
+  dim3Assessment: {
+    score: number; // 1 - 4
+    level: 'Terbatas' | 'Berkembang' | 'Matang' | 'Membudaya';
+    assessmentTool: string; // Tools asesmen & analitik
+    notes: string;
+    evidenceNotes: string;
+  };
+
+  // Dimensi 4: Kewarganegaraan Digital, Etika & Pemanfaatan AI (25 Poin)
+  dim4EthicsAndAi: {
+    score: number; // 1 - 4
+    level: 'Terbatas' | 'Berkembang' | 'Matang' | 'Membudaya';
+    aiUsageNotes: string; // Bagaimana AI atau literasi etika diintegrasikan
+    notes: string;
+    evidenceNotes: string;
+  };
+
+  checklist: DigitalChecklist;
+  toolUsage: DigitalToolUsage;
+
+  // Hasil Kalkulasi & Diagnostik
+  totalScore: number; // 0 - 100
+  maturityLevel: PMDigitalMaturity;
+  samrSummary: string;
+  keyStrengths: string[];
+  keyGrowthAreas: string[];
+  supervisoryRecommendations: string[];
+  status: 'draft' | 'final';
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface PMDigitalRubric {
+  id: string;
+  number: number;
+  title: string;
+  shortTitle: string;
+  description: string;
+  levels: {
+    1: { label: 'Terbatas'; points: 6.25; criteria: string };
+    2: { label: 'Berkembang'; points: 12.5; criteria: string };
+    3: { label: 'Matang'; points: 18.75; criteria: string };
+    4: { label: 'Membudaya'; points: 25.0; criteria: string };
+  };
+}
+
+export const PM_DIGITAL_RUBRICS: PMDigitalRubric[] = [
+  {
+    id: 'dig_dim1',
+    number: 1,
+    title: 'Peran Murid: Dari Konsumen Pasif Menjadi Kreator Konten Digital',
+    shortTitle: 'Kreator Konten Digital Otentik',
+    description:
+      'Tingkat keterlibatan murid dalam memproduksi karya digital bermakna (infografis, simulasi ilmiah, video edukasi, rekaman podcast, coding) bukan sekadar menonton tayangan guru.',
+    levels: {
+      1: {
+        label: 'Terbatas',
+        points: 6.25,
+        criteria:
+          'Murid pasif 100%. Teknologi hanya digunakan guru untuk menampilkan slide teks ceramah atau memutar video satu arah tanpa murid memegang gawai/berkarya.'
+      },
+      2: {
+        label: 'Berkembang',
+        points: 12.5,
+        criteria:
+          'Murid mulai mengoperasikan perangkat digital, namun sebatas mencari informasi di Google atau menyalin teks materi ke format dokumen word dasar.'
+      },
+      3: {
+        label: 'Matang',
+        points: 18.75,
+        criteria:
+          'Murid aktif menghasilkan artefak digital representatif (infografis Canva, demonstrasi simulasi PhET/GeoGebra, atau presentasi kelompok interaktif).'
+      },
+      4: {
+        label: 'Membudaya',
+        points: 25.0,
+        criteria:
+          'Murid menjadi kreator digital mandiri. Memproduksi karya otentik berdaya guna (video dokumenter mini, aplikasi Scratch, kampanye sosial digital, atau laporan sains komputasi) untuk memecahkan masalah nyata.'
+      }
+    }
+  },
+  {
+    id: 'dig_dim2',
+    number: 2,
+    title: 'Kolaborasi & Komunikasi Digital Interaktif (*Real-Time Synergy*)',
+    shortTitle: 'Kolaborasi Digital Antar-Murid',
+    description:
+      'Penggunaan platform digital cloud untuk memfasilitasi kerja tim simultan, berbagi ide secara visual, dan memperluas koneksi belajar melampaui sekat kelas fisik.',
+    levels: {
+      1: {
+        label: 'Terbatas',
+        points: 6.25,
+        criteria:
+          'Tidak ada interaksi digital antar-murid. Perangkat digunakan secara soliter dan terisolasi tanpa mekanisme berbagi gagasan bersama.'
+      },
+      2: {
+        label: 'Berkembang',
+        points: 12.5,
+        criteria:
+          'Terdapat pengumpulan tugas secara digital (misal via WhatsApp atau Google Classroom), namun proses penyusunan tugas belum memanfaatkan kerja bersama secara real-time.'
+      },
+      3: {
+        label: 'Matang',
+        points: 18.75,
+        criteria:
+          'Murid berkolaborasi aktif dalam satu kanvas/dokumen bersama (Google Docs/Slides, Padlet, Jamboard) untuk menyusun solusi kelompok secara bersamaan.'
+      },
+      4: {
+        label: 'Membudaya',
+        points: 25.0,
+        criteria:
+          'Sinergi digital mendalam dan lintas ruang. Murid berkolaborasi lintas kelompok atau terhubung dengan pakar/audiens luar via telekonferensi dan mempublikasikan karya kolaboratif terbuka.'
+      }
+    }
+  },
+  {
+    id: 'dig_dim3',
+    number: 3,
+    title: 'Asesmen Formatif Adaptif & Umpan Balik Instan Berbasis Data',
+    shortTitle: 'Asesmen Digital Adaptif & Analitik',
+    description:
+      'Pemanfaatan instrumen digital gamifikasi/adaptif untuk mendiagnosis pemahaman murid seketika, menyediakan umpan balik cepat, dan memandu diferensiasi instruksional.',
+    levels: {
+      1: {
+        label: 'Terbatas',
+        points: 6.25,
+        criteria:
+          'Asesmen masih konvensional kertas, atau tes digital sebatas pilihan ganda statis tanpa analisis umpan balik atau pembahasan tindak lanjut.'
+      },
+      2: {
+        label: 'Berkembang',
+        points: 12.5,
+        criteria:
+          'Menggunakan kuis digital (Quizizz/Google Forms), namun data skor baru ditinjau setelah pembelajaran usai sehingga belum memengaruhi alur intervensi saat sesi berlangsung.'
+      },
+      3: {
+        label: 'Matang',
+        points: 18.75,
+        criteria:
+          'Data asesmen digital dianalisis secara real-time di layar guru. Guru langsung mengidentifikasi miskonsepsi kelompok dan melakukan pendampingan terarah seketika.'
+      },
+      4: {
+        label: 'Membudaya',
+        points: 25.0,
+        criteria:
+          'Asesmen formatif adaptif berjenjang dan metakognitif. Murid memantau kemajuan belajarnya sendiri melalui dashboard capaian, dan guru mendiferensiasikan tantangan berikutnya secara otomatis.'
+      }
+    }
+  },
+  {
+    id: 'dig_dim4',
+    number: 4,
+    title: 'Kewarganegaraan Digital, Etika Siber & Literasi AI (*AI Literacy*)',
+    shortTitle: 'Etika Digital, Keamanan & Literasi AI',
+    description:
+      'Pembiasaan sikap etis di dunia digital, integritas akademik (anti-plagiasi), perlindungan data pribadi, verifikasi fakta/hoaks, dan pemanfaatan AI generatif sebagai mitra berpikir kritis.',
+    levels: {
+      1: {
+        label: 'Terbatas',
+        points: 6.25,
+        criteria:
+          'Aspek etika digital, hak cipta, dan keamanan siber diabaikan. Murid melakukan copy-paste bebas tanpa menyertakan sumber referensi yang valid.'
+      },
+      2: {
+        label: 'Berkembang',
+        points: 12.5,
+        criteria:
+          'Guru mengingatkan secara lisan untuk tidak mencontek atau mencantumkan sumber, namun belum ada panduan operasional etika digital atau literasi informasi.'
+      },
+      3: {
+        label: 'Matang',
+        points: 18.75,
+        criteria:
+          'Murid terlatih memverifikasi kredibilitas sumber informasi digital, menghargai lisensi karya cipta, dan menerapkan tata krama berkomunikasi di ruang siber.'
+      },
+      4: {
+        label: 'Membudaya',
+        points: 25.0,
+        criteria:
+          'Literasi digital dan AI mengakar kuat. Murid mampu menggunakan kecerdasan artifisial (AI) secara kritis sebagai asisten bertukar ide, membedah bias informasi, dan menjaga jejak digital positif secara mandiri.'
+      }
+    }
+  }
+];
+
+
 
 

@@ -60,6 +60,14 @@ const TAB_TITLES: Record<NavTab, { title: string; subtitle: string }> = {
     title: 'Laporan Pengelolaan PM di Sekolah',
     subtitle: 'Audit evaluasi mutu 4 dimensi praktik pedagogis di sekolah binaan'
   },
+  'pm-learning-env': {
+    title: 'PM: Elemen Lingkungan Pembelajaran',
+    subtitle: 'Iklim psikologis (keamanan emosional), efisiensi alokasi waktu belajar aktif, dan agensi murid'
+  },
+  'pm-digital': {
+    title: 'PM: Elemen Pemanfaatan Digital',
+    subtitle: 'Leveraging digital for deep learning, evaluasi tangga model SAMR, dan literasi AI etis'
+  },
   'quality-map': {
     title: 'Peta Mutu & Komparasi Antar-Sekolah Binaan',
     subtitle: 'Benchmarking kurva mutu, gap analysis 12 indikator, dan rekomendasi intervensi pengawas'

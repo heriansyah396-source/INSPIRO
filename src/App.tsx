@@ -21,6 +21,8 @@ import { ConfirmModal } from './components/ConfirmModal';
 import { LoginView } from './components/LoginView';
 import { ManagePrincipalsModal } from './components/ManagePrincipalsModal';
 import { PMManagementView } from './components/PMManagementView';
+import { PMLearningEnvView } from './components/PMLearningEnvView';
+import { PMDigitalView } from './components/PMDigitalView';
 import { SchoolQualityMapView } from './components/SchoolQualityMapView';
 import { GrowthTrackerView } from './components/GrowthTrackerView';
 import { SupervisionCalendarView } from './components/SupervisionCalendarView';
@@ -31,7 +33,9 @@ import {
   SupervisionRecord,
   Teacher,
   PMReport,
-  ManagedAccount
+  ManagedAccount,
+  PMLearningEnvRecord,
+  PMDigitalRecord
 } from './types/inspiro';
 import {
   addTeacher,
@@ -53,7 +57,13 @@ import {
   deletePMReport,
   getManagedAccounts,
   saveManagedAccounts,
-  getCoachingRecords
+  getCoachingRecords,
+  getLearningEnvRecords,
+  saveLearningEnvRecord,
+  deleteLearningEnvRecord,
+  getDigitalPMRecords,
+  saveDigitalPMRecord,
+  deleteDigitalPMRecord
 } from './utils/storage';
 import {
   auth,
@@ -89,6 +99,8 @@ export default function App() {
   const [teachers, setTeachers] = useState<Teacher[]>([]);
   const [supervisions, setSupervisions] = useState<SupervisionRecord[]>([]);
   const [pmReports, setPmReports] = useState<PMReport[]>([]);
+  const [learningEnvRecords, setLearningEnvRecords] = useState<PMLearningEnvRecord[]>(getLearningEnvRecords());
+  const [digitalPMRecords, setDigitalPMRecords] = useState<PMDigitalRecord[]>(getDigitalPMRecords());
   const [settings, setSettings] = useState<AppSettings>(getSettings());
 
   // Active item contexts
@@ -130,6 +142,8 @@ export default function App() {
     setTeachers(getTeachers());
     setSupervisions(getSupervisions());
     setPmReports(getPMReports());
+    setLearningEnvRecords(getLearningEnvRecords());
+    setDigitalPMRecords(getDigitalPMRecords());
     setSettings(getSettings());
   }, []);
 
@@ -415,6 +429,28 @@ export default function App() {
     refreshData();
   };
 
+  // Handlers: PM Learning Environment (Iklim Psikologis & Efisiensi Waktu)
+  const handleSaveLearningEnvRecord = (record: PMLearningEnvRecord) => {
+    saveLearningEnvRecord(record);
+    refreshData();
+  };
+
+  const handleDeleteLearningEnvRecord = (id: string) => {
+    deleteLearningEnvRecord(id);
+    refreshData();
+  };
+
+  // Handlers: PM Digital Utilization (SAMR & AI Literacy)
+  const handleSaveDigitalPMRecord = (record: PMDigitalRecord) => {
+    saveDigitalPMRecord(record);
+    refreshData();
+  };
+
+  const handleDeleteDigitalPMRecord = (id: string) => {
+    deleteDigitalPMRecord(id);
+    refreshData();
+  };
+
   // Active Record for detail view
   const activeRecord =
     supervisions.find((s) => s.id === selectedSupervisionId) || supervisions[0];
@@ -694,6 +730,37 @@ export default function App() {
                   currentUser={currentUser}
                   onSavePMReport={handleSavePMReport}
                   onDeletePMReport={handleDeletePMReport}
+                  onNavigateToLearningEnv={() => setCurrentTab('pm-learning-env')}
+                  showToast={showToast}
+                />
+              )}
+
+              {/* Tab: Program Pengelolaan PM - Elemen Lingkungan Pembelajaran (Iklim Psikologis & Efisiensi Waktu) */}
+              {currentTab === 'pm-learning-env' && (
+                <PMLearningEnvView
+                  records={learningEnvRecords}
+                  teachers={teachers}
+                  settings={settings}
+                  currentUser={currentUser}
+                  onSaveRecord={handleSaveLearningEnvRecord}
+                  onDeleteRecord={handleDeleteLearningEnvRecord}
+                  onNavigateToPedagogicalPM={() => setCurrentTab('pm-reports')}
+                  onNavigateToDigitalPM={() => setCurrentTab('pm-digital')}
+                  showToast={showToast}
+                />
+              )}
+
+              {/* Tab: Program Pengelolaan PM - Elemen Pemanfaatan Digital (SAMR & AI Literacy) */}
+              {currentTab === 'pm-digital' && (
+                <PMDigitalView
+                  records={digitalPMRecords}
+                  teachers={teachers}
+                  settings={settings}
+                  currentUser={currentUser}
+                  onSaveRecord={handleSaveDigitalPMRecord}
+                  onDeleteRecord={handleDeleteDigitalPMRecord}
+                  onNavigateToPedagogicalPM={() => setCurrentTab('pm-reports')}
+                  onNavigateToLearningEnv={() => setCurrentTab('pm-learning-env')}
                   showToast={showToast}
                 />
               )}

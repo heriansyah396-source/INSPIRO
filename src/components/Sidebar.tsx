@@ -21,7 +21,9 @@ import {
   TrendingUp,
   Calendar,
   HeartHandshake,
-  Grid2X2
+  Grid2X2,
+  ShieldCheck,
+  Laptop
 } from 'lucide-react';
 import { SupervisionRecord, PMReport } from '../types/inspiro';
 import { RadarChartWidget } from './RadarChartWidget';
@@ -36,6 +38,8 @@ export type NavTab =
   | 'results'
   | 'reports'
   | 'pm-reports'
+  | 'pm-learning-env'
+  | 'pm-digital'
   | 'quality-map'
   | 'growth-tracker'
   | 'settings';
@@ -128,6 +132,18 @@ export const Sidebar: React.FC<SidebarProps> = ({
       label: 'Pengelolaan PM',
       icon: BookOpenCheck,
       badge: pmReportCount > 0 ? pmReportCount : 'Praktik Pedagogis'
+    },
+    {
+      id: 'pm-learning-env' as NavTab,
+      label: 'PM: Lingkungan Belajar',
+      icon: ShieldCheck,
+      badge: 'Keamanan & Waktu'
+    },
+    {
+      id: 'pm-digital' as NavTab,
+      label: 'PM: Pemanfaatan Digital',
+      icon: Laptop,
+      badge: 'SAMR & AI'
     },
     {
       id: 'quality-map' as NavTab,

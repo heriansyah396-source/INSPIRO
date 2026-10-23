@@ -6,6 +6,8 @@
 import { DEFAULT_SETTINGS, SEED_SUPERVISIONS, SEED_TEACHERS } from '../data/seedData';
 import { SEED_VISIT_AGENDAS } from '../data/seedAgendas';
 import { SEED_COACHING_RECORDS } from '../data/seedCoaching';
+import { SEED_LEARNING_ENV_RECORDS } from '../data/seedLearningEnv';
+import { SEED_DIGITAL_PM_RECORDS } from '../data/seedDigitalPM';
 import {
   AppSettings,
   ManagedAccount,
@@ -16,13 +18,17 @@ import {
   Teacher,
   PMReport,
   VisitAgenda,
-  TirtaCoachingRecord
+  TirtaCoachingRecord,
+  PMLearningEnvRecord,
+  PMDigitalRecord
 } from '../types/inspiro';
 
 const TEACHERS_KEY = 'inspiro_teachers';
 const SUPERVISIONS_KEY = 'inspiro_supervisions';
 const SETTINGS_KEY = 'inspiro_settings';
 const VISIT_AGENDAS_KEY = 'inspiro_visit_agendas';
+const LEARNING_ENV_RECORDS_KEY = 'inspiro_learning_env_records';
+const DIGITAL_PM_RECORDS_KEY = 'inspiro_digital_pm_records';
 const COACHING_RECORDS_KEY = 'inspiro_coaching_records';
 
 // Helper to safely parse JSON from localStorage
@@ -875,4 +881,102 @@ export function getCoachingRecordById(id: string): TirtaCoachingRecord | null {
   const current = getCoachingRecords();
   return current.find((r) => r.id === id) || null;
 }
+
+// ========================================================================
+// 10. PM LEARNING ENVIRONMENT (LINGKUNGAN PEMBELAJARAN) STORAGE
+// Fokus: Iklim Psikologis (Keamanan Emosional) & Efisiensi Waktu Belajar
+// ========================================================================
+
+export function getLearningEnvRecords(): PMLearningEnvRecord[] {
+  const records = safeParse<PMLearningEnvRecord[]>(LEARNING_ENV_RECORDS_KEY, []);
+  if (records.length === 0) {
+    saveLearningEnvRecords(SEED_LEARNING_ENV_RECORDS);
+    return SEED_LEARNING_ENV_RECORDS;
+  }
+  return records;
+}
+
+export function saveLearningEnvRecords(records: PMLearningEnvRecord[]): void {
+  try {
+    localStorage.setItem(LEARNING_ENV_RECORDS_KEY, JSON.stringify(records));
+  } catch (e) {
+    console.error('Error saving learning env records:', e);
+  }
+}
+
+export function saveLearningEnvRecord(record: PMLearningEnvRecord): void {
+  const current = getLearningEnvRecords();
+  const index = current.findIndex((r) => r.id === record.id);
+  let updated: PMLearningEnvRecord[];
+  if (index >= 0) {
+    updated = [...current];
+    updated[index] = { ...record, updatedAt: new Date().toISOString() };
+  } else {
+    updated = [{ ...record, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }, ...current];
+  }
+  saveLearningEnvRecords(updated);
+}
+
+export function deleteLearningEnvRecord(id: string): boolean {
+  const current = getLearningEnvRecords();
+  const filtered = current.filter((r) => r.id !== id);
+  if (filtered.length === current.length) return false;
+  saveLearningEnvRecords(filtered);
+  return true;
+}
+
+export function getLearningEnvRecordById(id: string): PMLearningEnvRecord | null {
+  const current = getLearningEnvRecords();
+  return current.find((r) => r.id === id) || null;
+}
+
+// ========================================================================
+// 11. PM DIGITAL UTILIZATION (PEMANFAATAN DIGITAL) STORAGE
+// Fokus: Leveraging Digital for Deep Learning & Evaluasi SAMR
+// ========================================================================
+
+export function getDigitalPMRecords(): PMDigitalRecord[] {
+  const records = safeParse<PMDigitalRecord[]>(DIGITAL_PM_RECORDS_KEY, []);
+  if (records.length === 0) {
+    saveDigitalPMRecords(SEED_DIGITAL_PM_RECORDS);
+    return SEED_DIGITAL_PM_RECORDS;
+  }
+  return records;
+}
+
+export function saveDigitalPMRecords(records: PMDigitalRecord[]): void {
+  try {
+    localStorage.setItem(DIGITAL_PM_RECORDS_KEY, JSON.stringify(records));
+  } catch (e) {
+    console.error('Error saving digital PM records:', e);
+  }
+}
+
+export function saveDigitalPMRecord(record: PMDigitalRecord): void {
+  const current = getDigitalPMRecords();
+  const index = current.findIndex((r) => r.id === record.id);
+  let updated: PMDigitalRecord[];
+  if (index >= 0) {
+    updated = [...current];
+    updated[index] = { ...record, updatedAt: new Date().toISOString() };
+  } else {
+    updated = [{ ...record, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }, ...current];
+  }
+  saveDigitalPMRecords(updated);
+}
+
+export function deleteDigitalPMRecord(id: string): boolean {
+  const current = getDigitalPMRecords();
+  const filtered = current.filter((r) => r.id !== id);
+  if (filtered.length === current.length) return false;
+  saveDigitalPMRecords(filtered);
+  return true;
+}
+
+export function getDigitalPMRecordById(id: string): PMDigitalRecord | null {
+  const current = getDigitalPMRecords();
+  return current.find((r) => r.id === id) || null;
+}
+
+
 

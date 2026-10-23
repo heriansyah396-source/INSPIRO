@@ -46,6 +46,7 @@ interface PMManagementViewProps {
   currentUser: UserRoleProfile | null;
   onSavePMReport: (report: PMReport) => void;
   onDeletePMReport: (id: string) => void;
+  onNavigateToLearningEnv?: () => void;
   showToast: (title: string, desc?: string, type?: 'success' | 'warning' | 'error' | 'info') => void;
 }
 
@@ -56,6 +57,7 @@ export const PMManagementView: React.FC<PMManagementViewProps> = ({
   currentUser,
   onSavePMReport,
   onDeletePMReport,
+  onNavigateToLearningEnv,
   showToast
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -645,6 +647,16 @@ export const PMManagementView: React.FC<PMManagementViewProps> = ({
         </div>
 
         <div className="flex flex-wrap items-center gap-3 shrink-0 z-10">
+          {onNavigateToLearningEnv && (
+            <button
+              onClick={onNavigateToLearningEnv}
+              className="flex items-center gap-2 px-4 py-2.5 bg-white/10 hover:bg-white/20 text-white font-bold text-xs rounded-xl transition-all border border-white/20 cursor-pointer"
+            >
+              <ShieldCheck className="w-4 h-4 text-teal-300" />
+              <span>PM: Lingkungan Belajar (Keamanan & Waktu)</span>
+            </button>
+          )}
+
           <button
             onClick={handleOpenCreate}
             className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-cyan-400 via-blue-500 to-indigo-500 hover:from-cyan-300 hover:to-blue-400 text-slate-950 font-bold text-xs rounded-xl transition-all shadow-md shadow-cyan-500/20 cursor-pointer hover:scale-[1.02] active:scale-[0.98]"
