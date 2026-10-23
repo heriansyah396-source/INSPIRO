@@ -28,6 +28,7 @@ import { GrowthTrackerView } from './components/GrowthTrackerView';
 import { SupervisionCalendarView } from './components/SupervisionCalendarView';
 import { TirtaCoachingView } from './components/TirtaCoachingView';
 import { TeacherQuadrantView } from './components/TeacherQuadrantView';
+import { ContextualProblemView } from './components/ContextualProblemView';
 import {
   AppSettings,
   SupervisionRecord,
@@ -35,7 +36,8 @@ import {
   PMReport,
   ManagedAccount,
   PMLearningEnvRecord,
-  PMDigitalRecord
+  PMDigitalRecord,
+  ContextualProblemRecord
 } from './types/inspiro';
 import {
   addTeacher,
@@ -63,7 +65,10 @@ import {
   deleteLearningEnvRecord,
   getDigitalPMRecords,
   saveDigitalPMRecord,
-  deleteDigitalPMRecord
+  deleteDigitalPMRecord,
+  getContextualProblems,
+  saveContextualProblem,
+  deleteContextualProblem
 } from './utils/storage';
 import {
   auth,
@@ -101,6 +106,7 @@ export default function App() {
   const [pmReports, setPmReports] = useState<PMReport[]>([]);
   const [learningEnvRecords, setLearningEnvRecords] = useState<PMLearningEnvRecord[]>(getLearningEnvRecords());
   const [digitalPMRecords, setDigitalPMRecords] = useState<PMDigitalRecord[]>(getDigitalPMRecords());
+  const [contextualProblems, setContextualProblems] = useState<ContextualProblemRecord[]>(getContextualProblems());
   const [settings, setSettings] = useState<AppSettings>(getSettings());
 
   // Active item contexts
@@ -144,6 +150,7 @@ export default function App() {
     setPmReports(getPMReports());
     setLearningEnvRecords(getLearningEnvRecords());
     setDigitalPMRecords(getDigitalPMRecords());
+    setContextualProblems(getContextualProblems());
     setSettings(getSettings());
   }, []);
 
@@ -451,6 +458,19 @@ export default function App() {
     refreshData();
   };
 
+  // Handlers: Contextual Baseline Problems & Root-Cause Diagnosis
+  const handleSaveContextualProblem = (record: ContextualProblemRecord) => {
+    saveContextualProblem(record);
+    refreshData();
+    showToast('Data Awal & Akar Masalah Disimpan', `Rekam masalah "${record.problemTitle}" berhasil diperbarui`, 'success');
+  };
+
+  const handleDeleteContextualProblem = (id: string) => {
+    deleteContextualProblem(id);
+    refreshData();
+    showToast('Data Dihapus', 'Rekam data awal & akar masalah kontekstual telah dihapus', 'info');
+  };
+
   // Active Record for detail view
   const activeRecord =
     supervisions.find((s) => s.id === selectedSupervisionId) || supervisions[0];
@@ -607,6 +627,7 @@ export default function App() {
                   onPrintReport={handlePrintReport}
                   onNavigateToTeachers={() => setCurrentTab('teachers')}
                   onNavigateToReports={() => setCurrentTab('reports')}
+                  onNavigateToContextualProblems={() => setCurrentTab('contextual-problems')}
                   onNavigateToPM={() => setCurrentTab('pm-reports')}
                   onNavigateToQualityMap={() => setCurrentTab('quality-map')}
                   onNavigateToGrowthTracker={() => setCurrentTab('growth-tracker')}
@@ -643,6 +664,23 @@ export default function App() {
                     const sup = supervisions.find((s) => s.teacherId === id);
                     if (sup) handleViewResult(sup.id);
                   }}
+                />
+              )}
+
+              {/* Tab: Data Awal & Akar Masalah Kontekstual */}
+              {currentTab === 'contextual-problems' && (
+                <ContextualProblemView
+                  records={contextualProblems}
+                  teachers={teachers}
+                  settings={settings}
+                  currentUser={currentUser}
+                  onSaveRecord={handleSaveContextualProblem}
+                  onDeleteRecord={handleDeleteContextualProblem}
+                  onStartSupervision={(teacherId) => handleStartNewSupervision(teacherId)}
+                  onNavigateToCoaching={(teacherId) => setCurrentTab('coaching')}
+                  onNavigateToLearningEnv={() => setCurrentTab('pm-learning-env')}
+                  onNavigateToDigitalPM={() => setCurrentTab('pm-digital')}
+                  showToast={showToast}
                 />
               )}
 

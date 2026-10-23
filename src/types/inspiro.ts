@@ -1540,6 +1540,148 @@ export const PM_DIGITAL_RUBRICS: PMDigitalRubric[] = [
   }
 ];
 
+// ========================================================================
+// DATA AWAL MASALAH & AKAR MASALAH KONTEKSTUAL
+// Fokus: Realita Ruang Kelas, Wawancara, Bukti Fisik, & Solusi Terarah
+// ========================================================================
+
+export type ContextualProblemCategory =
+  | 'keaktifan_murid'
+  | 'manajemen_waktu'
+  | 'diferensiasi_belajar'
+  | 'iklim_psikologis'
+  | 'media_digital'
+  | 'asesmen_formatif'
+  | 'pengembangan_modul';
+
+export type ContextualDataSource =
+  | 'observasi_awal'
+  | 'wawancara_guru'
+  | 'artefak_tugas'
+  | 'suara_murid'
+  | 'supervisi_sebelumnya';
+
+export interface RootCauseAspect {
+  aspekMetodeGuru: string; // Praktik pedagogi & strategi guru di kelas
+  aspekPerencanaanModul: string; // Kualitas modul ajar, LKPD, & tujuan belajar
+  aspekPengelolaanKelas: string; // Aturan main, ritme waktu, dan suasana kelas
+  aspekKarakteristikMurid: string; // Kesiapan, rasa percaya diri, & keragaman murid
+  aspekDayaDukung: string; // Fasilitas fisik, bahan peraga, sarana digital
+}
+
+export interface FiveWhysAnalysis {
+  why1: string; // Mengapa masalah utama terjadi?
+  why2: string; // Mengapa kondisi pertama terjadi?
+  why3: string; // Mengapa kondisi kedua terjadi? (Akar terdalam)
+}
+
+export interface ContextualProblemRecord {
+  id: string;
+  schoolName: string;
+  teacherId?: string;
+  teacherName?: string;
+  teacherNip?: string;
+  subject?: string;
+  gradeClass?: string;
+  date: string; // YYYY-MM-DD
+  assessorName: string;
+  assessorRole: string; // 'Pengawas Sekolah' | 'Kepala Sekolah'
+  assessorNip: string;
+  headmasterName: string;
+  headmasterNip: string;
+
+  // 1. Klasifikasi Masalah Kontekstual
+  problemCategory: ContextualProblemCategory;
+  problemTitle: string; // Pernyataan Masalah Singkat & Padat
+  severity: 'Tinggi' | 'Sedang' | 'Rendah';
+
+  // 2. Data Awal Kontekstual (Fakta Nyata Lapangan)
+  dataSources: ContextualDataSource[];
+  baselineDataEvidence: string; // Uraian fakta konkret yang teramati/ditemukan
+
+  // 3. Analisis Akar Masalah (Root Cause Diagnostic)
+  rootCauses: RootCauseAspect;
+  fiveWhys: FiveWhysAnalysis;
+
+  // 4. Resep Solusi Supervisi Terarah (Action Prescription)
+  recommendedIntervention: {
+    supervisionAction: 'Supervisi Klinis' | 'Coaching TIRTA' | 'Pendampingan PM' | 'Modelling Pengawas' | 'Komunitas Belajar';
+    targetTimeline: string;
+    actionDetails: string[];
+    linkedFeature?: 'supervision' | 'coaching' | 'teacher-quadrant' | 'pm-learning-env' | 'pm-digital';
+  };
+
+  // Status Tindak Lanjut
+  status: 'teridentifikasi' | 'dalam_penanganan' | 'teratasi';
+  resolutionNotes?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export const CONTEXTUAL_CATEGORY_LABELS: Record<
+  ContextualProblemCategory,
+  { label: string; badge: string; color: string; bg: string; border: string }
+> = {
+  keaktifan_murid: {
+    label: 'Keaktifan & Rasa Percaya Diri Murid',
+    badge: 'Keaktifan Murid',
+    color: 'text-amber-700',
+    bg: 'bg-amber-50',
+    border: 'border-amber-200'
+  },
+  manajemen_waktu: {
+    label: 'Manajemen Alokasi Waktu & Ritme Mengajar',
+    badge: 'Manajemen Waktu',
+    color: 'text-blue-700',
+    bg: 'bg-blue-50',
+    border: 'border-blue-200'
+  },
+  diferensiasi_belajar: {
+    label: 'Pembelajaran Berdiferensiasi & Kesiapan Murid',
+    badge: 'Diferensiasi',
+    color: 'text-emerald-700',
+    bg: 'bg-emerald-50',
+    border: 'border-emerald-200'
+  },
+  iklim_psikologis: {
+    label: 'Iklim Emosional & Keamanan Psikologis Kelas',
+    badge: 'Keamanan Emosional',
+    color: 'text-rose-700',
+    bg: 'bg-rose-50',
+    border: 'border-rose-200'
+  },
+  media_digital: {
+    label: 'Pemanfaatan Media & Sarana Digital Otentik',
+    badge: 'Media Digital',
+    color: 'text-teal-700',
+    bg: 'bg-teal-50',
+    border: 'border-teal-200'
+  },
+  asesmen_formatif: {
+    label: 'Praktik Asesmen Berkelanjutan & Umpan Balik',
+    badge: 'Asesmen Formatif',
+    color: 'text-purple-700',
+    bg: 'bg-purple-50',
+    border: 'border-purple-200'
+  },
+  pengembangan_modul: {
+    label: 'Kontekstualisasi Modul Ajar & Bahan Ajar',
+    badge: 'Modul Ajar',
+    color: 'text-indigo-700',
+    bg: 'bg-indigo-50',
+    border: 'border-indigo-200'
+  }
+};
+
+export const CONTEXTUAL_DATA_SOURCE_LABELS: Record<ContextualDataSource, string> = {
+  observasi_awal: 'Pengamatan Langsung di Ruang Kelas',
+  wawancara_guru: 'Wawancara & Diskusi Reflektif dengan Guru',
+  artefak_tugas: 'Telaah Tugas Murid & Modul Ajar',
+  suara_murid: 'Umpan Balik & Suara Murid (Student Voice)',
+  supervisi_sebelumnya: 'Rekam Jejak Skor Supervisi Siklus Lalu'
+};
+
+
 
 
 

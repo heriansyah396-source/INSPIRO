@@ -8,6 +8,7 @@ import { SEED_VISIT_AGENDAS } from '../data/seedAgendas';
 import { SEED_COACHING_RECORDS } from '../data/seedCoaching';
 import { SEED_LEARNING_ENV_RECORDS } from '../data/seedLearningEnv';
 import { SEED_DIGITAL_PM_RECORDS } from '../data/seedDigitalPM';
+import { SEED_CONTEXTUAL_PROBLEMS } from '../data/seedContextualProblems';
 import {
   AppSettings,
   ManagedAccount,
@@ -20,7 +21,8 @@ import {
   VisitAgenda,
   TirtaCoachingRecord,
   PMLearningEnvRecord,
-  PMDigitalRecord
+  PMDigitalRecord,
+  ContextualProblemRecord
 } from '../types/inspiro';
 
 const TEACHERS_KEY = 'inspiro_teachers';
@@ -29,6 +31,7 @@ const SETTINGS_KEY = 'inspiro_settings';
 const VISIT_AGENDAS_KEY = 'inspiro_visit_agendas';
 const LEARNING_ENV_RECORDS_KEY = 'inspiro_learning_env_records';
 const DIGITAL_PM_RECORDS_KEY = 'inspiro_digital_pm_records';
+const CONTEXTUAL_PROBLEMS_KEY = 'inspiro_contextual_problems';
 const COACHING_RECORDS_KEY = 'inspiro_coaching_records';
 
 // Helper to safely parse JSON from localStorage
@@ -977,6 +980,55 @@ export function getDigitalPMRecordById(id: string): PMDigitalRecord | null {
   const current = getDigitalPMRecords();
   return current.find((r) => r.id === id) || null;
 }
+
+// ========================================================================
+// 12. DATA AWAL MASALAH & AKAR MASALAH KONTEKSTUAL STORAGE
+// Fokus: Realita Ruang Kelas, Wawancara, Bukti Fisik, & Solusi Terarah
+// ========================================================================
+
+export function getContextualProblems(): ContextualProblemRecord[] {
+  const records = safeParse<ContextualProblemRecord[]>(CONTEXTUAL_PROBLEMS_KEY, []);
+  if (records.length === 0) {
+    saveContextualProblems(SEED_CONTEXTUAL_PROBLEMS);
+    return SEED_CONTEXTUAL_PROBLEMS;
+  }
+  return records;
+}
+
+export function saveContextualProblems(records: ContextualProblemRecord[]): void {
+  try {
+    localStorage.setItem(CONTEXTUAL_PROBLEMS_KEY, JSON.stringify(records));
+  } catch (e) {
+    console.error('Error saving contextual problems:', e);
+  }
+}
+
+export function saveContextualProblem(record: ContextualProblemRecord): void {
+  const current = getContextualProblems();
+  const index = current.findIndex((r) => r.id === record.id);
+  let updated: ContextualProblemRecord[];
+  if (index >= 0) {
+    updated = [...current];
+    updated[index] = { ...record, updatedAt: new Date().toISOString() };
+  } else {
+    updated = [{ ...record, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }, ...current];
+  }
+  saveContextualProblems(updated);
+}
+
+export function deleteContextualProblem(id: string): boolean {
+  const current = getContextualProblems();
+  const filtered = current.filter((r) => r.id !== id);
+  if (filtered.length === current.length) return false;
+  saveContextualProblems(filtered);
+  return true;
+}
+
+export function getContextualProblemById(id: string): ContextualProblemRecord | null {
+  const current = getContextualProblems();
+  return current.find((r) => r.id === id) || null;
+}
+
 
 
 

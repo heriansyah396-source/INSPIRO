@@ -23,7 +23,8 @@ import {
   HeartHandshake,
   Grid2X2,
   ShieldCheck,
-  Laptop
+  Laptop,
+  FileSearch
 } from 'lucide-react';
 import { SupervisionRecord, PMReport } from '../types/inspiro';
 import { RadarChartWidget } from './RadarChartWidget';
@@ -32,6 +33,7 @@ export type NavTab =
   | 'dashboard'
   | 'calendar'
   | 'teachers'
+  | 'contextual-problems'
   | 'supervision'
   | 'coaching'
   | 'teacher-quadrant'
@@ -96,6 +98,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
       label: 'Data Guru',
       icon: Users,
       badge: teacherCount > 0 ? teacherCount : undefined
+    },
+    {
+      id: 'contextual-problems' as NavTab,
+      label: 'Data Awal & Akar Masalah',
+      icon: FileSearch,
+      badge: 'Kontekstual'
     },
     {
       id: 'supervision' as NavTab,

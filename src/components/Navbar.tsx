@@ -36,6 +36,10 @@ const TAB_TITLES: Record<NavTab, { title: string; subtitle: string }> = {
     title: 'Data Guru',
     subtitle: 'Daftar pendidik, identitas NIP, dan alokasi mata pelajaran'
   },
+  'contextual-problems': {
+    title: 'Data Awal & Akar Masalah Kontekstual',
+    subtitle: 'Identifikasi fakta lapangan, diagnosis akar masalah (5-Whys), dan resep solusi supervisi'
+  },
   supervision: {
     title: 'Supervisi Akademik',
     subtitle: 'Instrumen observasi 12 indikator, pra-observasi, dan RTL'

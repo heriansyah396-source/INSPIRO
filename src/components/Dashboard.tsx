@@ -23,7 +23,8 @@ import {
   Building,
   PlayCircle,
   HeartHandshake,
-  Grid2X2
+  Grid2X2,
+  FileSearch
 } from 'lucide-react';
 import { SupervisionRecord, Teacher, VISIT_TYPE_LABELS } from '../types/inspiro';
 import { getVisitAgendas, getCoachingRecords } from '../utils/storage';
@@ -37,6 +38,7 @@ interface DashboardProps {
   onPrintReport: (supervisionId: string) => void;
   onNavigateToTeachers: () => void;
   onNavigateToReports: () => void;
+  onNavigateToContextualProblems?: () => void;
   onNavigateToPM?: () => void;
   onNavigateToQualityMap?: () => void;
   onNavigateToGrowthTracker?: () => void;
@@ -55,6 +57,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
   onPrintReport,
   onNavigateToTeachers,
   onNavigateToReports,
+  onNavigateToContextualProblems,
   onNavigateToPM,
   onNavigateToQualityMap,
   onNavigateToGrowthTracker,
@@ -194,7 +197,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
             </span>
           </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-3">
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-8 gap-3">
             {/* Tile 1: Kalender & Agenda Kunjungan */}
             <button
               onClick={onNavigateToCalendar}
@@ -212,6 +215,27 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 </p>
                 <p className="text-[11px] text-cyan-200/70 mt-0.5 line-clamp-1">
                   Jadwal kunjungan
+                </p>
+              </div>
+            </button>
+
+            {/* Tile: Data Awal & Akar Masalah Kontekstual */}
+            <button
+              onClick={onNavigateToContextualProblems}
+              className="group text-left p-3.5 rounded-xl bg-white/6 hover:bg-white/12 border border-white/10 hover:border-amber-400/40 transition-all duration-200 cursor-pointer flex flex-col justify-between"
+            >
+              <div className="flex items-center justify-between mb-2">
+                <div className="w-8 h-8 rounded-lg bg-amber-500/20 text-amber-300 flex items-center justify-center border border-amber-400/30 group-hover:scale-105 transition-transform">
+                  <FileSearch className="w-4 h-4" />
+                </div>
+                <ArrowRight className="w-3.5 h-3.5 text-white/40 group-hover:text-amber-300 group-hover:translate-x-0.5 transition-all" />
+              </div>
+              <div>
+                <p className="text-xs font-bold text-white group-hover:text-amber-200 transition-colors">
+                  Akar Masalah
+                </p>
+                <p className="text-[11px] text-amber-200/70 mt-0.5 line-clamp-1">
+                  Data awal kontekstual
                 </p>
               </div>
             </button>
