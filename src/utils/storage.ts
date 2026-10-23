@@ -9,6 +9,8 @@ import { SEED_COACHING_RECORDS } from '../data/seedCoaching';
 import { SEED_LEARNING_ENV_RECORDS } from '../data/seedLearningEnv';
 import { SEED_DIGITAL_PM_RECORDS } from '../data/seedDigitalPM';
 import { SEED_CONTEXTUAL_PROBLEMS } from '../data/seedContextualProblems';
+import { SEED_PARTNERSHIP_PM_RECORDS } from '../data/seedLearningPartnership';
+import { SEED_SOAR_RECORDS } from '../data/seedSOAR';
 import {
   AppSettings,
   ManagedAccount,
@@ -22,7 +24,9 @@ import {
   TirtaCoachingRecord,
   PMLearningEnvRecord,
   PMDigitalRecord,
-  ContextualProblemRecord
+  ContextualProblemRecord,
+  PMLearningPartnershipRecord,
+  SOARAnalysisRecord
 } from '../types/inspiro';
 
 const TEACHERS_KEY = 'inspiro_teachers';
@@ -31,8 +35,10 @@ const SETTINGS_KEY = 'inspiro_settings';
 const VISIT_AGENDAS_KEY = 'inspiro_visit_agendas';
 const LEARNING_ENV_RECORDS_KEY = 'inspiro_learning_env_records';
 const DIGITAL_PM_RECORDS_KEY = 'inspiro_digital_pm_records';
+const PARTNERSHIP_PM_RECORDS_KEY = 'inspiro_pm_partnership_records';
 const CONTEXTUAL_PROBLEMS_KEY = 'inspiro_contextual_problems';
 const COACHING_RECORDS_KEY = 'inspiro_coaching_records';
+const SOAR_RECORDS_KEY = 'inspiro_soar_records';
 
 // Helper to safely parse JSON from localStorage
 function safeParse<T>(key: string, fallback: T): T {
@@ -1029,6 +1035,340 @@ export function getContextualProblemById(id: string): ContextualProblemRecord | 
   return current.find((r) => r.id === id) || null;
 }
 
+// ========================================================================
+// 13. PROGRAM PENGELOLAAN PEMBELAJARAN MENDALAM (PM) - ELEMEN KEMITRAAN PEMBELAJARAN
+// Fokus: Aliansi Murid-Guru, Antarmurid, Orang Tua, & Komunitas / Dunia Nyata
+// ========================================================================
 
+export function getPartnershipPMRecords(): PMLearningPartnershipRecord[] {
+  const records = safeParse<PMLearningPartnershipRecord[]>(PARTNERSHIP_PM_RECORDS_KEY, []);
+  if (records.length === 0) {
+    savePartnershipPMRecords(SEED_PARTNERSHIP_PM_RECORDS);
+    return SEED_PARTNERSHIP_PM_RECORDS;
+  }
+  return records;
+}
 
+export function savePartnershipPMRecords(records: PMLearningPartnershipRecord[]): void {
+  try {
+    localStorage.setItem(PARTNERSHIP_PM_RECORDS_KEY, JSON.stringify(records));
+  } catch (e) {
+    console.error('Error saving partnership PM records:', e);
+  }
+}
+
+export function savePartnershipPMRecord(record: PMLearningPartnershipRecord): void {
+  const current = getPartnershipPMRecords();
+  const index = current.findIndex((r) => r.id === record.id);
+  let updated: PMLearningPartnershipRecord[];
+  if (index >= 0) {
+    updated = [...current];
+    updated[index] = { ...record, updatedAt: new Date().toISOString() };
+  } else {
+    updated = [{ ...record, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }, ...current];
+  }
+  savePartnershipPMRecords(updated);
+}
+
+export function deletePartnershipPMRecord(id: string): boolean {
+  const current = getPartnershipPMRecords();
+  const filtered = current.filter((r) => r.id !== id);
+  if (filtered.length === current.length) return false;
+  savePartnershipPMRecords(filtered);
+  return true;
+}
+
+export function getPartnershipPMRecordById(id: string): PMLearningPartnershipRecord | null {
+  const current = getPartnershipPMRecords();
+  return current.find((r) => r.id === id) || null;
+}
+
+// ========================================================================
+// 14. SOAR STRATEGIC ANALYSIS STORAGE (4 KERANGKA PEMBELAJARAN MENDALAM)
+// Fokus: Strengths, Opportunities, Aspirations, Results & Inkuiri Apresiatif
+// ========================================================================
+
+export function getSOARRecords(): SOARAnalysisRecord[] {
+  const records = safeParse<SOARAnalysisRecord[]>(SOAR_RECORDS_KEY, []);
+  if (records.length === 0) {
+    saveSOARRecords(SEED_SOAR_RECORDS);
+    return SEED_SOAR_RECORDS;
+  }
+  return records;
+}
+
+export function saveSOARRecords(records: SOARAnalysisRecord[]): void {
+  try {
+    localStorage.setItem(SOAR_RECORDS_KEY, JSON.stringify(records));
+  } catch (e) {
+    console.error('Error saving SOAR records:', e);
+  }
+}
+
+export function saveSOARRecord(record: SOARAnalysisRecord): void {
+  const current = getSOARRecords();
+  const index = current.findIndex((r) => r.id === record.id);
+  let updated: SOARAnalysisRecord[];
+  if (index >= 0) {
+    updated = [...current];
+    updated[index] = { ...record, updatedAt: new Date().toISOString() };
+  } else {
+    updated = [{ ...record, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }, ...current];
+  }
+  saveSOARRecords(updated);
+}
+
+export function deleteSOARRecord(id: string): boolean {
+  const current = getSOARRecords();
+  const filtered = current.filter((r) => r.id !== id);
+  if (filtered.length === current.length) return false;
+  saveSOARRecords(filtered);
+  return true;
+}
+
+export function getSOARRecordById(id: string): SOARAnalysisRecord | null {
+  const current = getSOARRecords();
+  return current.find((r) => r.id === id) || null;
+}
+
+/**
+ * Export Matriks Analisis SOAR Kepemimpinan 4 Pilar PM ke format Microsoft Word (.doc)
+ * dengan tata letak resmi Kedinasan Kabupaten Sidenreng Rappang
+ */
+export function exportSOARToWord(record: SOARAnalysisRecord, settings: AppSettings): void {
+  const agency = settings.governmentAgency || 'PEMERINTAH KABUPATEN SIDENRENG RAPPANG';
+  const schoolCity = settings.schoolCity || 'Kabupaten Sidenreng Rappang';
+  const supervisorName = record.leadSupervisor || settings.supervisorName || 'HERIANSYAH, S.Si., S.Pd., M.Pd';
+  const supervisorNip = record.supervisorNip || settings.supervisorNip || '19820415 200801 1 007';
+  const supervisorRole = record.supervisorRole || settings.supervisorRole || 'Pengawas Sekolah Madya';
+  const headmasterName = record.headmasterName || 'Dra. Hj. Nurhasanah, M.Pd.';
+  const headmasterNip = record.headmasterNip || '19720815 199802 2 003';
+
+  // Group items by quadrant
+  const strengths = record.items.filter((i) => i.quadrant === 'strength');
+  const opportunities = record.items.filter((i) => i.quadrant === 'opportunity');
+  const aspirations = record.items.filter((i) => i.quadrant === 'aspiration');
+  const results = record.items.filter((i) => i.quadrant === 'result');
+
+  const renderItemsList = (items: typeof record.items) => {
+    if (items.length === 0) return '<em>Belum ada butir terdaftar</em>';
+    return `<ol style="margin-left: 18px; padding-left: 0;">
+      ${items
+        .map(
+          (it) => `
+        <li style="margin-bottom: 8px;">
+          <strong>[${it.pillar.toUpperCase()}] ${it.title}</strong>
+          <span style="color: #64748b; font-size: 9.5pt;">(${it.assetType || 'Aset'})</span><br/>
+          <span>${it.description}</span><br/>
+          <span style="font-size: 9.5pt; color: #047857;"><strong>Bukti/Metrik:</strong> ${it.evidenceOrMetric}</span>
+        </li>
+      `
+        )
+        .join('')}
+    </ol>`;
+  };
+
+  const renderStrategiesTable = () => {
+    if (!record.strategies || record.strategies.length === 0) {
+      return '<p><em>Belum ada inisiatif strategis yang dirumuskan.</em></p>';
+    }
+    return `
+      <table border="1" cellpadding="6" cellspacing="0" style="border-collapse: collapse; width: 100%; margin-top: 10px; font-size: 10pt;">
+        <thead>
+          <tr style="background-color: #f1f5f9; text-align: left;">
+            <th style="width: 8%;">Tipe</th>
+            <th style="width: 25%;">Nama Inisiatif Strategis</th>
+            <th style="width: 27%;">Langkah Aksi Konkret</th>
+            <th style="width: 20%;">Target Capaian & Pilar</th>
+            <th style="width: 10%;">Waktu</th>
+            <th style="width: 10%;">PIC</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${record.strategies
+            .map(
+              (s) => `
+            <tr>
+              <td style="font-weight: bold; text-align: center; background-color: #f8fafc;">${s.type}</td>
+              <td><strong>${s.title}</strong><br/><small style="color: #475569;">${s.description}</small></td>
+              <td>
+                <ul style="margin: 0; padding-left: 14px;">
+                  ${s.actionSteps.map((step) => `<li>${step}</li>`).join('')}
+                </ul>
+              </td>
+              <td>
+                <strong>${s.targetOutcome}</strong><br/>
+                <small style="color: #0284c7;">Pilar: ${s.linkedPillars.join(', ')}</small>
+              </td>
+              <td>${s.timeline}</td>
+              <td>${s.pic}</td>
+            </tr>
+          `
+            )
+            .join('')}
+        </tbody>
+      </table>
+    `;
+  };
+
+  const html = `
+    <!DOCTYPE html>
+    <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+    <head>
+      <meta charset="utf-8">
+      <title>Laporan Matriks Analisis SOAR Kepemimpinan Pembelajaran</title>
+      <style>
+        body {
+          font-family: 'Calibri', 'Times New Roman', sans-serif;
+          font-size: 11pt;
+          line-height: 1.35;
+          color: #0f172a;
+          margin: 20px;
+        }
+        .header-kop {
+          text-align: center;
+          border-bottom: 3px double #000;
+          padding-bottom: 12px;
+          margin-bottom: 20px;
+        }
+        .header-kop h3 { margin: 0; font-size: 13pt; text-transform: uppercase; font-weight: bold; }
+        .header-kop h2 { margin: 2px 0; font-size: 15pt; text-transform: uppercase; font-weight: bold; }
+        .header-kop h1 { margin: 2px 0; font-size: 16pt; text-transform: uppercase; font-weight: bold; }
+        .header-kop p { margin: 2px 0; font-size: 10pt; font-style: italic; color: #334155; }
+        .title-doc {
+          text-align: center;
+          margin-top: 15px;
+          margin-bottom: 15px;
+        }
+        .title-doc h2 { margin: 0; font-size: 14pt; text-transform: uppercase; text-decoration: underline; font-weight: bold; }
+        .title-doc p { margin: 4px 0 0 0; font-size: 10.5pt; font-weight: bold; }
+        .table-info { width: 100%; border-collapse: collapse; margin-bottom: 16px; font-size: 10.5pt; }
+        .table-info td { padding: 4px 6px; vertical-align: top; }
+        .matrix-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+        .matrix-table td { width: 50%; vertical-align: top; padding: 12px; border: 1.5pt solid #cbd5e1; }
+        .q-title { font-size: 12pt; font-weight: bold; padding: 6px 10px; border-radius: 4px; margin-bottom: 8px; text-transform: uppercase; }
+        .q-s { background-color: #d1fae5; color: #065f46; border-left: 5px solid #059669; }
+        .q-o { background-color: #fef3c7; color: #92400e; border-left: 5px solid #d97706; }
+        .q-a { background-color: #e0f2fe; color: #075985; border-left: 5px solid #0284c7; }
+        .q-r { background-color: #f3e8ff; color: #6b21a8; border-left: 5px solid #9333ea; }
+        .signature-table { width: 100%; margin-top: 35px; border-collapse: collapse; }
+        .signature-table td { width: 50%; text-align: center; vertical-align: top; font-size: 11pt; }
+      </style>
+    </head>
+    <body>
+      <div class="header-kop">
+        <h3>${agency}</h3>
+        <h2>DINAS PENDIDIKAN DAN KEBUDAYAAN</h2>
+        <h1>KOORDINATOR PENGAWAS SEKOLAH MENENGAH PERTAMA</h1>
+        <p>Alamat: Kompleks Perkantoran SKPD Jl. Harapan Baru No. 1, ${schoolCity} - Sulawesi Selatan</p>
+      </div>
+
+      <div class="title-doc">
+        <h2>BERITA ACARA & MATRIKS ANALISIS STRATEGIS SOAR</h2>
+        <p>PENDEKATAN INKUIRI APRESIATIF & 4 KERANGKA PEMBELAJARAN MENDALAM (PM)</p>
+      </div>
+
+      <table class="table-info">
+        <tr>
+          <td style="width: 22%;"><strong>Satuan Pendidikan</strong></td>
+          <td style="width: 3%;">:</td>
+          <td style="width: 45%;">${record.schoolName} (NPSN: ${record.schoolNpsn})</td>
+          <td style="width: 15%;"><strong>Tahun Pelajaran</strong></td>
+          <td style="width: 3%;">:</td>
+          <td>${record.academicYear}</td>
+        </tr>
+        <tr>
+          <td><strong>Fokus Analisis</strong></td>
+          <td>:</td>
+          <td>${record.title}</td>
+          <td><strong>Semester</strong></td>
+          <td>:</td>
+          <td>${record.semester}</td>
+        </tr>
+        <tr>
+          <td><strong>Tahapan Inkuiri 4D</strong></td>
+          <td>:</td>
+          <td>Tahap <strong>${record.appreciativeInquiryStage}</strong> (Discovery - Dream - Design - Destiny)</td>
+          <td><strong>Tanggal</strong></td>
+          <td>:</td>
+          <td>${record.date}</td>
+        </tr>
+        <tr>
+          <td><strong>Pengawas Pembina</strong></td>
+          <td>:</td>
+          <td colspan="4">${supervisorName} (NIP. ${supervisorNip})</td>
+        </tr>
+      </table>
+
+      <div style="background-color: #f8fafc; border-left: 4px solid #3b82f6; padding: 10px 14px; margin-bottom: 16px; font-size: 10.5pt;">
+        <strong>Catatan Sintesis Kepemimpinan Pengawas:</strong><br/>
+        <em>"${record.synthesisNotes}"</em>
+      </div>
+
+      <h3 style="font-size: 12pt; text-transform: uppercase; margin-bottom: 8px;">I. MATRIKS 4 KUADRAN SOAR (STRENGTHS, OPPORTUNITIES, ASPIRATIONS, RESULTS)</h3>
+
+      <table class="matrix-table">
+        <tr>
+          <td>
+            <div class="q-title q-s">S - STRENGTHS (Kekuatan & Aset Riil)</div>
+            <p style="font-size: 9.5pt; color: #475569; margin-top: 0;"><em>Modal utama internal sekolah & praktik pedagogis bermutu tinggi yang telah terbukti.</em></p>
+            ${renderItemsList(strengths)}
+          </td>
+          <td>
+            <div class="q-title q-o">O - OPPORTUNITIES (Peluang Ungkitan)</div>
+            <p style="font-size: 9.5pt; color: #475569; margin-top: 0;"><em>Peluang kolaborasi eksternal, dukungan kedinasan, & kemitraan komunitas Sidrap.</em></p>
+            ${renderItemsList(opportunities)}
+          </td>
+        </tr>
+        <tr>
+          <td>
+            <div class="q-title q-a">A - ASPIRATIONS (Aspirasi & Impian)</div>
+            <p style="font-size: 9.5pt; color: #475569; margin-top: 0;"><em>Visi pembelajaran mendalam ideal yang menyalakan gairah belajar murid & guru.</em></p>
+            ${renderItemsList(aspirations)}
+          </td>
+          <td>
+            <div class="q-title q-r">R - RESULTS (Hasil & Metrik Terukur)</div>
+            <p style="font-size: 9.5pt; color: #475569; margin-top: 0;"><em>Bukti autentik dampak keberhasilan, karya nyata murid, & indikator kinerja kunci.</em></p>
+            ${renderItemsList(results)}
+          </td>
+        </tr>
+      </table>
+
+      <h3 style="font-size: 12pt; text-transform: uppercase; margin-top: 24px; margin-bottom: 8px;">II. RENCANA INISIATIF STRATEGIS KOMBINASI (S-O, S-A, O-R, A-R)</h3>
+      ${renderStrategiesTable()}
+
+      <table class="signature-table">
+        <tr>
+          <td>
+            Mengetahui,<br/>
+            Kepala Sekolah ${record.schoolName}
+            <br/><br/><br/><br/><br/>
+            <strong><u>${headmasterName}</u></strong><br/>
+            NIP. ${headmasterNip}
+          </td>
+          <td>
+            ${schoolCity}, ${record.date}<br/>
+            Pengawas Sekolah Pembina
+            <br/><br/><br/><br/><br/>
+            <strong><u>${supervisorName}</u></strong><br/>
+            NIP. ${supervisorNip}<br/>
+            <span>${supervisorRole}</span>
+          </td>
+        </tr>
+      </table>
+    </body>
+    </html>
+  `;
+
+  const blob = new Blob(['\ufeff', html], { type: 'application/msword;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  const safeTitle = record.schoolName.replace(/[^a-zA-Z0-9]/g, '_');
+  a.download = `Analisis_SOAR_${safeTitle}_${record.date}.doc`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
 

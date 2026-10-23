@@ -24,7 +24,8 @@ import {
   PlayCircle,
   HeartHandshake,
   Grid2X2,
-  FileSearch
+  FileSearch,
+  Sparkles
 } from 'lucide-react';
 import { SupervisionRecord, Teacher, VISIT_TYPE_LABELS } from '../types/inspiro';
 import { getVisitAgendas, getCoachingRecords } from '../utils/storage';
@@ -45,6 +46,7 @@ interface DashboardProps {
   onNavigateToCalendar?: () => void;
   onNavigateToCoaching?: () => void;
   onNavigateToQuadrant?: () => void;
+  onNavigateToSOAR?: () => void;
   onOpenManagePrincipals?: () => void;
   isSupervisor?: boolean;
 }
@@ -64,6 +66,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
   onNavigateToCalendar,
   onNavigateToCoaching,
   onNavigateToQuadrant,
+  onNavigateToSOAR,
   onOpenManagePrincipals,
   isSupervisor
 }) => {
@@ -938,6 +941,44 @@ export const Dashboard: React.FC<DashboardProps> = ({
             </div>
           </div>
         </div>
+      </div>
+
+      {/* Featured Banner: Analisis SOAR & 4 Kerangka Pembelajaran Mendalam */}
+      <div className="bg-gradient-to-r from-indigo-900 via-slate-900 to-indigo-950 text-white rounded-2xl p-5 sm:p-6 shadow-md border border-indigo-800/50 flex flex-col md:flex-row items-start md:items-center justify-between gap-5">
+        <div className="space-y-2 max-w-2xl">
+          <div className="inline-flex items-center gap-2 px-2.5 py-0.5 rounded-full bg-indigo-500/30 text-indigo-300 text-[11px] font-semibold border border-indigo-400/30">
+            <Sparkles className="w-3.5 h-3.5 text-indigo-400" />
+            Inovasi Kepemimpinan Pembelajaran Berbasis Aset
+          </div>
+          <h3 className="text-base sm:text-lg font-bold tracking-tight">
+            Analisis SOAR (Strengths, Opportunities, Aspirations, Results)
+          </h3>
+          <p className="text-xs text-slate-300 leading-relaxed">
+            Metode Inkuiri Apresiatif untuk memetakan kekuatan guru, peluang kemitraan Sidrap, aspirasi pembelajaran mendalam, serta bukti hasil terukur pada 4 Kerangka PM (Pedagogis, Lingkungan, Digital, &amp; Kemitraan).
+          </p>
+          <div className="flex flex-wrap items-center gap-2 pt-1 text-[10px] font-bold">
+            <span className="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+              S: Kekuatan Internal
+            </span>
+            <span className="px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30">
+              O: Peluang Ungkitan
+            </span>
+            <span className="px-2 py-0.5 rounded bg-sky-500/20 text-sky-300 border border-sky-500/30">
+              A: Aspirasi Bermakna
+            </span>
+            <span className="px-2 py-0.5 rounded bg-purple-500/20 text-purple-300 border border-purple-500/30">
+              R: Hasil Terukur
+            </span>
+          </div>
+        </div>
+
+        <button
+          onClick={onNavigateToSOAR}
+          className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white text-xs font-semibold shadow-md shadow-indigo-900/40 transition-all flex items-center gap-2 shrink-0 self-stretch sm:self-auto justify-center cursor-pointer"
+        >
+          <span>Buka Matriks SOAR &amp; Grafik</span>
+          <ArrowRight className="w-4 h-4" />
+        </button>
       </div>
 
       {/* Recent Supervisions Table */}

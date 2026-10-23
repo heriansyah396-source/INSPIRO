@@ -23,12 +23,14 @@ import { ManagePrincipalsModal } from './components/ManagePrincipalsModal';
 import { PMManagementView } from './components/PMManagementView';
 import { PMLearningEnvView } from './components/PMLearningEnvView';
 import { PMDigitalView } from './components/PMDigitalView';
+import { PMLearningPartnershipView } from './components/PMLearningPartnershipView';
 import { SchoolQualityMapView } from './components/SchoolQualityMapView';
 import { GrowthTrackerView } from './components/GrowthTrackerView';
 import { SupervisionCalendarView } from './components/SupervisionCalendarView';
 import { TirtaCoachingView } from './components/TirtaCoachingView';
 import { TeacherQuadrantView } from './components/TeacherQuadrantView';
 import { ContextualProblemView } from './components/ContextualProblemView';
+import { SOARAnalysisView } from './components/SOARAnalysisView';
 import {
   AppSettings,
   SupervisionRecord,
@@ -37,7 +39,9 @@ import {
   ManagedAccount,
   PMLearningEnvRecord,
   PMDigitalRecord,
-  ContextualProblemRecord
+  ContextualProblemRecord,
+  PMLearningPartnershipRecord,
+  SOARAnalysisRecord
 } from './types/inspiro';
 import {
   addTeacher,
@@ -68,7 +72,13 @@ import {
   deleteDigitalPMRecord,
   getContextualProblems,
   saveContextualProblem,
-  deleteContextualProblem
+  deleteContextualProblem,
+  getPartnershipPMRecords,
+  savePartnershipPMRecord,
+  deletePartnershipPMRecord,
+  getSOARRecords,
+  saveSOARRecord,
+  deleteSOARRecord
 } from './utils/storage';
 import {
   auth,
@@ -106,7 +116,9 @@ export default function App() {
   const [pmReports, setPmReports] = useState<PMReport[]>([]);
   const [learningEnvRecords, setLearningEnvRecords] = useState<PMLearningEnvRecord[]>(getLearningEnvRecords());
   const [digitalPMRecords, setDigitalPMRecords] = useState<PMDigitalRecord[]>(getDigitalPMRecords());
+  const [partnershipPMRecords, setPartnershipPMRecords] = useState<PMLearningPartnershipRecord[]>(getPartnershipPMRecords());
   const [contextualProblems, setContextualProblems] = useState<ContextualProblemRecord[]>(getContextualProblems());
+  const [soarRecords, setSoarRecords] = useState<SOARAnalysisRecord[]>(getSOARRecords());
   const [settings, setSettings] = useState<AppSettings>(getSettings());
 
   // Active item contexts
@@ -150,7 +162,9 @@ export default function App() {
     setPmReports(getPMReports());
     setLearningEnvRecords(getLearningEnvRecords());
     setDigitalPMRecords(getDigitalPMRecords());
+    setPartnershipPMRecords(getPartnershipPMRecords());
     setContextualProblems(getContextualProblems());
+    setSoarRecords(getSOARRecords());
     setSettings(getSettings());
   }, []);
 
@@ -471,6 +485,32 @@ export default function App() {
     showToast('Data Dihapus', 'Rekam data awal & akar masalah kontekstual telah dihapus', 'info');
   };
 
+  // Handlers: PM Learning Partnerships (Murid-Guru, Antarmurid, Orang Tua, Komunitas)
+  const handleSavePartnershipPMRecord = (record: PMLearningPartnershipRecord) => {
+    savePartnershipPMRecord(record);
+    refreshData();
+    showToast('Evaluasi Kemitraan Disimpan', `Rekam kemitraan pembelajaran ${record.teacherName} berhasil disimpan`, 'success');
+  };
+
+  const handleDeletePartnershipPMRecord = (id: string) => {
+    deletePartnershipPMRecord(id);
+    refreshData();
+    showToast('Data Dihapus', 'Rekam evaluasi kemitraan pembelajaran telah dihapus', 'info');
+  };
+
+  // Handlers: SOAR Strategic Analysis (4 Pilar PM)
+  const handleSaveSOARRecord = (record: SOARAnalysisRecord) => {
+    saveSOARRecord(record);
+    refreshData();
+    showToast('Analisis SOAR Disimpan', `Analisis SOAR untuk ${record.schoolName} berhasil disimpan.`, 'success');
+  };
+
+  const handleDeleteSOARRecord = (id: string) => {
+    deleteSOARRecord(id);
+    refreshData();
+    showToast('Analisis SOAR Dihapus', 'Dokumen analisis SOAR telah dihapus dari sistem.', 'info');
+  };
+
   // Active Record for detail view
   const activeRecord =
     supervisions.find((s) => s.id === selectedSupervisionId) || supervisions[0];
@@ -634,6 +674,7 @@ export default function App() {
                   onNavigateToCalendar={() => setCurrentTab('calendar')}
                   onNavigateToCoaching={() => setCurrentTab('coaching')}
                   onNavigateToQuadrant={() => setCurrentTab('teacher-quadrant')}
+                  onNavigateToSOAR={() => setCurrentTab('soar-analysis')}
                   onOpenManagePrincipals={() => setIsManagePrincipalsOpen(true)}
                   isSupervisor={currentUser?.role === 'pengawas'}
                 />
@@ -784,6 +825,7 @@ export default function App() {
                   onDeleteRecord={handleDeleteLearningEnvRecord}
                   onNavigateToPedagogicalPM={() => setCurrentTab('pm-reports')}
                   onNavigateToDigitalPM={() => setCurrentTab('pm-digital')}
+                  onNavigateToPartnershipPM={() => setCurrentTab('pm-partnership')}
                   showToast={showToast}
                 />
               )}
@@ -799,6 +841,34 @@ export default function App() {
                   onDeleteRecord={handleDeleteDigitalPMRecord}
                   onNavigateToPedagogicalPM={() => setCurrentTab('pm-reports')}
                   onNavigateToLearningEnv={() => setCurrentTab('pm-learning-env')}
+                  onNavigateToPartnershipPM={() => setCurrentTab('pm-partnership')}
+                  showToast={showToast}
+                />
+              )}
+
+              {/* Tab: Program Pengelolaan PM - Elemen Kemitraan Pembelajaran (Aliansi Murid-Guru, Antarmurid, Orang Tua, & Komunitas) */}
+              {currentTab === 'pm-partnership' && (
+                <PMLearningPartnershipView
+                  records={partnershipPMRecords}
+                  teachers={teachers}
+                  settings={settings}
+                  currentUser={currentUser}
+                  onSaveRecord={handleSavePartnershipPMRecord}
+                  onDeleteRecord={handleDeletePartnershipPMRecord}
+                  onNavigateToPedagogicalPM={() => setCurrentTab('pm-reports')}
+                  onNavigateToLearningEnv={() => setCurrentTab('pm-learning-env')}
+                  onNavigateToDigitalPM={() => setCurrentTab('pm-digital')}
+                  showToast={showToast}
+                />
+              )}
+
+              {/* Tab: Analisis Strategis SOAR & 4 Kerangka Pembelajaran Mendalam */}
+              {currentTab === 'soar-analysis' && (
+                <SOARAnalysisView
+                  records={soarRecords}
+                  settings={settings}
+                  onSaveRecord={handleSaveSOARRecord}
+                  onDeleteRecord={handleDeleteSOARRecord}
                   showToast={showToast}
                 />
               )}

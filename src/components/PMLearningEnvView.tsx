@@ -30,7 +30,8 @@ import {
   Timer,
   ChevronRight,
   Maximize2,
-  Laptop
+  Laptop,
+  Handshake
 } from 'lucide-react';
 import {
   PMLearningEnvRecord,
@@ -52,6 +53,7 @@ interface PMLearningEnvViewProps {
   onDeleteRecord: (id: string) => void;
   onNavigateToPedagogicalPM?: () => void;
   onNavigateToDigitalPM?: () => void;
+  onNavigateToPartnershipPM?: () => void;
   showToast: (title: string, desc?: string, type?: 'success' | 'warning' | 'error' | 'info') => void;
 }
 
@@ -64,6 +66,7 @@ export const PMLearningEnvView: React.FC<PMLearningEnvViewProps> = ({
   onDeleteRecord,
   onNavigateToPedagogicalPM,
   onNavigateToDigitalPM,
+  onNavigateToPartnershipPM,
   showToast
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -405,6 +408,16 @@ export const PMLearningEnvView: React.FC<PMLearningEnvViewProps> = ({
               >
                 <Compass className="w-4 h-4 text-teal-400" />
                 <span>PM: Praktik Pedagogis</span>
+              </button>
+            )}
+
+            {onNavigateToPartnershipPM && (
+              <button
+                onClick={onNavigateToPartnershipPM}
+                className="inline-flex items-center gap-2 px-4 py-2.5 bg-slate-800/80 hover:bg-slate-700 text-slate-200 rounded-xl text-xs sm:text-sm font-semibold transition border border-slate-700 shadow-sm"
+              >
+                <Handshake className="w-4 h-4 text-sky-400" />
+                <span>PM: Kemitraan</span>
               </button>
             )}
 

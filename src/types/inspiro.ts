@@ -1681,6 +1681,412 @@ export const CONTEXTUAL_DATA_SOURCE_LABELS: Record<ContextualDataSource, string>
   supervisi_sebelumnya: 'Rekam Jejak Skor Supervisi Siklus Lalu'
 };
 
+// ========================================================================
+// PROGRAM PENGELOLAAN PEMBELAJARAN MENDALAM (PM) - ELEMEN KEMITRAAN PEMBELAJARAN
+// Fokus: Learning Partnerships (Murid-Guru, Antarmurid, Orang Tua, Komunitas/Dunia Nyata)
+// ========================================================================
+
+export type PMPartnershipMaturity =
+  | 'Level 1: Terbatas (Emerging)'
+  | 'Level 2: Berkembang (Developing)'
+  | 'Level 3: Matang (Accelerating)'
+  | 'Level 4: Membudaya (Deepening)';
+
+export type PrimaryPartnerType =
+  | 'Orang Tua / Keluarga'
+  | 'Praktisi / Tokoh Komunitas'
+  | 'Dunia Usaha / UMKM'
+  | 'Instansi / Lembaga Publik'
+  | 'Alumni / Komunitas Belajar Luar';
+
+export interface PartnershipChecklist {
+  studentCoDesign: boolean; // Murid aktif terlibat merancang alur belajar atau kriteria sukses
+  structuredPeerFeedback: boolean; // Terjadi umpan balik antarteman menggunakan panduan/rubrik terstruktur
+  familyTwoWayCommunication: boolean; // Komunikasi dua arah dengan orang tua (bukan sekadar rapor)
+  authenticExpertInvolvement: boolean; // Keterlibatan praktisi/ahli/tokoh luar sebagai mentor atau narasumber
+  authenticAudienceExhibition: boolean; // Karya dipamerkan/diuji oleh penerima manfaat atau masyarakat luas
+}
+
+export interface PMLearningPartnershipRecord {
+  id: string;
+  schoolName: string;
+  teacherId: string;
+  teacherName: string;
+  teacherNip: string;
+  subject: string;
+  gradeClass: string;
+  topic: string;
+  date: string; // YYYY-MM-DD
+  assessorName: string;
+  assessorRole: string; // 'Pengawas Sekolah' | 'Kepala Sekolah'
+  assessorNip: string;
+  headmasterName: string;
+  headmasterNip: string;
+
+  // Profil Kemitraan Utama
+  primaryPartnerType: PrimaryPartnerType;
+  partnerName: string; // Nama lembaga / paguyuban / tokoh mitra
+  partnerRoleInLearning: string; // Peran mitra dalam pembelajaran
+  studentVoiceLevel: 'Tinggi' | 'Sedang' | 'Rendah';
+
+  // Dimensi 1: Kemitraan Murid & Guru (Co-Designing & Agensi) - 25 Poin
+  dim1StudentTeacher: {
+    score: number; // 1 - 4
+    level: 'Terbatas' | 'Berkembang' | 'Matang' | 'Membudaya';
+    coDesignPractices: string;
+    notes: string;
+    evidenceNotes: string;
+  };
+
+  // Dimensi 2: Kemitraan Antarmurid (Peer Alliances & Feedback) - 25 Poin
+  dim2PeerToPeer: {
+    score: number; // 1 - 4
+    level: 'Terbatas' | 'Berkembang' | 'Matang' | 'Membudaya';
+    peerInteractionType: string;
+    notes: string;
+    evidenceNotes: string;
+  };
+
+  // Dimensi 3: Kemitraan Sekolah & Keluarga / Orang Tua - 25 Poin
+  dim3FamilyPartnership: {
+    score: number; // 1 - 4
+    level: 'Terbatas' | 'Berkembang' | 'Matang' | 'Membudaya';
+    familyEngagementActivity: string;
+    notes: string;
+    evidenceNotes: string;
+  };
+
+  // Dimensi 4: Kemitraan Komunitas, Dunia Usaha & Audiens Autentik - 25 Poin
+  dim4CommunityRealWorld: {
+    score: number; // 1 - 4
+    level: 'Terbatas' | 'Berkembang' | 'Matang' | 'Membudaya';
+    realWorldImpact: string;
+    notes: string;
+    evidenceNotes: string;
+  };
+
+  checklist: PartnershipChecklist;
+
+  // Hasil Kalkulasi
+  totalScore: number; // 0 - 100
+  maturityLevel: PMPartnershipMaturity;
+  keyStrengths: string[];
+  keyGrowthAreas: string[];
+  supervisoryRecommendations: string[];
+  status: 'draft' | 'final';
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface PMPartnershipRubric {
+  id: string;
+  number: number;
+  title: string;
+  shortTitle: string;
+  description: string;
+  levels: {
+    1: { label: 'Terbatas'; points: 6.25; criteria: string };
+    2: { label: 'Berkembang'; points: 12.5; criteria: string };
+    3: { label: 'Matang'; points: 18.75; criteria: string };
+    4: { label: 'Membudaya'; points: 25.0; criteria: string };
+  };
+}
+
+export const PM_PARTNERSHIP_RUBRICS: PMPartnershipRubric[] = [
+  {
+    id: 'part_dim1',
+    number: 1,
+    title: 'Kemitraan Murid & Guru: Perancangan Bersama (*Co-Designing Learning*) & Agensi',
+    shortTitle: 'Kemitraan Murid & Guru (Co-Design)',
+    description:
+      'Pergeseran relasi dari instruksi satu arah menjadi mitra perancang alur belajar, perumusan kriteria sukses (rubrik), dan evaluasi reflektif bersama.',
+    levels: {
+      1: {
+        label: 'Terbatas',
+        points: 6.25,
+        criteria:
+          'Instruksional kaku dan satu arah. Guru memegang kendali mutlak; murid hanya menjalankan tugas tanpa ruang menyuarakan ide, memilih strategi, atau menyepakati rubrik.'
+      },
+      2: {
+        label: 'Berkembang',
+        points: 12.5,
+        criteria:
+          'Guru mulai memberi pilihan terbatas (misal: memilih urutan pengerjaan soal), namun tujuan belajar dan rubrik penilaian masih ditentukan sepihak oleh guru.'
+      },
+      3: {
+        label: 'Matang',
+        points: 18.75,
+        criteria:
+          'Murid aktif dilibatkan dalam merumuskan kriteria keberhasilan proyek, memilih format demonstrasi pemahaman, dan melakukan dialog reflektif dua arah di akhir sesi.'
+      },
+      4: {
+        label: 'Membudaya',
+        points: 25.0,
+        criteria:
+          'Kemitraan sejati terwujud (Co-Designers). Murid memiliki agensi penuh dalam mengarahkan penyelidikan, menegosiasikan target belajar, dan bersama guru mengkaji kemajuan belajar secara egaliter.'
+      }
+    }
+  },
+  {
+    id: 'part_dim2',
+    number: 2,
+    title: 'Kemitraan Antarmurid: Aliansi Kolaboratif & Umpan Balik Rakan Sebaya',
+    shortTitle: 'Aliansi Belajar Antarmurid',
+    description:
+      'Pembangunan interdependensi positif, budaya saling bimbing (peer tutoring), dan penerapan protokol umpan balik kritis yang konstruktif.',
+    levels: {
+      1: {
+        label: 'Terbatas',
+        points: 6.25,
+        criteria:
+          'Kerja kelompok formalitas tanpa struktur. Terjadi dominasi murid tertentu atau murid bekerja individual di meja yang sama tanpa interdependensi positif.'
+      },
+      2: {
+        label: 'Berkembang',
+        points: 12.5,
+        criteria:
+          'Murid berbagi tugas kelompok secara bergantian, namun interaksi masih terbatas pada pembagian teknis tanpa saling memeriksa atau memberi masukan substantif.'
+      },
+      3: {
+        label: 'Matang',
+        points: 18.75,
+        criteria:
+          'Terbangun aliansi kolaboratif efektif. Murid saling mengajarkan konsep dengan panduan jelas dan melakukan umpan balik rakan sebaya (peer feedback) berbasis rubrik.'
+      },
+      4: {
+        label: 'Membudaya',
+        points: 25.0,
+        criteria:
+          'Kultur kemitraan antarmurid sangat kuat. Setiap anggota bertanggung jawab atas pemahaman rekannya, aktif bernegosiasi secara demokratis, dan saling mendorong mencapai standar karya tertinggi.'
+      }
+    }
+  },
+  {
+    id: 'part_dim3',
+    number: 3,
+    title: 'Kemitraan Sekolah & Keluarga: Dialog Berkelanjutan & Konferensi Murid (*Student-Led*)',
+    shortTitle: 'Kemitraan Keluarga & Orang Tua',
+    description:
+      'Pelibatan orang tua sebagai mitra pendamping tumbuh kembang dan eksplorasi bakat anak, melampaui formalitas pembagian rapor semester.',
+    levels: {
+      1: {
+        label: 'Terbatas',
+        points: 6.25,
+        criteria:
+          'Komunikasi dengan keluarga hanya bersifat administratif searah (undangan rapat, surat iuran, atau panggilan indisipliner siswa) tanpa keterlibatan dalam proses belajar.'
+      },
+      2: {
+        label: 'Berkembang',
+        points: 12.5,
+        criteria:
+          'Orang tua mulai diberi informasi berkala mengenai materi dan tugas anak di rumah, namun ruang dialog dua arah mengenai strategi pendampingan masih minim.'
+      },
+      3: {
+        label: 'Matang',
+        points: 18.75,
+        criteria:
+          'Keluarga dilibatkan aktif dalam penugasan kontekstual rumah (misal: wawancara narasumber keluarga) dan menghadiri pemaparan perkembangan belajar berkala.'
+      },
+      4: {
+        label: 'Membudaya',
+        points: 25.0,
+        criteria:
+          'Kemitraan keluarga sangat solid. Terlaksana Student-Led Conference di mana murid mempresentasikan portofolionya langsung di hadapan orang tua dan guru, serta orang tua rutin berkontribusi sebagai narasumber keahlian.'
+      }
+    }
+  },
+  {
+    id: 'part_dim4',
+    number: 4,
+    title: 'Kemitraan Komunitas, Dunia Usaha & Audiens Autentik (*Place-Based Learning*)',
+    shortTitle: 'Kemitraan Komunitas & Dunia Nyata',
+    description:
+      'Koneksi pembelajaran dengan praktisi lokal, instansi, dunia usaha, dan pengujian hasil karya murid kepada penerima manfaat nyata di masyarakat.',
+    levels: {
+      1: {
+        label: 'Terbatas',
+        points: 6.25,
+        criteria:
+          'Pembelajaran terisolasi di dalam kelas. Tugas dan latihan hanya dikerjakan untuk dinilai guru sendiri tanpa kaitan dengan dunia luar atau audiens nyata.'
+      },
+      2: {
+        label: 'Berkembang',
+        points: 12.5,
+        criteria:
+          'Menggunakan contoh atau kasus dari lingkungan sekitar, namun belum melibatkan kontak langsung dengan praktisi, komunitas, atau penerima manfaat nyata.'
+      },
+      3: {
+        label: 'Matang',
+        points: 18.75,
+        criteria:
+          'Bermitra dengan narasumber praktisi atau lembaga eksternal (puskesmas, petani, pengrajin lokal, UMKM) untuk memberikan wawasan kontekstual dan mentoring proyek.'
+      },
+      4: {
+        label: 'Membudaya',
+        points: 25.0,
+        criteria:
+          'Pembelajaran berbasis tempat nyata (Place-Based) berdaya dampak tinggi. Karya murid dipamerkan di ruang publik, diuji oleh audiens autentik, dan diadopsi untuk memecahkan persoalan riil komunitas.'
+      }
+    }
+  }
+];
+
+// ========================================================================
+// 14. SOAR STRATEGIC FRAMEWORK & 4 KERANGKA PEMBELAJARAN MENDALAM (PM)
+// Kepemimpinan Pembelajaran Berbasis Inkuiri Apresiatif (Strengths, Opportunities, Aspirations, Results)
+// ========================================================================
+
+export type PMPillarKey = 'pedagogi' | 'lingkungan' | 'digital' | 'kemitraan';
+
+export type SOARQuadrantType = 'strength' | 'opportunity' | 'aspiration' | 'result';
+
+export interface SOARItem {
+  id: string;
+  quadrant: SOARQuadrantType;
+  pillar: PMPillarKey;
+  title: string;
+  description: string;
+  evidenceOrMetric: string;
+  priority: 'Sangat Tinggi' | 'Tinggi' | 'Sedang';
+  score: number; // 0 - 100
+  assetType?: 'Modal Manusia' | 'Modal Sosial' | 'Modal Fisik' | 'Modal Lingkungan' | 'Modal Finansial' | 'Modal Budaya';
+}
+
+export interface SOARStrategicMatrixStrategy {
+  id: string;
+  type: 'S-O' | 'S-A' | 'O-R' | 'A-R';
+  title: string;
+  description: string;
+  linkedPillars: PMPillarKey[];
+  actionSteps: string[];
+  targetOutcome: string;
+  timeline: string;
+  pic: string;
+  progress: number; // 0 - 100
+  status: 'Perencanaan' | 'Sedang Berjalan' | 'Tercapai';
+}
+
+export interface SOARAnalysisRecord {
+  id: string;
+  schoolName: string;
+  schoolNpsn: string;
+  academicYear: string;
+  semester: string;
+  date: string;
+  title: string;
+  focusPillarSummary?: string;
+  leadSupervisor: string;
+  supervisorNip: string;
+  supervisorRole: string;
+  headmasterName: string;
+  headmasterNip: string;
+  appreciativeInquiryStage: 'Discovery' | 'Dream' | 'Design' | 'Destiny';
+  synthesisNotes: string;
+  items: SOARItem[];
+  strategies: SOARStrategicMatrixStrategy[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface PMPillarDefinition {
+  key: PMPillarKey;
+  number: number;
+  name: string;
+  shortName: string;
+  subtitle: string;
+  color: string;
+  badgeBg: string;
+  badgeBorder: string;
+  badgeText: string;
+  description: string;
+  inquiryPrompts: {
+    strength: string;
+    opportunity: string;
+    aspiration: string;
+    result: string;
+  };
+}
+
+export const PM_PILLAR_DEFINITIONS: Record<PMPillarKey, PMPillarDefinition> = {
+  pedagogi: {
+    key: 'pedagogi',
+    number: 1,
+    name: 'Praktik Pedagogis Berpusat Murid',
+    shortName: 'Praktik Pedagogis',
+    subtitle: 'Strategi, Model & Desain Pembelajaran Mendalam',
+    color: 'emerald',
+    badgeBg: 'bg-emerald-50',
+    badgeBorder: 'border-emerald-200',
+    badgeText: 'text-emerald-700',
+    description:
+      'Pemberdayaan guru dalam merancang pengalaman belajar mendalam berbasis masalah riil, inkuiri, pemodelan scaffolded, dan penilaian autentik.',
+    inquiryPrompts: {
+      strength: 'Apa praktik mengajar guru yang terbukti paling memicu antusiasme dan pemikiran kritis murid?',
+      opportunity: 'Tren kurikulum, perangkat asesmen baru, atau program MGMP apa yang bisa memperkuat pedagogi guru?',
+      aspiration: 'Bagaimana wujud ideal pengalaman belajar siswa di mana mereka sepenuhnya menjadi pemilik proses belajarnya?',
+      result: 'Indikator autentik apa (proyek, unjuk kerja, portofolio) yang menunjukkan pemahaman murid benar-benar mendalam?'
+    }
+  },
+  lingkungan: {
+    key: 'lingkungan',
+    number: 2,
+    name: 'Lingkungan Belajar Berdaya Gugah',
+    shortName: 'Lingkungan Belajar',
+    subtitle: 'Iklim Psikologis, Keamanan Emosional & Agensi Waktu',
+    color: 'amber',
+    badgeBg: 'bg-amber-50',
+    badgeBorder: 'border-amber-200',
+    badgeText: 'text-amber-700',
+    description:
+      'Penciptaan rasa aman emosional, budaya bebas perundungan, penerimaan kegagalan sebagai proses belajar, dan optimalisasi waktu aktif belajar.',
+    inquiryPrompts: {
+      strength: 'Kondisi ruang kelas dan budaya positif apa yang membuat murid merasa nyaman berekspresi dan berani mencoba?',
+      opportunity: 'Program anti-perundungan daerah atau pemanfaatan ruang terbuka apa yang belum dimaksimalkan?',
+      aspiration: 'Suasana kelas dan sekolah impian seperti apa yang membangkitkan rasa memiliki dan kegembiraan belajar murid?',
+      result: 'Bukti terukur apa (indeks well-being, penurunan absen, partisipasi aktif) yang menandakan lingkungan belajar berhasil?'
+    }
+  },
+  digital: {
+    key: 'digital',
+    number: 3,
+    name: 'Pemanfaatan Digital Berdampak',
+    shortName: 'Pemanfaatan Digital',
+    subtitle: 'Leveraging Digital (SAMR Model) & Literasi AI Etis',
+    color: 'cyan',
+    badgeBg: 'bg-cyan-50',
+    badgeBorder: 'border-cyan-200',
+    badgeText: 'text-cyan-700',
+    description:
+      'Penggunaan teknologi digital sebagai pendorong akselerasi capaian pembelajaran, bukan sekadar pengganti kertas (Redefinition & Modification SAMR).',
+    inquiryPrompts: {
+      strength: 'Alat digital, platform PMM, atau aplikasi edukasi apa yang telah dikuasai guru dan disenangi murid?',
+      opportunity: 'Bantuan TIK Kemendikbud, akun belajar.id, atau AI edukasi apa yang dapat membuka cakrawala riset murid?',
+      aspiration: 'Bagaimana murid memanfaatkan teknologi untuk memecahkan persoalan dunia nyata dan memproduksi karya global?',
+      result: 'Metrik digital apa (portofolio digital, produk multimedia, penguasaan etika AI) yang membuktikan peningkatan kapasitas?'
+    }
+  },
+  kemitraan: {
+    key: 'kemitraan',
+    number: 4,
+    name: 'Kemitraan Pembelajaran Kolaboratif',
+    shortName: 'Kemitraan Belajar',
+    subtitle: 'Aliansi Murid-Guru, Antarmurid, Orang Tua & Komunitas',
+    color: 'purple',
+    badgeBg: 'bg-purple-50',
+    badgeBorder: 'border-purple-200',
+    badgeText: 'text-purple-700',
+    description:
+      'Perluasan ruang belajar melalui kemitraan yang setara antara guru-murid (co-design), kolaborasi antarmurid, keluarga, dan praktisi dunia nyata.',
+    inquiryPrompts: {
+      strength: 'Siapa saja mitra eksternal, tokoh lokal, atau orang tua yang memiliki hubungan baik dengan sekolah saat ini?',
+      opportunity: 'Dunia usaha, kelompok tani/UMKM Sidrap, atau instansi publik mana yang berpotensi menjadi laboratorium nyata?',
+      aspiration: 'Bagaimana bentuk aliansi belajar sekolah di mana dinding kelas runtuh dan masyarakat menjadi sumber belajar?',
+      result: 'Bukti kolaborasi nyata apa (student-led conference, pameran publik, adopsi solusi oleh warga) yang terwujud?'
+    }
+  }
+};
+
+
 
 
 

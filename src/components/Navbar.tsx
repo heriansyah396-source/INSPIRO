@@ -72,6 +72,14 @@ const TAB_TITLES: Record<NavTab, { title: string; subtitle: string }> = {
     title: 'PM: Elemen Pemanfaatan Digital',
     subtitle: 'Leveraging digital for deep learning, evaluasi tangga model SAMR, dan literasi AI etis'
   },
+  'pm-partnership': {
+    title: 'PM: Elemen Kemitraan Pembelajaran',
+    subtitle: 'Membangun 4 aliansi belajar: Murid-Guru (Co-Design), Antarmurid, Orang Tua, dan Komunitas Dunia Nyata'
+  },
+  'soar-analysis': {
+    title: 'Analisis Strategis SOAR & 4 Kerangka PM',
+    subtitle: 'Inkuiri Apresiatif: Kekuatan (Strengths), Peluang (Opportunities), Aspirasi (Aspirations), dan Bukti Hasil (Results)'
+  },
   'quality-map': {
     title: 'Peta Mutu & Komparasi Antar-Sekolah Binaan',
     subtitle: 'Benchmarking kurva mutu, gap analysis 12 indikator, dan rekomendasi intervensi pengawas'

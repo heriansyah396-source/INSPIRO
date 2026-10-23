@@ -24,7 +24,8 @@ import {
   Grid2X2,
   ShieldCheck,
   Laptop,
-  FileSearch
+  FileSearch,
+  Handshake
 } from 'lucide-react';
 import { SupervisionRecord, PMReport } from '../types/inspiro';
 import { RadarChartWidget } from './RadarChartWidget';
@@ -42,6 +43,8 @@ export type NavTab =
   | 'pm-reports'
   | 'pm-learning-env'
   | 'pm-digital'
+  | 'pm-partnership'
+  | 'soar-analysis'
   | 'quality-map'
   | 'growth-tracker'
   | 'settings';
@@ -152,6 +155,18 @@ export const Sidebar: React.FC<SidebarProps> = ({
       label: 'PM: Pemanfaatan Digital',
       icon: Laptop,
       badge: 'SAMR & AI'
+    },
+    {
+      id: 'pm-partnership' as NavTab,
+      label: 'PM: Kemitraan Belajar',
+      icon: Handshake,
+      badge: 'Aliansi & Komunitas'
+    },
+    {
+      id: 'soar-analysis' as NavTab,
+      label: 'Analisis SOAR (4 Pilar)',
+      icon: Sparkles,
+      badge: 'Kepemimpinan'
     },
     {
       id: 'quality-map' as NavTab,
