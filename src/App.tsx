@@ -31,10 +31,13 @@ import { TirtaCoachingView } from './components/TirtaCoachingView';
 import { TeacherQuadrantView } from './components/TeacherQuadrantView';
 import { ContextualProblemView } from './components/ContextualProblemView';
 import { SOARAnalysisView } from './components/SOARAnalysisView';
+import { PrincipalList } from './components/PrincipalList';
 import {
   AppSettings,
   SupervisionRecord,
   Teacher,
+  Principal,
+  ManagerialEvaluationRecord,
   PMReport,
   ManagedAccount,
   PMLearningEnvRecord,
@@ -51,6 +54,13 @@ import {
   getSupervisionById,
   getSupervisions,
   getTeachers,
+  getPrincipals,
+  savePrincipals,
+  addPrincipal,
+  updatePrincipal,
+  deletePrincipal,
+  getManagerialEvaluations,
+  saveManagerialEvaluations,
   resetToDemoData,
   saveSettings,
   saveSupervisionRecord,
@@ -89,6 +99,10 @@ import {
   deleteSupervisionFromCloud,
   syncTeacherToCloud,
   deleteTeacherFromCloud,
+  syncPrincipalToCloud,
+  deletePrincipalFromCloud,
+  fetchCloudPrincipals,
+  fetchCloudManagerialEvaluations,
   fetchCloudSupervisions,
   fetchCloudTeachers,
   syncPMReportToCloud,
@@ -112,6 +126,7 @@ export default function App() {
 
   // Data State from Local Storage
   const [teachers, setTeachers] = useState<Teacher[]>([]);
+  const [principals, setPrincipals] = useState<Principal[]>(() => getPrincipals());
   const [supervisions, setSupervisions] = useState<SupervisionRecord[]>([]);
   const [pmReports, setPmReports] = useState<PMReport[]>([]);
   const [learningEnvRecords, setLearningEnvRecords] = useState<PMLearningEnvRecord[]>(getLearningEnvRecords());
@@ -126,6 +141,7 @@ export default function App() {
   const [printSupervisionId, setPrintSupervisionId] = useState<string | null>(null);
   const [wizardSupervision, setWizardSupervision] = useState<SupervisionRecord | null>(null);
   const [wizardPreselectedTeacherId, setWizardPreselectedTeacherId] = useState<string | null>(null);
+  const [presetManagerialPrincipal, setPresetManagerialPrincipal] = useState<Principal | null>(null);
 
   // Modals & Feedback
   const [isTeacherModalOpen, setIsTeacherModalOpen] = useState(false);
@@ -158,6 +174,7 @@ export default function App() {
   // Load initial data from local storage
   const refreshData = useCallback(() => {
     setTeachers(getTeachers());
+    setPrincipals(getPrincipals());
     setSupervisions(getSupervisions());
     setPmReports(getPMReports());
     setLearningEnvRecords(getLearningEnvRecords());
@@ -242,6 +259,29 @@ export default function App() {
           savePMReports(merged);
           return merged;
         });
+      }
+
+      // 6. Sync Principals from Cloud
+      const cloudPrincipals = await fetchCloudPrincipals();
+      if (cloudPrincipals && cloudPrincipals.length > 0) {
+        setPrincipals((prev) => {
+          const map = new Map<string, Principal>();
+          prev.forEach((p) => map.set(p.id, p));
+          cloudPrincipals.forEach((p) => map.set(p.id, p));
+          const merged = Array.from(map.values());
+          savePrincipals(merged);
+          return merged;
+        });
+      }
+
+      // 7. Sync Managerial Evaluations from Cloud
+      const cloudManagerialEvals = await fetchCloudManagerialEvaluations();
+      if (cloudManagerialEvals && cloudManagerialEvals.length > 0) {
+        const localEvals = getManagerialEvaluations();
+        const map = new Map<string, ManagerialEvaluationRecord>();
+        localEvals.forEach((e) => map.set(e.id, e));
+        cloudManagerialEvals.forEach((e) => map.set(e.id, e));
+        saveManagerialEvaluations(Array.from(map.values()));
       }
     } catch (err) {
       console.warn('Initial cloud sync:', err);
@@ -413,6 +453,47 @@ export default function App() {
         showToast('Guru Dihapus', `Data ${teacher.nama} berhasil dihapus dari sistem dan Cloud.`, 'info');
       }
     });
+  };
+
+  // Handlers: Principals CRUD (Supervisi Manajerial)
+  const handleAddPrincipal = (pData: Omit<Principal, 'id' | 'createdAt' | 'updatedAt'>) => {
+    const newPrincipal = addPrincipal(pData);
+    setPrincipals(getPrincipals());
+    syncPrincipalToCloud(newPrincipal).catch((e) => console.warn('Cloud principal save failed', e));
+    showToast('Kepala Sekolah Ditambahkan', `Data ${pData.nama} berhasil didaftarkan dan tersimpan.`, 'success');
+  };
+
+  const handleEditPrincipal = (id: string, updates: Partial<Principal>) => {
+    updatePrincipal(id, updates);
+    setPrincipals(getPrincipals());
+    const updated = getPrincipals().find((p) => p.id === id);
+    if (updated) {
+      syncPrincipalToCloud(updated).catch((e) => console.warn('Cloud principal update failed', e));
+    }
+    showToast('Data Diperbarui', 'Data Kepala Sekolah berhasil disimpan ke sistem dan Cloud.', 'success');
+  };
+
+  const handleDeletePrincipal = (id: string) => {
+    const p = principals.find((item) => item.id === id);
+    if (!p) return;
+    setConfirmModal({
+      isOpen: true,
+      title: 'Hapus Data Kepala Sekolah?',
+      message: `Apakah Anda yakin ingin menghapus data Kepala Sekolah ${p.nama} (${p.satuanPendidikan})? Tindakan ini tidak dapat dibatalkan.`,
+      onConfirm: () => {
+        deletePrincipal(id);
+        deletePrincipalFromCloud(id).catch((e) => console.warn('Cloud principal delete failed', e));
+        setPrincipals(getPrincipals());
+        setConfirmModal(null);
+        showToast('Data Dihapus', `Data ${p.nama} berhasil dihapus dari sistem.`, 'info');
+      }
+    });
+  };
+
+  const handleScheduleManagerialSupervision = (principal: Principal) => {
+    setPresetManagerialPrincipal(principal);
+    setCurrentTab('calendar');
+    showToast('Jadwal Supervisi Manajerial', `Membuka kalender untuk ${principal.nama} (${principal.satuanPendidikan})`, 'info');
   };
 
   // Handlers: Settings & Reset
@@ -616,6 +697,7 @@ export default function App() {
         isOpen={isSidebarOpen}
         onClose={() => setIsSidebarOpen(false)}
         teacherCount={teachers.length}
+        principalCount={principals.length}
         supervisionCount={supervisions.length}
         pmReportCount={pmReports.length}
         supervisions={supervisions}
@@ -662,10 +744,12 @@ export default function App() {
                 <Dashboard
                   teachers={teachers}
                   supervisions={supervisions}
+                  principalsCount={principals.length}
                   onStartSupervision={handleStartNewSupervision}
                   onViewResult={handleViewResult}
                   onPrintReport={handlePrintReport}
                   onNavigateToTeachers={() => setCurrentTab('teachers')}
+                  onNavigateToPrincipals={() => setCurrentTab('principals')}
                   onNavigateToReports={() => setCurrentTab('reports')}
                   onNavigateToContextualProblems={() => setCurrentTab('contextual-problems')}
                   onNavigateToPM={() => setCurrentTab('pm-reports')}
@@ -684,10 +768,27 @@ export default function App() {
               {currentTab === 'calendar' && (
                 <SupervisionCalendarView
                   teachers={teachers}
+                  principals={principals}
                   supervisions={supervisions}
                   settings={settings}
+                  presetManagerialPrincipal={presetManagerialPrincipal}
+                  onClearPresetPrincipal={() => setPresetManagerialPrincipal(null)}
                   onStartSupervision={(teacherId) => handleStartNewSupervision(teacherId)}
                   onUpdateSettings={handleSaveSettings}
+                  showToast={showToast}
+                />
+              )}
+
+              {/* Tab: Data Kepala Sekolah (Supervisi Manajerial) */}
+              {currentTab === 'principals' && (
+                <PrincipalList
+                  principals={principals}
+                  settings={settings}
+                  onAddPrincipal={handleAddPrincipal}
+                  onEditPrincipal={handleEditPrincipal}
+                  onDeletePrincipal={handleDeletePrincipal}
+                  onScheduleManagerialSupervision={handleScheduleManagerialSupervision}
+                  onNavigateToCalendar={() => setCurrentTab('calendar')}
                   showToast={showToast}
                 />
               )}

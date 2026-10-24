@@ -36,6 +36,10 @@ const TAB_TITLES: Record<NavTab, { title: string; subtitle: string }> = {
     title: 'Data Guru',
     subtitle: 'Daftar pendidik, identitas NIP, dan alokasi mata pelajaran'
   },
+  principals: {
+    title: 'Data Kepala Sekolah & Supervisi Manajerial',
+    subtitle: 'Profil pimpinan satuan pendidikan, audit 8 SNP, tata kelola RKAS, dan evaluasi manajerial'
+  },
   'contextual-problems': {
     title: 'Data Awal & Akar Masalah Kontekstual',
     subtitle: 'Identifikasi fakta lapangan, diagnosis akar masalah (5-Whys), dan resep solusi supervisi'

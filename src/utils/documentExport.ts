@@ -12,7 +12,12 @@ import {
   PRE_OBSERVATION_QUESTIONS,
   SupervisionRecord,
   TeacherCycleComparison,
-  RegionalGrowthAnalysis
+  RegionalGrowthAnalysis,
+  Principal,
+  ManagerialEvaluationRecord,
+  MANAGERIAL_DIMENSIONS,
+  TOTAL_MANAGERIAL_ITEMS,
+  MAX_MANAGERIAL_RAW_SCORE
 } from '../types/inspiro';
 import { calculateTeacherRadarData } from '../components/TeacherRadarChart';
 import { QualityMapAnalysis } from './qualityMapUtils';
@@ -1487,3 +1492,606 @@ function escapeHtml(str: string): string {
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;');
 }
+
+/**
+ * Ekspor Rekapitulasi Data Kepala Sekolah & Supervisi Manajerial ke format Microsoft Word (.doc)
+ */
+export function exportPrincipalsManagerialToWord(
+  principals: Principal[],
+  evaluations: ManagerialEvaluationRecord[],
+  settings: AppSettings
+): void {
+  const currentDate = new Date().toLocaleDateString('id-ID', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric'
+  });
+
+  // Calculate statistics
+  const total = principals.length;
+  const completed = principals.filter((p) => p.statusSupervisiManajerial === 'Selesai').length;
+  const scheduled = principals.filter((p) => p.statusSupervisiManajerial === 'Terjadwal').length;
+  const pending = total - completed - scheduled;
+
+  // Average score among completed
+  const scoredPrincipals = principals.filter(
+    (p) => typeof p.skorManajerialTerakhir === 'number' && p.skorManajerialTerakhir > 0
+  );
+  const avgScore =
+    scoredPrincipals.length > 0
+      ? (
+          scoredPrincipals.reduce((acc, p) => acc + (p.skorManajerialTerakhir || 0), 0) /
+          scoredPrincipals.length
+        ).toFixed(1)
+      : '0.0';
+
+  // Build eval lookup map
+  const evalMap = new Map<string, ManagerialEvaluationRecord>();
+  evaluations.forEach((e) => {
+    evalMap.set(e.principalId, e);
+  });
+
+  // Build rows for each principal
+  const principalRows = principals
+    .map((p, idx) => {
+      const evalRec = evalMap.get(p.id);
+      const isDone = p.statusSupervisiManajerial === 'Selesai';
+      const isSched = p.statusSupervisiManajerial === 'Terjadwal';
+
+      const statusBadge = isDone
+        ? '<span style="background-color:#dcfce7; color:#166534; padding:2px 8px; border-radius:4px; font-weight:bold; font-size:8.5pt;">SELESAI</span>'
+        : isSched
+        ? '<span style="background-color:#e0f2fe; color:#0369a1; padding:2px 8px; border-radius:4px; font-weight:bold; font-size:8.5pt;">TERJADWAL</span>'
+        : '<span style="background-color:#f1f5f9; color:#475569; padding:2px 8px; border-radius:4px; font-weight:bold; font-size:8.5pt;">BELUM</span>';
+
+      const scoreText =
+        p.skorManajerialTerakhir !== undefined && p.skorManajerialTerakhir !== null
+          ? `<strong style="font-size:10.5pt; color:#1e3a8a;">${p.skorManajerialTerakhir}</strong><br><span style="font-size:8.5pt; color:#047857; font-weight:bold;">${p.predikatManajerial || '-'}</span>`
+          : '<span style="color:#94a3b8;">-</span>';
+
+      // 8 Dimensions mini breakdown
+      let dimBreakdown = '-';
+      if (evalRec && evalRec.dimensionScores) {
+        dimBreakdown = `
+          <table style="width:100%; border:none; font-size:8pt; line-height:1.2; margin:0;">
+            <tr>
+              <td style="border:none; padding:1px 4px 1px 0;">1. Kurikulum: <strong>${evalRec.dimensionScores.kurikulum?.percentage || 0}%</strong></td>
+              <td style="border:none; padding:1px 0 1px 4px;">5. Keuangan: <strong>${evalRec.dimensionScores.keuangan?.percentage || 0}%</strong></td>
+            </tr>
+            <tr>
+              <td style="border:none; padding:1px 4px 1px 0;">2. Kesiswaan: <strong>${evalRec.dimensionScores.kesiswaan?.percentage || 0}%</strong></td>
+              <td style="border:none; padding:1px 0 1px 4px;">6. Humas: <strong>${evalRec.dimensionScores.humas?.percentage || 0}%</strong></td>
+            </tr>
+            <tr>
+              <td style="border:none; padding:1px 4px 1px 0;">3. PTK: <strong>${evalRec.dimensionScores.ptk?.percentage || 0}%</strong></td>
+              <td style="border:none; padding:1px 0 1px 4px;">7. Administrasi: <strong>${evalRec.dimensionScores.administrasi?.percentage || 0}%</strong></td>
+            </tr>
+            <tr>
+              <td style="border:none; padding:1px 4px 1px 0;">4. Sarpras: <strong>${evalRec.dimensionScores.sarpras?.percentage || 0}%</strong></td>
+              <td style="border:none; padding:1px 0 1px 4px;">8. Lingkungan: <strong>${evalRec.dimensionScores.lingkungan?.percentage || 0}%</strong></td>
+            </tr>
+          </table>
+        `;
+      }
+
+      const notes = escapeHtml(p.catatanPengawas || p.fokusManajerial || '-');
+      const reco = escapeHtml(p.rekomendasiManajerial || '-');
+
+      return `
+        <tr style="border-bottom:1px solid #cbd5e1;">
+          <td style="text-align:center; vertical-align:top; padding:8px 6px; font-weight:bold;">${idx + 1}</td>
+          <td style="vertical-align:top; padding:8px 6px;">
+            <strong style="color:#0f172a; font-size:9.5pt;">${escapeHtml(p.nama)}</strong><br>
+            <span style="font-size:8.5pt; color:#475569;">NIP: ${escapeHtml(p.nip || '-')}</span><br>
+            <span style="font-size:8pt; color:#64748b;">${escapeHtml(p.pangkatGolongan || '-')}</span>
+          </td>
+          <td style="vertical-align:top; padding:8px 6px;">
+            <strong style="color:#1e293b; font-size:9pt;">${escapeHtml(p.satuanPendidikan)}</strong><br>
+            <span style="font-size:8pt; color:#64748b;">NPSN: ${escapeHtml(p.npsn || '-')}</span>
+          </td>
+          <td style="text-align:center; vertical-align:top; padding:8px 6px;">
+            ${statusBadge}<br>
+            <span style="font-size:7.5pt; color:#64748b; margin-top:3px; display:inline-block;">
+              ${p.tanggalSupervisiTerakhir || '-'}
+            </span>
+          </td>
+          <td style="text-align:center; vertical-align:top; padding:8px 6px;">
+            ${scoreText}
+          </td>
+          <td style="vertical-align:top; padding:8px 6px; background-color:#fafafa;">
+            ${dimBreakdown}
+          </td>
+          <td style="vertical-align:top; padding:8px 6px; font-size:8.5pt; line-height:1.3;">
+            <div style="margin-bottom:4px;">
+              <strong style="color:#0284c7;">Temuan:</strong> ${notes}
+            </div>
+            <div>
+              <strong style="color:#16a34a;">Rekomendasi:</strong> ${reco}
+            </div>
+          </td>
+        </tr>
+      `;
+    })
+    .join('');
+
+  const wordHtml = `
+    <!DOCTYPE html>
+    <html xmlns:o="urn:schemas-microsoft-com:office:office"
+          xmlns:w="urn:schemas-microsoft-com:office:word"
+          xmlns="http://www.w3.org/TR/REC-html40">
+    <head>
+      <meta charset="utf-8">
+      <title>Rekapitulasi Data Kepala Sekolah & Supervisi Manajerial</title>
+      <style>
+        @page {
+          size: A4 landscape;
+          margin: 1.5cm 1.2cm 1.5cm 1.2cm;
+          mso-page-orientation: landscape;
+        }
+        body {
+          font-family: Calibri, 'Segoe UI', Arial, sans-serif;
+          font-size: 9.5pt;
+          line-height: 1.35;
+          color: #0f172a;
+          margin: 0;
+          padding: 0;
+        }
+        .header-kop {
+          text-align: center;
+          border-bottom: 3px double #0f172a;
+          padding-bottom: 8px;
+          margin-bottom: 16px;
+        }
+        .header-kop h2 {
+          font-size: 13pt;
+          font-weight: bold;
+          margin: 0;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+        }
+        .header-kop h3 {
+          font-size: 11pt;
+          font-weight: bold;
+          margin: 2px 0 0 0;
+          text-transform: uppercase;
+          color: #1e293b;
+        }
+        .header-kop p {
+          font-size: 8.5pt;
+          color: #475569;
+          margin: 3px 0 0 0;
+        }
+        .title-doc {
+          text-align: center;
+          margin: 14px 0 16px 0;
+        }
+        .title-doc h1 {
+          font-size: 12.5pt;
+          font-weight: 800;
+          margin: 0;
+          text-transform: uppercase;
+          color: #0f172a;
+        }
+        .title-doc p {
+          font-size: 9pt;
+          color: #334155;
+          margin: 3px 0 0 0;
+        }
+        .kpi-table {
+          width: 100%;
+          border-collapse: collapse;
+          margin-bottom: 16px;
+        }
+        .kpi-table td {
+          border: 1px solid #cbd5e1;
+          padding: 8px 12px;
+          text-align: center;
+          background-color: #f8fafc;
+        }
+        .kpi-val {
+          font-size: 14pt;
+          font-weight: bold;
+          color: #1e3a8a;
+          display: block;
+        }
+        .kpi-lbl {
+          font-size: 8pt;
+          color: #64748b;
+          text-transform: uppercase;
+          font-weight: bold;
+        }
+        .main-table {
+          width: 100%;
+          border-collapse: collapse;
+          font-size: 9pt;
+          margin-bottom: 20px;
+        }
+        .main-table th {
+          background-color: #1e293b;
+          color: #ffffff;
+          padding: 8px 6px;
+          border: 1px solid #0f172a;
+          font-size: 8.5pt;
+          font-weight: bold;
+          text-transform: uppercase;
+          text-align: center;
+        }
+        .main-table td {
+          border: 1px solid #cbd5e1;
+        }
+        .signature-table {
+          width: 100%;
+          border: none;
+          margin-top: 25px;
+          font-size: 9.5pt;
+        }
+        .signature-table td {
+          border: none;
+          vertical-align: top;
+        }
+      </style>
+    </head>
+    <body>
+      <!-- KOP DINAS -->
+      <div class="header-kop">
+        <h2>${escapeHtml(settings.governmentAgency || 'PEMERINTAH KABUPATEN SIDENRENG RAPPANG')}</h2>
+        <h3>DINAS PENDIDIKAN DAN KEBUDAYAAN</h3>
+        <p>Alamat: Kompleks SKPD Jl. Harapan Baru No. 1, Pangkajene, Kab. Sidenreng Rappang, Sulawesi Selatan</p>
+      </div>
+
+      <!-- JUDUL LAPORAN -->
+      <div class="title-doc">
+        <h1>REKAPITULASI DATA KEPALA SEKOLAH &amp; LAPORAN SUPERVISI MANAJERIAL</h1>
+        <p>Instrumen Pemantauan 8 Dimensi Pengelolaan Sekolah (Skala 1 – 4 / 138 Indikator Mutu)</p>
+        <p style="font-size:8.5pt; color:#475569; margin-top:2px;">
+          Wilayah Binaan Pengawas: <strong>${escapeHtml(settings.supervisorName || 'HERIANSYAH, S.Si., S.Pd., M.Pd')}</strong> (NIP: ${escapeHtml(settings.supervisorNip || '19820415 200801 1 007')})
+        </p>
+      </div>
+
+      <!-- RINGKASAN STATISTIK KPI -->
+      <table class="kpi-table">
+        <tr>
+          <td style="width:25%;">
+            <span class="kpi-val">${total}</span>
+            <span class="kpi-lbl">Total Kepala Sekolah Binaan</span>
+          </td>
+          <td style="width:25%;">
+            <span class="kpi-val" style="color:#16a34a;">${completed}</span>
+            <span class="kpi-lbl">Supervisi Selesai (${total > 0 ? Math.round((completed / total) * 100) : 0}%)</span>
+          </td>
+          <td style="width:25%;">
+            <span class="kpi-val" style="color:#0284c7;">${scheduled + pending}</span>
+            <span class="kpi-lbl">Terjadwal / Belum</span>
+          </td>
+          <td style="width:25%;">
+            <span class="kpi-val" style="color:#d97706;">${avgScore}</span>
+            <span class="kpi-lbl">Rata-rata Skor Manajerial (0–100)</span>
+          </td>
+        </tr>
+      </table>
+
+      <!-- TABEL DATA LENGKAP -->
+      <table class="main-table">
+        <thead>
+          <tr>
+            <th style="width:30px;">No</th>
+            <th style="width:145px;">Nama &amp; NIP Kepala Sekolah</th>
+            <th style="width:130px;">Satuan Pendidikan</th>
+            <th style="width:80px;">Status Supervisi</th>
+            <th style="width:75px;">Nilai &amp; Predikat</th>
+            <th style="width:180px;">Capaian 8 Dimensi Manajerial</th>
+            <th>Catatan Temuan &amp; Rekomendasi Pengawas</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${principalRows}
+        </tbody>
+      </table>
+
+      <!-- TANDA TANGAN -->
+      <table class="signature-table">
+        <tr>
+          <td style="width:60%;"></td>
+          <td style="width:40%; text-align:left; padding-left:30px;">
+            ${escapeHtml(settings.schoolCity || 'Kabupaten Sidenreng Rappang')}, ${currentDate}<br>
+            Pengawas Sekolah Pembina,<br>
+            <div style="height:65px;"></div>
+            <strong><u>${escapeHtml(settings.supervisorName || 'HERIANSYAH, S.Si., S.Pd., M.Pd')}</u></strong><br>
+            NIP. ${escapeHtml(settings.supervisorNip || '19820415 200801 1 007')}<br>
+            <span style="font-size:8pt; color:#64748b;">Pembina Tk. I / IV.b</span>
+          </td>
+        </tr>
+      </table>
+    </body>
+    </html>
+  `;
+
+  const fileName = `Rekap_Supervisi_Manajerial_${new Date().toISOString().split('T')[0]}.doc`;
+  downloadBlob(wordHtml, fileName, 'application/msword;charset=utf-8');
+}
+
+/**
+ * Ekspor Hasil Supervisi Manajerial 8 Menu (138 Indikator) Individual Kepala Sekolah ke Word (.doc)
+ */
+export function exportIndividualManagerialToWord(
+  principal: Principal,
+  evaluation: ManagerialEvaluationRecord,
+  settings: AppSettings
+): void {
+  const currentDate = new Date().toLocaleDateString('id-ID', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric'
+  });
+
+  const evalDate = evaluation.date
+    ? new Date(evaluation.date).toLocaleDateString('id-ID', {
+        weekday: 'long',
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric'
+      })
+    : currentDate;
+
+  // Build 8 dimensions and 138 indicator tables
+  const dimensionSectionsHtml = MANAGERIAL_DIMENSIONS.map((dim) => {
+    const dimStat = evaluation.dimensionScores[dim.key] || {
+      total: 0,
+      max: dim.items.length * 4,
+      percentage: 0,
+      average: 0
+    };
+
+    const itemRows = dim.items
+      .map((item) => {
+        const val = evaluation.scores[item.id] || 0;
+        const rubricText = val > 0 ? item.rubrics[val as 1 | 2 | 3 | 4] : 'Belum dinilai';
+        const note = evaluation.notes?.[item.id] ? `<br><em style="color:#0284c7; font-size:8pt;">Catatan: ${escapeHtml(evaluation.notes[item.id])}</em>` : '';
+
+        return `
+          <tr style="border-bottom:1px solid #cbd5e1;">
+            <td style="text-align:center; vertical-align:top; padding:6px; font-weight:bold; font-size:8.5pt;">${item.number}</td>
+            <td style="vertical-align:top; padding:6px; font-size:8.5pt;">
+              <strong style="color:#0f172a;">${escapeHtml(item.text)}</strong>
+              ${item.evidenceGuidance ? `<div style="font-size:7.5pt; color:#64748b; margin-top:2px;">Bukti: ${escapeHtml(item.evidenceGuidance)}</div>` : ''}
+              ${note}
+            </td>
+            <td style="text-align:center; vertical-align:top; padding:6px;">
+              <strong style="display:inline-block; width:22px; height:22px; line-height:22px; background-color:#1e293b; color:#ffffff; border-radius:3px; font-size:9.5pt;">
+                ${val || '-'}
+              </strong>
+            </td>
+            <td style="vertical-align:top; padding:6px; font-size:8pt; color:#334155; line-height:1.3;">
+              ${rubricText}
+            </td>
+          </tr>
+        `;
+      })
+      .join('');
+
+    return `
+      <div style="margin-top:14px; margin-bottom:14px; border:1px solid #cbd5e1; border-radius:4px; overflow:hidden;">
+        <div style="background-color:#f1f5f9; padding:6px 10px; border-bottom:1px solid #cbd5e1; display:flex; justify-content:space-between;">
+          <strong style="font-size:9.5pt; text-transform:uppercase; color:#0f172a;">
+            DIMENSI ${dim.number}. ${escapeHtml(dim.title)} (${dim.items.length} Indikator)
+          </strong>
+          <span style="font-size:9pt; font-weight:bold; color:#1e3a8a; float:right;">
+            Capaian: ${dimStat.total} / ${dimStat.max} (${dimStat.percentage}%) - Rata-rata: ${dimStat.average}
+          </span>
+        </div>
+        <table style="width:100%; border-collapse:collapse; font-size:8.5pt;">
+          <thead>
+            <tr style="background-color:#f8fafc; border-bottom:1px solid #cbd5e1;">
+              <th style="width:30px; padding:5px; text-align:center; font-weight:bold; color:#475569;">No</th>
+              <th style="padding:5px; text-align:left; font-weight:bold; color:#475569;">Indikator Kinerja &amp; Bukti Fisik</th>
+              <th style="width:50px; padding:5px; text-align:center; font-weight:bold; color:#475569;">Skala (1-4)</th>
+              <th style="width:280px; padding:5px; text-align:left; font-weight:bold; color:#475569;">Deskripsi Capaian / Rubrik</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${itemRows}
+          </tbody>
+        </table>
+      </div>
+    `;
+  }).join('');
+
+  const wordHtml = `
+    <!DOCTYPE html>
+    <html xmlns:o="urn:schemas-microsoft-com:office:office"
+          xmlns:w="urn:schemas-microsoft-com:office:word"
+          xmlns="http://www.w3.org/TR/REC-html40">
+    <head>
+      <meta charset="utf-8">
+      <title>Instrumen Supervisi Manajerial - ${escapeHtml(principal.nama)}</title>
+      <style>
+        @page {
+          size: A4 portrait;
+          margin: 1.5cm 1.2cm 1.5cm 1.2cm;
+          mso-page-orientation: portrait;
+        }
+        body {
+          font-family: Calibri, 'Segoe UI', Arial, sans-serif;
+          font-size: 9pt;
+          line-height: 1.35;
+          color: #0f172a;
+          margin: 0;
+          padding: 0;
+        }
+        .header-kop {
+          text-align: center;
+          border-bottom: 3px double #0f172a;
+          padding-bottom: 6px;
+          margin-bottom: 14px;
+        }
+        .header-kop h2 {
+          font-size: 12pt;
+          font-weight: bold;
+          margin: 0;
+          text-transform: uppercase;
+        }
+        .header-kop h3 {
+          font-size: 10pt;
+          font-weight: bold;
+          margin: 2px 0 0 0;
+          text-transform: uppercase;
+          color: #1e293b;
+        }
+        .title-doc {
+          text-align: center;
+          margin: 10px 0 12px 0;
+        }
+        .title-doc h1 {
+          font-size: 12pt;
+          font-weight: 800;
+          margin: 0;
+          text-transform: uppercase;
+        }
+        .title-doc p {
+          font-size: 8.5pt;
+          color: #334155;
+          margin: 2px 0 0 0;
+        }
+        .identity-table {
+          width: 100%;
+          border-collapse: collapse;
+          margin-bottom: 12px;
+          font-size: 8.5pt;
+          background-color: #f8fafc;
+          border: 1px solid #cbd5e1;
+        }
+        .identity-table td {
+          padding: 4px 8px;
+          border: none;
+        }
+        .summary-card {
+          border: 1px solid #bfdbfe;
+          background-color: #eff6ff;
+          padding: 10px 14px;
+          border-radius: 4px;
+          margin-bottom: 14px;
+        }
+        .reco-box {
+          border: 1px solid #cbd5e1;
+          background-color: #f8fafc;
+          padding: 10px 12px;
+          border-radius: 4px;
+          margin-top: 10px;
+          font-size: 8.5pt;
+        }
+        .signature-table {
+          width: 100%;
+          border: none;
+          margin-top: 25px;
+          font-size: 9pt;
+        }
+        .signature-table td {
+          border: none;
+          vertical-align: top;
+          text-align: center;
+        }
+      </style>
+    </head>
+    <body>
+      <!-- KOP -->
+      <div class="header-kop">
+        <h2>${escapeHtml(settings.governmentAgency || 'PEMERINTAH KABUPATEN SIDENRENG RAPPANG')}</h2>
+        <h3>DINAS PENDIDIKAN DAN KEBUDAYAAN</h3>
+        <p style="font-size:8pt; color:#475569; margin:2px 0 0 0;">Alamat: Kompleks SKPD Jl. Harapan Baru No. 1, Pangkajene, Kab. Sidenreng Rappang</p>
+      </div>
+
+      <!-- JUDUL -->
+      <div class="title-doc">
+        <h1>INSTRUMEN EVALUASI SUPERVISI MANAJERIAL KEPALA SEKOLAH</h1>
+        <p>Evaluasi 8 Dimensi Berdasarkan Standar Pengelolaan Pendidikan (Skala 1 – 4 / 138 Indikator)</p>
+      </div>
+
+      <!-- IDENTITAS -->
+      <table class="identity-table">
+        <tr>
+          <td style="width:20%; font-weight:bold; color:#475569;">Nama Kepala Sekolah</td>
+          <td style="width:30%;">: <strong>${escapeHtml(principal.nama)}</strong></td>
+          <td style="width:20%; font-weight:bold; color:#475569;">Nama Pengawas Pembina</td>
+          <td style="width:30%;">: <strong>${escapeHtml(settings.supervisorName || 'HERIANSYAH, S.Si., S.Pd., M.Pd')}</strong></td>
+        </tr>
+        <tr>
+          <td style="font-weight:bold; color:#475569;">NIP Kepala Sekolah</td>
+          <td>: ${escapeHtml(principal.nip || '-')}</td>
+          <td style="font-weight:bold; color:#475569;">NIP Pengawas</td>
+          <td>: ${escapeHtml(settings.supervisorNip || '19820415 200801 1 007')}</td>
+        </tr>
+        <tr>
+          <td style="font-weight:bold; color:#475569;">Pangkat / Golongan</td>
+          <td>: ${escapeHtml(principal.pangkatGolongan || '-')}</td>
+          <td style="font-weight:bold; color:#475569;">Hari / Tanggal Supervisi</td>
+          <td>: ${evalDate}</td>
+        </tr>
+        <tr>
+          <td style="font-weight:bold; color:#475569;">Satuan Pendidikan</td>
+          <td>: <strong>${escapeHtml(principal.satuanPendidikan)}</strong></td>
+          <td style="font-weight:bold; color:#475569;">Semester / Tahun Ajaran</td>
+          <td>: Semester ${evaluation.semester} / TA ${evaluation.academicYear}</td>
+        </tr>
+      </table>
+
+      <!-- RINGKASAN HASIL -->
+      <div class="summary-card">
+        <table style="width:100%; border:none; margin:0;">
+          <tr>
+            <td style="border:none;">
+              <strong style="color:#1e3a8a; font-size:10pt;">HASIL EVALUASI MANAJERIAL KESELURUHAN (138 INDIKATOR)</strong><br>
+              <span style="font-size:8.5pt; color:#334155;">
+                Total Skor Mentah: <strong>${evaluation.totalScore}</strong> dari maksimal ${MAX_MANAGERIAL_RAW_SCORE} poin (${TOTAL_MANAGERIAL_ITEMS} Indikator)
+              </span>
+            </td>
+            <td style="border:none; text-align:right;">
+              <span style="font-size:16pt; font-weight:900; color:#1e3a8a;">${evaluation.finalScore}</span>
+              <span style="font-size:9pt; color:#64748b;"> / 100</span><br>
+              <span style="display:inline-block; background-color:#16a34a; color:#ffffff; font-weight:bold; padding:2px 8px; border-radius:3px; font-size:8.5pt;">
+                Predikat: ${evaluation.predicate}
+              </span>
+            </td>
+          </tr>
+        </table>
+      </div>
+
+      <!-- 8 MENU DIMENSIONS DETAIL -->
+      ${dimensionSectionsHtml}
+
+      <!-- CATATAN & REKOMENDASI -->
+      <div class="reco-box">
+        <strong style="color:#0f172a; font-size:9pt; display:block; margin-bottom:4px;">A. CATATAN TEMUAN LAPANGAN PENGAWAS PEMBINA:</strong>
+        <p style="margin:0 0 8px 0; color:#334155; line-height:1.4; white-space:pre-wrap;">${escapeHtml(evaluation.catatanPengawas || 'Semua dokumen manajerial 8 standar telah diperiksa dan terverifikasi sesuai regulasi.')}</p>
+
+        <strong style="color:#0f172a; font-size:9pt; display:block; margin-bottom:4px;">B. REKOMENDASI TINDAK LANJUT MANAJERIAL:</strong>
+        <p style="margin:0; color:#334155; line-height:1.4; white-space:pre-wrap;">${escapeHtml(evaluation.rekomendasiManajerial || 'Lanjutkan pemenuhan standar mutu dan pemutakhiran data secara berkelanjutan.')}</p>
+      </div>
+
+      <!-- TANDA TANGAN -->
+      <table class="signature-table">
+        <tr>
+          <td style="width:50%;">
+            Mengetahui / Memeriksa,<br>
+            Kepala Satuan Pendidikan Yang Disupervisi,<br>
+            <div style="height:60px;"></div>
+            <strong><u>${escapeHtml(principal.nama)}</u></strong><br>
+            NIP. ${escapeHtml(principal.nip || '-')}
+          </td>
+          <td style="width:50%;">
+            ${escapeHtml(settings.schoolCity || 'Kabupaten Sidenreng Rappang')}, ${evalDate}<br>
+            Pengawas Sekolah Pembina,<br>
+            <div style="height:60px;"></div>
+            <strong><u>${escapeHtml(settings.supervisorName || 'HERIANSYAH, S.Si., S.Pd., M.Pd')}</u></strong><br>
+            NIP. ${escapeHtml(settings.supervisorNip || '19820415 200801 1 007')}
+          </td>
+        </tr>
+      </table>
+    </body>
+    </html>
+  `;
+
+  const safeName = principal.nama.replace(/[^a-zA-Z0-9]/g, '_');
+  const fileName = `Supervisi_Manajerial_${safeName}_${evaluation.academicYear.replace('/', '-')}.doc`;
+  downloadBlob(wordHtml, fileName, 'application/msword;charset=utf-8');
+}
+

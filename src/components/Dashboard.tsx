@@ -25,19 +25,22 @@ import {
   HeartHandshake,
   Grid2X2,
   FileSearch,
-  Sparkles
+  Sparkles,
+  School
 } from 'lucide-react';
 import { SupervisionRecord, Teacher, VISIT_TYPE_LABELS } from '../types/inspiro';
-import { getVisitAgendas, getCoachingRecords } from '../utils/storage';
+import { getVisitAgendas, getCoachingRecords, getPrincipals } from '../utils/storage';
 import { computeTeacherQuadrants } from '../utils/quadrantUtils';
 
 interface DashboardProps {
   teachers: Teacher[];
   supervisions: SupervisionRecord[];
+  principalsCount?: number;
   onStartSupervision: (teacherId?: string) => void;
   onViewResult: (supervisionId: string) => void;
   onPrintReport: (supervisionId: string) => void;
   onNavigateToTeachers: () => void;
+  onNavigateToPrincipals?: () => void;
   onNavigateToReports: () => void;
   onNavigateToContextualProblems?: () => void;
   onNavigateToPM?: () => void;
@@ -54,10 +57,12 @@ interface DashboardProps {
 export const Dashboard: React.FC<DashboardProps> = ({
   teachers,
   supervisions,
+  principalsCount,
   onStartSupervision,
   onViewResult,
   onPrintReport,
   onNavigateToTeachers,
+  onNavigateToPrincipals,
   onNavigateToReports,
   onNavigateToContextualProblems,
   onNavigateToPM,
@@ -73,6 +78,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
   // Calculations
   const totalSupervisi = supervisions.length;
   const totalGuru = teachers.length;
+  const totalKepsek = principalsCount ?? getPrincipals().length;
   const completedSupervisions = supervisions.filter((s) => s.status === 'selesai');
   const draftSupervisions = supervisions.filter((s) => s.status === 'draft');
   const completedCount = completedSupervisions.length;
@@ -200,7 +206,30 @@ export const Dashboard: React.FC<DashboardProps> = ({
             </span>
           </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-8 gap-3">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 xl:grid-cols-9 gap-3">
+            {/* Tile: Data Kepala Sekolah & Supervisi Manajerial */}
+            {onNavigateToPrincipals && (
+              <button
+                onClick={onNavigateToPrincipals}
+                className="group text-left p-3.5 rounded-xl bg-white/6 hover:bg-white/12 border border-white/10 hover:border-purple-400/40 transition-all duration-200 cursor-pointer flex flex-col justify-between"
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <div className="w-8 h-8 rounded-lg bg-purple-500/20 text-purple-300 flex items-center justify-center border border-purple-400/30 group-hover:scale-105 transition-transform">
+                    <School className="w-4 h-4" />
+                  </div>
+                  <ArrowRight className="w-3.5 h-3.5 text-white/40 group-hover:text-purple-300 group-hover:translate-x-0.5 transition-all" />
+                </div>
+                <div>
+                  <p className="text-xs font-bold text-white group-hover:text-purple-200 transition-colors">
+                    Supervisi Manajerial
+                  </p>
+                  <p className="text-[11px] text-purple-200/70 mt-0.5 line-clamp-1">
+                    Data Kepsek ({totalKepsek})
+                  </p>
+                </div>
+              </button>
+            )}
+
             {/* Tile 1: Kalender & Agenda Kunjungan */}
             <button
               onClick={onNavigateToCalendar}
@@ -788,7 +817,16 @@ export const Dashboard: React.FC<DashboardProps> = ({
                           <>
                             <span>·</span>
                             <span className="text-indigo-700 font-medium">
-                              Sasaran: {item.targetTeacherNames.join(', ')}
+                              Sasaran Guru: {item.targetTeacherNames.join(', ')}
+                            </span>
+                          </>
+                        )}
+                        {item.targetPrincipalName && (
+                          <>
+                            <span>·</span>
+                            <span className="text-purple-700 font-semibold flex items-center gap-1 bg-purple-50 px-2 py-0.5 rounded border border-purple-200">
+                              <School className="w-3 h-3 text-purple-600" />
+                              Kepsek: {item.targetPrincipalName}
                             </span>
                           </>
                         )}
@@ -804,6 +842,15 @@ export const Dashboard: React.FC<DashboardProps> = ({
                       >
                         <PlayCircle className="w-3.5 h-3.5" />
                         <span>Mulai Observasi</span>
+                      </button>
+                    )}
+                    {item.visitType === 'supervisi_manajerial' && onNavigateToPrincipals && (
+                      <button
+                        onClick={onNavigateToPrincipals}
+                        className="flex items-center gap-1 px-3 py-1.5 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-xs font-bold transition-all cursor-pointer shadow-xs"
+                      >
+                        <School className="w-3.5 h-3.5" />
+                        <span>Data Kepsek</span>
                       </button>
                     )}
                     <button

@@ -11,6 +11,8 @@ import { SEED_DIGITAL_PM_RECORDS } from '../data/seedDigitalPM';
 import { SEED_CONTEXTUAL_PROBLEMS } from '../data/seedContextualProblems';
 import { SEED_PARTNERSHIP_PM_RECORDS } from '../data/seedLearningPartnership';
 import { SEED_SOAR_RECORDS } from '../data/seedSOAR';
+import { SEED_PRINCIPALS } from '../data/seedPrincipals';
+import { SEED_MANAGERIAL_EVALUATIONS } from '../data/seedManagerialEvaluations';
 import {
   AppSettings,
   ManagedAccount,
@@ -19,6 +21,8 @@ import {
   SupervisionCategory,
   SupervisionRecord,
   Teacher,
+  Principal,
+  ManagerialEvaluationRecord,
   PMReport,
   VisitAgenda,
   TirtaCoachingRecord,
@@ -30,6 +34,8 @@ import {
 } from '../types/inspiro';
 
 const TEACHERS_KEY = 'inspiro_teachers';
+const PRINCIPALS_KEY = 'inspiro_principals';
+const MANAGERIAL_EVALUATIONS_KEY = 'inspiro_managerial_evaluations';
 const SUPERVISIONS_KEY = 'inspiro_supervisions';
 const SETTINGS_KEY = 'inspiro_settings';
 const VISIT_AGENDAS_KEY = 'inspiro_visit_agendas';
@@ -98,6 +104,115 @@ export function deleteTeacher(id: string): boolean {
   if (filtered.length === current.length) return false;
   saveTeachers(filtered);
   return true;
+}
+
+// 1.5. Principals (Kepala Sekolah Binaan) CRUD
+export function getPrincipals(): Principal[] {
+  const principals = safeParse<Principal[]>(PRINCIPALS_KEY, []);
+  if (principals.length === 0) {
+    savePrincipals(SEED_PRINCIPALS);
+    return SEED_PRINCIPALS;
+  }
+  return principals;
+}
+
+export function savePrincipals(principals: Principal[]): void {
+  try {
+    localStorage.setItem(PRINCIPALS_KEY, JSON.stringify(principals));
+  } catch (e) {
+    console.error('Error saving principals:', e);
+  }
+}
+
+export function addPrincipal(principal: Omit<Principal, 'id' | 'createdAt'>): Principal {
+  const current = getPrincipals();
+  const newPrincipal: Principal = {
+    ...principal,
+    id: `KS${String(current.length + 1).padStart(3, '0')}-${Date.now().toString().slice(-4)}`,
+    createdAt: new Date().toISOString()
+  };
+  const updated = [newPrincipal, ...current];
+  savePrincipals(updated);
+  return newPrincipal;
+}
+
+export function updatePrincipal(id: string, updates: Partial<Principal>): boolean {
+  const current = getPrincipals();
+  const index = current.findIndex((p) => p.id === id);
+  if (index === -1) return false;
+  current[index] = { ...current[index], ...updates, updatedAt: new Date().toISOString() };
+  savePrincipals(current);
+  return true;
+}
+
+export function deletePrincipal(id: string): boolean {
+  const current = getPrincipals();
+  const filtered = current.filter((p) => p.id !== id);
+  if (filtered.length === current.length) return false;
+  savePrincipals(filtered);
+  return true;
+}
+
+export function getPrincipalById(id: string): Principal | null {
+  const current = getPrincipals();
+  return current.find((p) => p.id === id) || null;
+}
+
+// 1.6. Managerial Supervision (8 Dimensi Skala 1-4) CRUD
+export function getManagerialEvaluations(): ManagerialEvaluationRecord[] {
+  const records = safeParse<ManagerialEvaluationRecord[]>(MANAGERIAL_EVALUATIONS_KEY, []);
+  if (records.length === 0) {
+    saveManagerialEvaluations(SEED_MANAGERIAL_EVALUATIONS);
+    return SEED_MANAGERIAL_EVALUATIONS;
+  }
+  return records;
+}
+
+export function saveManagerialEvaluations(records: ManagerialEvaluationRecord[]): void {
+  try {
+    localStorage.setItem(MANAGERIAL_EVALUATIONS_KEY, JSON.stringify(records));
+  } catch (e) {
+    console.error('Error saving managerial evaluations:', e);
+  }
+}
+
+export function saveManagerialEvaluation(record: ManagerialEvaluationRecord): void {
+  const current = getManagerialEvaluations();
+  const index = current.findIndex((r) => r.id === record.id);
+  let updated: ManagerialEvaluationRecord[];
+
+  if (index >= 0) {
+    updated = [...current];
+    updated[index] = { ...record, updatedAt: new Date().toISOString() };
+  } else {
+    updated = [record, ...current];
+  }
+  saveManagerialEvaluations(updated);
+
+  // Automatically update the Principal's managerial summary in real time!
+  if (record.principalId) {
+    updatePrincipal(record.principalId, {
+      statusSupervisiManajerial: record.status === 'selesai' ? 'Selesai' : 'Terjadwal',
+      skorManajerialTerakhir: record.finalScore,
+      predikatManajerial: record.predicate,
+      tanggalSupervisiTerakhir: record.date,
+      catatanPengawas: record.catatanPengawas,
+      rekomendasiManajerial: record.rekomendasiManajerial
+    });
+  }
+}
+
+export function deleteManagerialEvaluation(id: string): boolean {
+  const current = getManagerialEvaluations();
+  const filtered = current.filter((r) => r.id !== id);
+  if (filtered.length === current.length) return false;
+  saveManagerialEvaluations(filtered);
+  return true;
+}
+
+export function getManagerialEvaluationByPrincipalId(principalId: string): ManagerialEvaluationRecord | null {
+  const current = getManagerialEvaluations();
+  return current.find((r) => r.principalId === principalId) || null;
 }
 
 // 2. Supervisions CRUD
@@ -486,9 +601,12 @@ export function importDataFromJson(jsonStr: string): { success: boolean; message
 
 export function resetToDemoData(): void {
   saveTeachers(SEED_TEACHERS);
+  savePrincipals(SEED_PRINCIPALS);
+  saveManagerialEvaluations(SEED_MANAGERIAL_EVALUATIONS);
   saveSupervisions(SEED_SUPERVISIONS);
   saveSettings(DEFAULT_SETTINGS);
   saveManagedAccounts(DEFAULT_ACCOUNTS);
+  saveVisitAgendas(SEED_VISIT_AGENDAS);
 }
 
 // 7. Managed Accounts (Pengawas & Kepala Sekolah Binaan)
@@ -809,6 +927,16 @@ export function getVisitAgendas(): VisitAgenda[] {
   if (agendas.length === 0) {
     saveVisitAgendas(SEED_VISIT_AGENDAS);
     return SEED_VISIT_AGENDAS;
+  }
+  // Auto-merge managerial supervision seed agendas if not present
+  const hasManagerial = agendas.some((a) => a.visitType === 'supervisi_manajerial');
+  if (!hasManagerial) {
+    const managerialSeeds = SEED_VISIT_AGENDAS.filter((a) => a.visitType === 'supervisi_manajerial');
+    if (managerialSeeds.length > 0) {
+      const merged = [...agendas, ...managerialSeeds];
+      saveVisitAgendas(merged);
+      return merged;
+    }
   }
   return agendas;
 }

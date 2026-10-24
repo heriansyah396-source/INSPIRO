@@ -26,6 +26,7 @@ import {
   Trash2,
   X,
   Building,
+  School,
   Sparkles,
   CalendarDays,
   ListTodo,
@@ -40,6 +41,7 @@ import {
   VisitStatus,
   VISIT_TYPE_LABELS,
   Teacher,
+  Principal,
   SupervisionRecord,
   AppSettings
 } from '../types/inspiro';
@@ -47,7 +49,8 @@ import {
   getVisitAgendas,
   saveVisitAgenda,
   deleteVisitAgenda,
-  saveVisitAgendas
+  saveVisitAgendas,
+  getPrincipals
 } from '../utils/storage';
 import {
   downloadIcsFile,
@@ -59,8 +62,11 @@ import { SignatoryModal } from './SignatoryModal';
 
 interface SupervisionCalendarViewProps {
   teachers: Teacher[];
+  principals?: Principal[];
   supervisions: SupervisionRecord[];
   settings: AppSettings;
+  presetManagerialPrincipal?: Principal | null;
+  onClearPresetPrincipal?: () => void;
   onStartSupervision: (teacherId?: string) => void;
   onUpdateSettings?: (newSettings: AppSettings) => void;
   showToast: (title: string, message: string, type: 'success' | 'error' | 'info') => void;
@@ -68,14 +74,22 @@ interface SupervisionCalendarViewProps {
 
 export const SupervisionCalendarView: React.FC<SupervisionCalendarViewProps> = ({
   teachers,
+  principals,
   supervisions,
   settings,
+  presetManagerialPrincipal,
+  onClearPresetPrincipal,
   onStartSupervision,
   onUpdateSettings,
   showToast
 }) => {
   // Master agendas state
   const [agendas, setAgendas] = useState<VisitAgenda[]>(() => getVisitAgendas());
+
+  // Principals list
+  const principalsList = useMemo(() => {
+    return principals && principals.length > 0 ? principals : getPrincipals();
+  }, [principals]);
 
   // UI States
   const [currentDate, setCurrentDate] = useState<Date>(() => new Date(2026, 9, 21)); // Default to Oct 2026
@@ -105,6 +119,7 @@ export const SupervisionCalendarView: React.FC<SupervisionCalendarViewProps> = (
   const [formStartTime, setFormStartTime] = useState<string>('08:00');
   const [formEndTime, setFormEndTime] = useState<string>('12:00');
   const [formVisitType, setFormVisitType] = useState<VisitType>('supervisi_akademik');
+  const [formPrincipalId, setFormPrincipalId] = useState<string>('');
   const [formTeacherIds, setFormTeacherIds] = useState<string[]>([]);
   const [formPurpose, setFormPurpose] = useState<string>('');
   const [formNotes, setFormNotes] = useState<string>('');
@@ -120,15 +135,37 @@ export const SupervisionCalendarView: React.FC<SupervisionCalendarViewProps> = (
     setAgendas(getVisitAgendas());
   }, []);
 
+  // Auto-open modal if presetManagerialPrincipal is given
+  useEffect(() => {
+    if (presetManagerialPrincipal) {
+      setEditingAgenda(null);
+      setFormTitle(`Supervisi Manajerial: Audit 8 SNP & PBD (${presetManagerialPrincipal.satuanPendidikan})`);
+      setFormSchool(presetManagerialPrincipal.satuanPendidikan);
+      setFormDate('2026-10-24');
+      setFormStartTime('08:30');
+      setFormEndTime('12:00');
+      setFormVisitType('supervisi_manajerial');
+      setFormPrincipalId(presetManagerialPrincipal.id);
+      setFormTeacherIds([]);
+      setFormPurpose(`Supervisi manajerial kepemimpinan kepala sekolah: ${presetManagerialPrincipal.fokusManajerial || 'Evaluasi 8 SNP & Perencanaan Berbasis Data (PBD)'}.`);
+      setFormNotes('Instrumen pemantauan 8 Standar Nasional Pendidikan dan evaluasi RKAS.');
+      setFormStatus('terjadwal');
+      setFormCompletionNotes('');
+      setIsFormModalOpen(true);
+      onClearPresetPrincipal?.();
+    }
+  }, [presetManagerialPrincipal, onClearPresetPrincipal]);
+
   // Distinct schools
   const distinctSchools = useMemo(() => {
     const set = new Set<string>();
     if (settings.schoolName) set.add(settings.schoolName);
     teachers.forEach((t) => t.satuanPendidikan && set.add(t.satuanPendidikan));
+    principalsList.forEach((p) => p.satuanPendidikan && set.add(p.satuanPendidikan));
     supervisions.forEach((s) => s.identity?.satuanPendidikan && set.add(s.identity.satuanPendidikan));
     agendas.forEach((a) => a.schoolName && set.add(a.schoolName));
     return Array.from(set).filter(Boolean);
-  }, [settings.schoolName, teachers, supervisions, agendas]);
+  }, [settings.schoolName, teachers, principalsList, supervisions, agendas]);
 
   // Merge real completed supervisions as calendar entries if requested
   const allMergedAgendas = useMemo(() => {
@@ -319,6 +356,7 @@ export const SupervisionCalendarView: React.FC<SupervisionCalendarViewProps> = (
     setFormStartTime('08:00');
     setFormEndTime('12:00');
     setFormVisitType('supervisi_akademik');
+    setFormPrincipalId('');
     setFormTeacherIds([]);
     setFormPurpose('Observasi pelaksanaan pembelajaran Kurikulum Merdeka dan bimbingan klinis.');
     setFormNotes('Membawa instrumen 12 indikator dan lembar rubrik observasi.');
@@ -336,6 +374,7 @@ export const SupervisionCalendarView: React.FC<SupervisionCalendarViewProps> = (
     setFormStartTime(agenda.startTime || '08:00');
     setFormEndTime(agenda.endTime || '12:00');
     setFormVisitType(agenda.visitType);
+    setFormPrincipalId(agenda.targetPrincipalId || '');
     setFormTeacherIds(agenda.targetTeacherIds || []);
     setFormPurpose(agenda.purposeAndTargets);
     setFormNotes(agenda.notes || '');
@@ -357,6 +396,17 @@ export const SupervisionCalendarView: React.FC<SupervisionCalendarViewProps> = (
       .map((id) => teachers.find((t) => t.id === id)?.nama)
       .filter((n): n is string => Boolean(n));
 
+    // Resolve principal if selected
+    let targetPrincipalName: string | undefined = undefined;
+    let targetPrincipalNip: string | undefined = undefined;
+    if (formPrincipalId) {
+      const p = principalsList.find((pr) => pr.id === formPrincipalId);
+      if (p) {
+        targetPrincipalName = p.nama;
+        targetPrincipalNip = p.nip;
+      }
+    }
+
     const now = new Date().toISOString();
     const agendaToSave: VisitAgenda = {
       id: editingAgenda ? editingAgenda.id : `va-${Date.now().toString().slice(-6)}`,
@@ -366,6 +416,9 @@ export const SupervisionCalendarView: React.FC<SupervisionCalendarViewProps> = (
       startTime: formStartTime,
       endTime: formEndTime,
       visitType: formVisitType,
+      targetPrincipalId: formPrincipalId || undefined,
+      targetPrincipalName: targetPrincipalName || undefined,
+      targetPrincipalNip: targetPrincipalNip || undefined,
       targetTeacherIds: formTeacherIds,
       targetTeacherNames: teacherNames,
       purposeAndTargets: formPurpose.trim(),
@@ -453,124 +506,143 @@ export const SupervisionCalendarView: React.FC<SupervisionCalendarViewProps> = (
 
   return (
     <div className="space-y-6">
-      {/* 1. Header Banner with Executive Styling */}
-      <div className="relative overflow-hidden bg-gradient-to-br from-[#081533] via-[#0e214d] to-[#12285a] rounded-2xl p-6 sm:p-7 text-white shadow-xl border border-blue-400/25">
+      {/* 1. Header Banner with Executive & Flexible Styling */}
+      <div className="relative overflow-hidden bg-gradient-to-br from-[#081533] via-[#0d204a] to-[#12285a] rounded-2xl p-5 sm:p-7 text-white shadow-xl border border-blue-400/25">
         <div className="absolute -top-16 -right-16 w-80 h-80 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none" />
         <div className="absolute -bottom-16 left-1/3 w-80 h-80 bg-blue-500/15 rounded-full blur-3xl pointer-events-none" />
 
-        <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-6 pb-6 border-b border-white/10">
-          <div className="space-y-2 max-w-3xl">
-            <div className="flex flex-wrap items-center gap-2 text-xs text-cyan-300 font-semibold tracking-wide">
-              <span>Pengawas Pembina: {settings.supervisorName || 'HERIANSYAH, S.Si., S.Pd., M.Pd'}</span>
-              <span aria-hidden="true" className="text-white/40">·</span>
-              <span>NIP: {settings.supervisorNip || '19820415 200801 1 007'}</span>
-              <span aria-hidden="true" className="text-white/40">·</span>
-              <span className="text-blue-200">Semester Ganjil 2026/2027</span>
+        <div className="relative z-10 space-y-5 pb-6 border-b border-white/10">
+          {/* Row 1: Contextual Identity & Academic Term Metadata */}
+          <div className="flex flex-wrap items-center justify-between gap-3 text-xs">
+            <div className="flex flex-wrap items-center gap-2 text-cyan-300 font-medium">
+              <span className="font-semibold text-white">Pengawas Pembina:</span>
+              <span className="text-cyan-200 font-bold">{settings.supervisorName || 'HERIANSYAH, S.Si., S.Pd., M.Pd'}</span>
+              <span aria-hidden="true" className="text-white/30 hidden sm:inline">·</span>
+              <span className="text-blue-200 font-mono tabular-nums">NIP: {settings.supervisorNip || '19820415 200801 1 007'}</span>
+              <span aria-hidden="true" className="text-white/30 hidden sm:inline">·</span>
+              <span className="text-indigo-200">Semester Ganjil 2026/2027</span>
             </div>
-
-            <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white leading-tight flex items-center gap-3">
-              <CalendarDays className="w-7 h-7 sm:w-8 h-8 text-cyan-400 shrink-0" />
-              <span>Kalender Supervisi &amp; Agenda Kunjungan Sekolah</span>
-            </h2>
-
-            <p className="text-xs sm:text-sm text-blue-100/85 leading-relaxed font-normal">
-              Instrumen koordinasi dinas terintegrasi: jadwal observasi kelas, bimbingan klinis, pendampingan
-              Komunitas Belajar (Kombel), telaah KOSP, hingga sinkronisasi Google Calendar dan cetak berita acara resmi.
-            </p>
+            <div className="hidden md:inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/8 border border-white/10 text-cyan-200 text-xs font-semibold">
+              <span className="w-2 h-2 rounded-full bg-cyan-400"></span>
+              Agenda Pengawasan &amp; Kunjungan Terpadu
+            </div>
           </div>
 
-          {/* Action Toolbar */}
-          <div className="flex flex-wrap items-center gap-2.5 shrink-0">
-            <button
-              onClick={() => handleOpenAddModal(selectedDateStr)}
-              className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-cyan-400 via-cyan-300 to-blue-400 hover:from-cyan-300 hover:to-blue-300 text-slate-950 font-extrabold text-xs sm:text-sm rounded-xl transition-all shadow-md shadow-cyan-500/20 cursor-pointer hover:scale-[1.02] active:scale-[0.98]"
-            >
-              <Plus className="w-4 h-4 text-slate-950 stroke-[3]" />
-              <span>+ Tambah Agenda Kunjungan</span>
-            </button>
+          {/* Row 2: Title & Primary CTA - Fluid & Balanced */}
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 sm:gap-6">
+            <div className="space-y-2 flex-1 min-w-0">
+              <div className="flex items-center gap-3">
+                <div className="p-2 sm:p-2.5 rounded-xl bg-cyan-500/20 border border-cyan-400/30 text-cyan-400 shrink-0 shadow-xs">
+                  <CalendarDays className="w-6 h-6 sm:w-7 h-7" />
+                </div>
+                <h2 className="text-xl sm:text-2xl lg:text-3xl font-extrabold tracking-tight text-white leading-tight">
+                  Kalender Supervisi &amp; Agenda Kunjungan Sekolah
+                </h2>
+              </div>
+              <p className="text-xs sm:text-sm text-blue-100/80 leading-relaxed max-w-4xl">
+                Instrumen koordinasi dinas terintegrasi: jadwal observasi kelas, bimbingan klinis, pendampingan
+                Komunitas Belajar (Kombel), telaah KOSP, hingga sinkronisasi Google Calendar dan cetak berita acara resmi.
+              </p>
+            </div>
+
+            {/* Prominent Primary Action Button */}
+            <div className="shrink-0 flex items-center">
+              <button
+                onClick={() => handleOpenAddModal(selectedDateStr)}
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-3 bg-gradient-to-r from-cyan-400 via-cyan-300 to-blue-400 hover:from-cyan-300 hover:to-blue-300 text-slate-950 font-black text-xs sm:text-sm rounded-xl transition-all shadow-lg shadow-cyan-500/20 cursor-pointer hover:scale-[1.02] active:scale-[0.98] whitespace-nowrap"
+              >
+                <Plus className="w-4 h-4 text-slate-950 stroke-[3]" />
+                <span>Tambah Agenda Kunjungan</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Row 3: Action Toolbar for Document Exports & Configurations */}
+          <div className="flex flex-wrap items-center gap-2 pt-1">
+            <span className="text-xs font-semibold text-blue-200/80 mr-1 hidden sm:inline">Aksi Dokumen:</span>
 
             <button
               onClick={handlePrintSchedule}
-              className="flex items-center gap-2 px-3.5 py-2.5 bg-white/10 hover:bg-white/15 text-white font-semibold text-xs rounded-xl transition-all border border-white/15 backdrop-blur-xs cursor-pointer hover:border-white/30"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-white/10 hover:bg-white/15 text-white font-semibold text-xs rounded-xl transition-all border border-white/15 backdrop-blur-xs cursor-pointer hover:border-white/30 hover:text-cyan-200 whitespace-nowrap"
               title="Cetak Jadwal Kunjungan Resmi ke PDF"
             >
-              <Printer className="w-4 h-4 text-cyan-300" />
+              <Printer className="w-3.5 h-3.5 text-cyan-300" />
               <span>Cetak / Simpan PDF</span>
             </button>
 
             <button
               onClick={() => exportVisitAgendasToWord(filteredAgendas, settings, currentMonthLabel)}
-              className="flex items-center gap-2 px-3.5 py-2.5 bg-white/10 hover:bg-white/15 text-white font-semibold text-xs rounded-xl transition-all border border-white/15 backdrop-blur-xs cursor-pointer hover:border-white/30"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-white/10 hover:bg-white/15 text-white font-semibold text-xs rounded-xl transition-all border border-white/15 backdrop-blur-xs cursor-pointer hover:border-white/30 hover:text-blue-200 whitespace-nowrap"
               title="Unduh Tabel Agenda ke Dokumen Word"
             >
-              <Download className="w-4 h-4 text-blue-300" />
+              <Download className="w-3.5 h-3.5 text-blue-300" />
               <span>Unduh Word (.doc)</span>
             </button>
 
             <button
               onClick={() => downloadIcsFile(filteredAgendas, `Agenda_Supervisi_${currentMonthLabel.replace(/\s+/g, '_')}`, settings.supervisorName || 'Pengawas')}
-              className="flex items-center gap-2 px-3.5 py-2.5 bg-white/10 hover:bg-white/15 text-white font-semibold text-xs rounded-xl transition-all border border-white/15 backdrop-blur-xs cursor-pointer hover:border-white/30"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-white/10 hover:bg-white/15 text-white font-semibold text-xs rounded-xl transition-all border border-white/15 backdrop-blur-xs cursor-pointer hover:border-white/30 hover:text-emerald-200 whitespace-nowrap"
               title="Ekspor format iCalendar (.ics) untuk Google Calendar / HP"
             >
-              <ExternalLink className="w-4 h-4 text-emerald-300" />
+              <ExternalLink className="w-3.5 h-3.5 text-emerald-300" />
               <span>Ekspor iCal (.ics)</span>
             </button>
 
             <button
               onClick={() => setIsSignatoryModalOpen(true)}
-              className="flex items-center gap-2 px-3.5 py-2.5 bg-amber-500/20 hover:bg-amber-500/30 text-amber-200 font-semibold text-xs rounded-xl transition-all border border-amber-400/30 cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-amber-500/20 hover:bg-amber-500/30 text-amber-200 font-semibold text-xs rounded-xl transition-all border border-amber-400/30 cursor-pointer hover:border-amber-400/50 whitespace-nowrap"
               title="Atur data penandatangan resmi"
             >
-              <FileSignature className="w-4 h-4 text-amber-300" />
+              <FileSignature className="w-3.5 h-3.5 text-amber-300" />
               <span>Atur Penandatangan</span>
             </button>
           </div>
         </div>
 
         {/* Live Pulse KPI Stats */}
-        <div className="relative z-10 pt-5 grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <div className="p-3 rounded-xl bg-white/6 border border-white/10">
-            <span className="text-[11px] font-medium text-blue-200">Total Kunjungan Terjadwal</span>
+        <div className="relative z-10 pt-5 grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+          <div className="p-3.5 rounded-xl bg-white/6 border border-white/10 backdrop-blur-xs">
+            <span className="text-[11px] font-medium text-blue-200">Total Kunjungan</span>
             <div className="flex items-baseline gap-2 mt-1">
-              <span className="text-xl sm:text-2xl font-black text-white">{stats.total}</span>
-              <span className="text-[11px] text-cyan-300">kegiatan</span>
+              <span className="text-xl sm:text-2xl font-black text-white tabular-nums">{stats.total}</span>
+              <span className="text-[11px] text-cyan-300 font-medium">agenda</span>
             </div>
           </div>
 
-          <div className="p-3 rounded-xl bg-white/6 border border-white/10">
-            <span className="text-[11px] font-medium text-emerald-200">Realisasi Selesai Dilaksanakan</span>
+          <div className="p-3.5 rounded-xl bg-white/6 border border-white/10 backdrop-blur-xs">
+            <span className="text-[11px] font-medium text-emerald-200">Realisasi Selesai</span>
             <div className="flex items-baseline gap-2 mt-1">
-              <span className="text-xl sm:text-2xl font-black text-emerald-300">{stats.completed}</span>
-              <span className="text-[11px] text-emerald-200/80">({stats.completionRate}%)</span>
+              <span className="text-xl sm:text-2xl font-black text-emerald-300 tabular-nums">{stats.completed}</span>
+              <span className="text-[11px] text-emerald-200/80 font-medium tabular-nums">({stats.completionRate}%)</span>
             </div>
           </div>
 
-          <div className="p-3 rounded-xl bg-white/6 border border-white/10">
-            <span className="text-[11px] font-medium text-amber-200">Kunjungan Terdekat / Hari Ini</span>
+          <div className="p-3.5 rounded-xl bg-white/6 border border-white/10 backdrop-blur-xs">
+            <span className="text-[11px] font-medium text-amber-200">Agenda Terdekat</span>
             <div className="flex items-baseline gap-2 mt-1">
-              <span className="text-sm font-bold text-amber-300 truncate">
-                {stats.nearest ? `${stats.nearest.date === '2026-10-21' ? 'Hari Ini' : stats.nearest.date} · ${stats.nearest.schoolName.slice(0, 14)}...` : 'Semua Tuntas'}
+              <span className="text-xs sm:text-sm font-bold text-amber-300 truncate">
+                {stats.nearest ? `${stats.nearest.date === '2026-10-21' ? 'Hari Ini' : stats.nearest.date} · ${stats.nearest.schoolName}` : 'Semua Tuntas'}
               </span>
             </div>
           </div>
 
-          <div className="p-3 rounded-xl bg-white/6 border border-white/10">
-            <span className="text-[11px] font-medium text-indigo-200">Sekolah Binaan Terjadwal</span>
+          <div className="p-3.5 rounded-xl bg-white/6 border border-white/10 backdrop-blur-xs">
+            <span className="text-[11px] font-medium text-indigo-200">Sekolah Binaan</span>
             <div className="flex items-baseline gap-2 mt-1">
-              <span className="text-xl sm:text-2xl font-black text-indigo-300">{stats.uniqueVisitedSchools}</span>
-              <span className="text-[11px] text-indigo-200/80">satuan pendidikan</span>
+              <span className="text-xl sm:text-2xl font-black text-indigo-300 tabular-nums">{stats.uniqueVisitedSchools}</span>
+              <span className="text-[11px] text-indigo-200/80 font-medium">satuan</span>
             </div>
           </div>
         </div>
       </div>
 
       {/* 2. Control & Filter Bar */}
-      <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs flex flex-col xl:flex-row xl:items-center justify-between gap-4">
         {/* View Mode Switcher */}
-        <div className="flex items-center gap-1.5 p-1 bg-slate-100 rounded-lg">
+        <div className="flex flex-wrap items-center gap-1.5 p-1 bg-slate-100 rounded-lg">
           <button
             onClick={() => setActiveTab('calendar')}
-            className={`flex items-center gap-2 px-3 py-1.5 text-xs font-bold rounded-md transition-all cursor-pointer ${
+            className={`flex items-center gap-2 px-3 py-1.5 text-xs font-bold rounded-md transition-all cursor-pointer whitespace-nowrap ${
               activeTab === 'calendar'
                 ? 'bg-white text-blue-700 shadow-xs'
                 : 'text-slate-600 hover:text-slate-900'
@@ -581,7 +653,7 @@ export const SupervisionCalendarView: React.FC<SupervisionCalendarViewProps> = (
           </button>
           <button
             onClick={() => setActiveTab('timeline')}
-            className={`flex items-center gap-2 px-3 py-1.5 text-xs font-bold rounded-md transition-all cursor-pointer ${
+            className={`flex items-center gap-2 px-3 py-1.5 text-xs font-bold rounded-md transition-all cursor-pointer whitespace-nowrap ${
               activeTab === 'timeline'
                 ? 'bg-white text-blue-700 shadow-xs'
                 : 'text-slate-600 hover:text-slate-900'
@@ -592,7 +664,7 @@ export const SupervisionCalendarView: React.FC<SupervisionCalendarViewProps> = (
           </button>
           <button
             onClick={() => setActiveTab('school-matrix')}
-            className={`flex items-center gap-2 px-3 py-1.5 text-xs font-bold rounded-md transition-all cursor-pointer ${
+            className={`flex items-center gap-2 px-3 py-1.5 text-xs font-bold rounded-md transition-all cursor-pointer whitespace-nowrap ${
               activeTab === 'school-matrix'
                 ? 'bg-white text-blue-700 shadow-xs'
                 : 'text-slate-600 hover:text-slate-900'
@@ -913,6 +985,12 @@ export const SupervisionCalendarView: React.FC<SupervisionCalendarViewProps> = (
                             <Clock className="w-3.5 h-3.5 text-slate-400 shrink-0" />
                             <span>{agenda.startTime || '08:00'} - {agenda.endTime || '12:00'} WIB</span>
                           </div>
+                          {agenda.targetPrincipalName && (
+                            <div className="flex items-center gap-1.5 text-indigo-700 font-bold bg-indigo-50/80 px-2 py-1 rounded-md border border-indigo-200/60">
+                              <School className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
+                              <span>Kepala Sekolah: {agenda.targetPrincipalName}</span>
+                            </div>
+                          )}
                           {agenda.targetTeacherNames && agenda.targetTeacherNames.length > 0 && (
                             <div className="flex items-center gap-1.5 text-slate-600 font-medium">
                               <Users className="w-3.5 h-3.5 text-indigo-500 shrink-0" />
@@ -1089,6 +1167,15 @@ export const SupervisionCalendarView: React.FC<SupervisionCalendarViewProps> = (
                           <Clock className="w-3.5 h-3.5" />
                           {agenda.startTime || '08:00'} - {agenda.endTime || '12:00'} WIB
                         </span>
+                        {agenda.targetPrincipalName && (
+                          <>
+                            <span>·</span>
+                            <span className="flex items-center gap-1 text-indigo-700 font-bold bg-indigo-50/80 px-2 py-0.5 rounded-md border border-indigo-200/60">
+                              <School className="w-3.5 h-3.5 text-indigo-600" />
+                              <span>Kepala Sekolah: {agenda.targetPrincipalName}</span>
+                            </span>
+                          </>
+                        )}
                         {agenda.targetTeacherNames && agenda.targetTeacherNames.length > 0 && (
                           <>
                             <span>·</span>
@@ -1368,7 +1455,23 @@ export const SupervisionCalendarView: React.FC<SupervisionCalendarViewProps> = (
                 </label>
                 <select
                   value={formVisitType}
-                  onChange={(e) => setFormVisitType(e.target.value as VisitType)}
+                  onChange={(e) => {
+                    const newType = e.target.value as VisitType;
+                    setFormVisitType(newType);
+                    if (newType === 'supervisi_manajerial' && !formPrincipalId && principalsList.length > 0) {
+                      const matching = principalsList.find((p) => p.satuanPendidikan === formSchool) || principalsList[0];
+                      if (matching) {
+                        setFormPrincipalId(matching.id);
+                        setFormSchool(matching.satuanPendidikan);
+                        if (!formTitle || formTitle === '') {
+                          setFormTitle(`Supervisi Manajerial: Audit 8 SNP & PBD (${matching.satuanPendidikan})`);
+                        }
+                        if (!formPurpose || formPurpose === '') {
+                          setFormPurpose(`Supervisi manajerial kepemimpinan kepala sekolah: ${matching.fokusManajerial || 'Evaluasi 8 SNP & Perencanaan Berbasis Data (PBD)'}.`);
+                        }
+                      }
+                    }
+                  }}
                   className="w-full px-3 py-2 text-xs sm:text-sm bg-slate-50 border border-slate-300 rounded-xl text-slate-900 focus:ring-2 focus:ring-blue-500 focus:bg-white"
                 >
                   {Object.entries(VISIT_TYPE_LABELS).map(([k, v]) => (
@@ -1377,10 +1480,52 @@ export const SupervisionCalendarView: React.FC<SupervisionCalendarViewProps> = (
                 </select>
               </div>
 
+              {/* Dedicated Kepala Sekolah Selection if Supervisi Manajerial */}
+              {formVisitType === 'supervisi_manajerial' && (
+                <div className="p-3.5 bg-indigo-50/80 border border-indigo-200 rounded-xl space-y-2">
+                  <div className="flex items-center justify-between">
+                    <label className="block text-xs font-bold text-indigo-950 flex items-center gap-1.5">
+                      <School className="w-4 h-4 text-indigo-600" />
+                      <span>Kepala Sekolah Sasaran Supervisi Manajerial</span>
+                    </label>
+                    <span className="text-[10px] bg-indigo-200/80 text-indigo-900 font-bold px-2 py-0.5 rounded-full">
+                      Manajerial &amp; 8 SNP
+                    </span>
+                  </div>
+
+                  <select
+                    value={formPrincipalId}
+                    onChange={(e) => {
+                      const pid = e.target.value;
+                      setFormPrincipalId(pid);
+                      const found = principalsList.find((pr) => pr.id === pid);
+                      if (found) {
+                        setFormSchool(found.satuanPendidikan);
+                        setFormTitle(`Supervisi Manajerial: Audit 8 SNP & PBD (${found.satuanPendidikan})`);
+                        setFormPurpose(`Supervisi manajerial kepemimpinan kepala sekolah: ${found.fokusManajerial || 'Evaluasi 8 SNP & Perencanaan Berbasis Data (PBD)'}.`);
+                      }
+                    }}
+                    className="w-full px-3 py-2 text-xs sm:text-sm bg-white border border-indigo-300 rounded-lg text-slate-900 font-semibold focus:ring-2 focus:ring-indigo-500"
+                  >
+                    <option value="">-- Pilih Kepala Sekolah Binaan --</option>
+                    {principalsList.map((pr) => (
+                      <option key={pr.id} value={pr.id}>
+                        {pr.nama} ({pr.satuanPendidikan})
+                      </option>
+                    ))}
+                  </select>
+                  <p className="text-[11px] text-indigo-700/80">
+                    Pilih kepala sekolah untuk mengaitkan evaluasi manajerial, audit RKAS, dan pemantauan 8 SNP.
+                  </p>
+                </div>
+              )}
+
               {/* Target Teachers multi-select */}
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1">
-                  Guru Sasaran Observasi / Sasaran Kegiatan (Opsional)
+                  {formVisitType === 'supervisi_manajerial'
+                    ? 'Tim Pendamping / Guru Koordinator Terlibat (Opsional)'
+                    : 'Guru Sasaran Observasi / Sasaran Kegiatan (Opsional)'}
                 </label>
                 <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-1.5 max-h-36 overflow-y-auto">
                   {teachers.length === 0 ? (

@@ -7,6 +7,7 @@ import React from 'react';
 import {
   LayoutDashboard,
   Users,
+  School,
   ClipboardCheck,
   BarChart3,
   FileText,
@@ -33,6 +34,7 @@ import { RadarChartWidget } from './RadarChartWidget';
 export type NavTab =
   | 'dashboard'
   | 'calendar'
+  | 'principals'
   | 'teachers'
   | 'contextual-problems'
   | 'supervision'
@@ -57,6 +59,7 @@ interface SidebarProps {
   isOpenMobile?: boolean;
   onCloseMobile?: () => void;
   teacherCount: number;
+  principalCount?: number;
   supervisionCount: number;
   pmReportCount?: number;
   supervisions?: SupervisionRecord[];
@@ -73,6 +76,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   isOpenMobile,
   onCloseMobile,
   teacherCount,
+  principalCount = 0,
   supervisionCount,
   pmReportCount = 0,
   supervisions = [],
@@ -95,6 +99,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
       label: 'Kalender & Agenda',
       icon: Calendar,
       badge: 'Jadwal Kunjungan'
+    },
+    {
+      id: 'principals' as NavTab,
+      label: 'Data Kepala Sekolah',
+      icon: School,
+      badge: principalCount > 0 ? `${principalCount} Kepsek` : 'Manajerial'
     },
     {
       id: 'teachers' as NavTab,

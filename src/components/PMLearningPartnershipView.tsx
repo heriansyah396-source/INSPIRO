@@ -316,7 +316,7 @@ export const PMLearningPartnershipView: React.FC<PMLearningPartnershipViewProps>
         <div className="absolute -bottom-16 left-1/4 w-80 h-80 bg-indigo-500/15 rounded-full blur-3xl pointer-events-none" />
 
         <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-          <div className="space-y-2 max-w-3xl">
+          <div className="space-y-2 flex-1 min-w-0 max-w-3xl">
             {/* Zero-pill unboxed metadata */}
             <div className="flex flex-wrap items-center gap-2 text-xs font-semibold tracking-wide text-sky-300">
               <span>Program Pengelolaan Pembelajaran Mendalam (PM)</span>

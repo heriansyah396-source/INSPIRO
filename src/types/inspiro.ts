@@ -28,6 +28,26 @@ export interface Teacher {
   createdAt: string;
 }
 
+export interface Principal {
+  id: string;
+  nama: string;
+  nip: string;
+  pangkatGolongan?: string; // e.g. 'Pembina Tk. I (IV/b)', 'Pembina (IV/a)'
+  satuanPendidikan: string;
+  npsn?: string;
+  telepon?: string;
+  email?: string;
+  statusSupervisiManajerial: 'Belum Disupervisi' | 'Terjadwal' | 'Selesai';
+  skorManajerialTerakhir?: number; // 0 - 100
+  predikatManajerial?: 'Amat Baik (A)' | 'Baik (B)' | 'Cukup (C)' | 'Kurang (D)';
+  fokusManajerial?: string; // e.g. 'Tata Kelola RKAS & PBD Rapor Pendidikan', 'Pengembangan SDM & Kombel Sekolah'
+  tanggalSupervisiTerakhir?: string;
+  catatanPengawas?: string;
+  rekomendasiManajerial?: string;
+  createdAt: string;
+  updatedAt?: string;
+}
+
 export interface PreObservationData {
   tujuanPembelajaran: string;
   pemetaanKebutuhan: string;
@@ -715,6 +735,9 @@ export interface VisitAgenda {
   visitType: VisitType;
   targetTeacherIds?: string[];
   targetTeacherNames?: string[];
+  targetPrincipalId?: string;
+  targetPrincipalName?: string;
+  targetPrincipalNip?: string;
   purposeAndTargets: string;
   notes?: string;
   status: VisitStatus;
@@ -2085,6 +2108,155 @@ export const PM_PILLAR_DEFINITIONS: Record<PMPillarKey, PMPillarDefinition> = {
     }
   }
 };
+
+// ==========================================
+// INSTRUMEN SUPERVISI MANAJERIAL KEPALA SEKOLAH
+// 8 Dimensi Manajemen Sekolah Berbasis Skala 1 - 4
+// ==========================================
+
+export interface ManagerialIndicatorItem {
+  id: string;
+  dimensionKey: string;
+  number: number;
+  text: string;
+  rubrics: {
+    1: string;
+    2: string;
+    3: string;
+    4: string;
+  };
+  evidenceGuidance?: string;
+}
+
+export interface ManagerialDimensionDef {
+  key: string;
+  number: number;
+  title: string;
+  shortTitle: string;
+  description: string;
+  iconName: string;
+  color: string;
+  badgeBg: string;
+  badgeBorder: string;
+  badgeText: string;
+  items: ManagerialIndicatorItem[];
+}
+
+export interface ManagerialEvaluationRecord {
+  id: string;
+  principalId: string;
+  principalName: string;
+  principalNip: string;
+  schoolName: string;
+  date: string;
+  academicYear: string;
+  semester: 'Ganjil' | 'Genap';
+  scores: Record<string, number>; // itemId -> score (1-4)
+  notes?: Record<string, string>; // itemId or dimensionKey -> note
+  dimensionScores: Record<
+    string,
+    {
+      total: number;
+      max: number;
+      percentage: number;
+      average: number;
+    }
+  >;
+  totalScore: number; // max 116
+  finalScore: number; // 0 - 100
+  predicate: 'Amat Baik (A)' | 'Baik (B)' | 'Cukup (C)' | 'Kurang (D)';
+  catatanPengawas?: string;
+  rekomendasiManajerial?: string;
+  supervisorName: string;
+  supervisorNip: string;
+  status: 'draft' | 'selesai';
+  createdAt: string;
+  updatedAt?: string;
+}
+import {
+  COMPLETE_MANAGERIAL_DIMENSIONS,
+  TOTAL_COMPLETE_ITEMS,
+  MAX_COMPLETE_RAW_SCORE
+} from '../data/managerialData';
+
+export const MANAGERIAL_DIMENSIONS: ManagerialDimensionDef[] = COMPLETE_MANAGERIAL_DIMENSIONS;
+export const TOTAL_MANAGERIAL_ITEMS = TOTAL_COMPLETE_ITEMS;
+export const MAX_MANAGERIAL_RAW_SCORE = MAX_COMPLETE_RAW_SCORE;
+
+
+/**
+ * Hitung skor total, skor dimensi, skor akhir 0-100 dan predikat
+ */
+export function calculateManagerialScore(scores: Record<string, number>): {
+  totalScore: number;
+  finalScore: number;
+  predicate: 'Amat Baik (A)' | 'Baik (B)' | 'Cukup (C)' | 'Kurang (D)';
+  dimensionScores: Record<
+    string,
+    {
+      total: number;
+      max: number;
+      percentage: number;
+      average: number;
+    }
+  >;
+  answeredCount: number;
+} {
+  let totalScore = 0;
+  let answeredCount = 0;
+  const dimensionScores: Record<
+    string,
+    {
+      total: number;
+      max: number;
+      percentage: number;
+      average: number;
+    }
+  > = {};
+
+  MANAGERIAL_DIMENSIONS.forEach((dim) => {
+    let dimTotal = 0;
+    const dimMax = dim.items.length * 4;
+
+    dim.items.forEach((item) => {
+      const score = scores[item.id] || 0;
+      if (score > 0) {
+        dimTotal += score;
+        totalScore += score;
+        answeredCount++;
+      }
+    });
+
+    const average = dim.items.length > 0 ? Number((dimTotal / dim.items.length).toFixed(2)) : 0;
+    const percentage = dimMax > 0 ? Number(((dimTotal / dimMax) * 100).toFixed(1)) : 0;
+
+    dimensionScores[dim.key] = {
+      total: dimTotal,
+      max: dimMax,
+      percentage,
+      average
+    };
+  });
+
+  const finalScore = Number(((totalScore / MAX_MANAGERIAL_RAW_SCORE) * 100).toFixed(1));
+
+  let predicate: 'Amat Baik (A)' | 'Baik (B)' | 'Cukup (C)' | 'Kurang (D)' = 'Kurang (D)';
+  if (finalScore >= 91) {
+    predicate = 'Amat Baik (A)';
+  } else if (finalScore >= 81) {
+    predicate = 'Baik (B)';
+  } else if (finalScore >= 71) {
+    predicate = 'Cukup (C)';
+  }
+
+  return {
+    totalScore,
+    finalScore,
+    predicate,
+    dimensionScores,
+    answeredCount
+  };
+}
 
 
 

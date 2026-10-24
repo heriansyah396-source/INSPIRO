@@ -30,7 +30,7 @@ import {
 import firebaseConfig from '@/firebase-applet-config.json';
 
 export { onAuthStateChanged };
-import { SupervisionRecord, Teacher, AppSettings, PMReport, ManagedAccount } from '../types/inspiro';
+import { SupervisionRecord, Teacher, Principal, ManagerialEvaluationRecord, AppSettings, PMReport, ManagedAccount, VisitAgenda } from '../types/inspiro';
 
 // Initialize Firebase App
 export const app = initializeApp(firebaseConfig);
@@ -378,4 +378,98 @@ export async function fetchCloudManagedAccounts(): Promise<ManagedAccount[]> {
     return [];
   }
 }
+
+// 6. Cloud Principals (Kepala Sekolah) Sync
+export async function syncPrincipalToCloud(principal: Principal): Promise<void> {
+  const path = `principals/${principal.id}`;
+  try {
+    await setDoc(doc(db, 'principals', principal.id), principal);
+  } catch (error) {
+    handleFirestoreError(error, OperationType.WRITE, path);
+  }
+}
+
+export async function deletePrincipalFromCloud(id: string): Promise<void> {
+  const path = `principals/${id}`;
+  try {
+    await deleteDoc(doc(db, 'principals', id));
+  } catch (error) {
+    handleFirestoreError(error, OperationType.DELETE, path);
+  }
+}
+
+export async function fetchCloudPrincipals(): Promise<Principal[]> {
+  const path = 'principals';
+  try {
+    const snap = await getDocs(collection(db, 'principals'));
+    const list: Principal[] = [];
+    snap.forEach((d) => {
+      list.push(d.data() as Principal);
+    });
+    return list;
+  } catch (error) {
+    handleFirestoreError(error, OperationType.LIST, path);
+    return [];
+  }
+}
+
+// 7. Cloud Visit Agendas Sync
+export async function syncAgendaToCloud(agenda: VisitAgenda): Promise<void> {
+  const path = `visit_agendas/${agenda.id}`;
+  try {
+    await setDoc(doc(db, 'visit_agendas', agenda.id), agenda);
+  } catch (error) {
+    handleFirestoreError(error, OperationType.WRITE, path);
+  }
+}
+
+export async function fetchCloudAgendas(): Promise<VisitAgenda[]> {
+  const path = 'visit_agendas';
+  try {
+    const snap = await getDocs(collection(db, 'visit_agendas'));
+    const list: VisitAgenda[] = [];
+    snap.forEach((d) => {
+      list.push(d.data() as VisitAgenda);
+    });
+    return list;
+  } catch (error) {
+    handleFirestoreError(error, OperationType.LIST, path);
+    return [];
+  }
+}
+
+// 8. Cloud Managerial Evaluations (8 Dimensi Skala 1-4) Sync
+export async function syncManagerialEvaluationToCloud(record: ManagerialEvaluationRecord): Promise<void> {
+  const path = `managerial_evaluations/${record.id}`;
+  try {
+    await setDoc(doc(db, 'managerial_evaluations', record.id), record);
+  } catch (error) {
+    handleFirestoreError(error, OperationType.WRITE, path);
+  }
+}
+
+export async function deleteManagerialEvaluationFromCloud(id: string): Promise<void> {
+  const path = `managerial_evaluations/${id}`;
+  try {
+    await deleteDoc(doc(db, 'managerial_evaluations', id));
+  } catch (error) {
+    handleFirestoreError(error, OperationType.DELETE, path);
+  }
+}
+
+export async function fetchCloudManagerialEvaluations(): Promise<ManagerialEvaluationRecord[]> {
+  const path = 'managerial_evaluations';
+  try {
+    const snap = await getDocs(collection(db, 'managerial_evaluations'));
+    const list: ManagerialEvaluationRecord[] = [];
+    snap.forEach((d) => {
+      list.push(d.data() as ManagerialEvaluationRecord);
+    });
+    return list;
+  } catch (error) {
+    handleFirestoreError(error, OperationType.LIST, path);
+    return [];
+  }
+}
+
 

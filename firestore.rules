@@ -62,6 +62,24 @@ service cloud.firestore {
       allow write: if isValidId(schoolId);
     }
 
+    // Principals (Kepala Sekolah Binaan) Directory & Managerial Supervision
+    match /principals/{principalId} {
+      allow read: if true;
+      allow write: if isValidId(principalId);
+    }
+
+    // Visit Agendas & Calendar
+    match /visit_agendas/{agendaId} {
+      allow read: if true;
+      allow write: if isValidId(agendaId);
+    }
+
+    // Managerial Supervision Evaluations (8 Dimensi)
+    match /managerial_evaluations/{evalId} {
+      allow read: if true;
+      allow write: if isValidId(evalId);
+    }
+
     // Default deny catch-all for any other path
     match /{document=**} {
       allow read, write: if false;

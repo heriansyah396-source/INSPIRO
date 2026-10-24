@@ -543,8 +543,8 @@ export const SOARAnalysisView: React.FC<SOARAnalysisViewProps> = ({
       <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white rounded-2xl p-6 sm:p-8 shadow-xl border border-indigo-900/50 relative overflow-hidden">
         <div className="absolute right-0 top-0 bottom-0 w-96 bg-[radial-gradient(circle_at_top_right,rgba(99,102,241,0.15),transparent_70%)] pointer-events-none" />
 
-        <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-          <div className="space-y-2">
+        <div className="relative z-10 flex flex-col xl:flex-row xl:items-center justify-between gap-6">
+          <div className="space-y-2 flex-1 min-w-0">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/20 text-indigo-300 text-xs font-semibold border border-indigo-500/30">
               <Sparkles className="w-3.5 h-3.5 text-indigo-400" />
               Inkuiri Apresiatif & Kepemimpinan Pembelajaran Mendalam
