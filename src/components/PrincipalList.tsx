@@ -29,7 +29,8 @@ import {
   Sparkles,
   ExternalLink,
   Printer,
-  FileDown
+  FileDown,
+  FileText
 } from 'lucide-react';
 import {
   Principal,
@@ -45,7 +46,8 @@ import { ManagerialSupervisionModal } from './ManagerialSupervisionModal';
 import {
   printDocumentElement,
   exportPrincipalsManagerialToWord,
-  exportIndividualManagerialToWord
+  exportIndividualManagerialToWord,
+  exportSuratKunjunganToWord
 } from '../utils/documentExport';
 
 interface PrincipalListProps {
@@ -84,6 +86,19 @@ export const PrincipalList: React.FC<PrincipalListProps> = ({
   const [isEvalModalOpen, setIsEvalModalOpen] = useState(false);
   const [evaluatingPrincipal, setEvaluatingPrincipal] = useState<Principal | null>(null);
   const [printTargetPrincipal, setPrintTargetPrincipal] = useState<Principal | null>(() => principals[0] || null);
+  const [suratTargetData, setSuratTargetData] = useState<{
+    nama: string;
+    nip: string;
+    pangkatGolongan: string;
+    satuanPendidikan: string;
+    npsn?: string;
+    noTelepon?: string;
+    email?: string;
+    tanggalSupervisi?: string;
+    fokusSupervisi?: string;
+    catatanPengawas?: string;
+    rekomendasiManajerial?: string;
+  } | null>(null);
 
   // Form states
   const [formNama, setFormNama] = useState('');
@@ -343,6 +358,145 @@ export const PrincipalList: React.FC<PrincipalListProps> = ({
       );
     }, 200);
   };
+
+  const handlePrintSuratKunjunganFromModal = () => {
+    const target = {
+      nama: formNama || 'Kepala Sekolah',
+      nip: formNip || '-',
+      pangkatGolongan: formPangkat || 'Pembina (IV/a)',
+      satuanPendidikan: formSekolah || 'Satuan Pendidikan Binaan',
+      npsn: formNpsn,
+      noTelepon: formTelepon,
+      email: formEmail,
+      tanggalSupervisi: formTanggal || new Date().toISOString().split('T')[0],
+      fokusSupervisi: formFokus || 'Tata Kelola RKAS & Perencanaan Berbasis Data (PBD Rapor Pendidikan)',
+      catatanPengawas: formCatatan,
+      rekomendasiManajerial: formRekomendasi
+    };
+    setSuratTargetData(target);
+    showToast('Menyiapkan Surat Kunjungan (PDF)', `Membuka dialog cetak Surat Pemberitahuan Kunjungan untuk ${target.satuanPendidikan}...`, 'info');
+    setTimeout(() => {
+      printDocumentElement(
+        'printable-surat-kunjungan',
+        `Surat-Kunjungan-${target.satuanPendidikan.replace(/[^a-zA-Z0-9]/g, '_')}`,
+        { orientation: 'portrait' }
+      );
+    }, 150);
+  };
+
+  const handleExportSuratKunjunganWordFromModal = () => {
+    const target = {
+      nama: formNama || 'Kepala Sekolah',
+      nip: formNip || '-',
+      pangkatGolongan: formPangkat || 'Pembina (IV/a)',
+      satuanPendidikan: formSekolah || 'Satuan Pendidikan Binaan',
+      npsn: formNpsn,
+      noTelepon: formTelepon,
+      email: formEmail,
+      tanggalSupervisi: formTanggal || new Date().toISOString().split('T')[0],
+      fokusSupervisi: formFokus || 'Tata Kelola RKAS & Perencanaan Berbasis Data (PBD Rapor Pendidikan)',
+      catatanPengawas: formCatatan,
+      rekomendasiManajerial: formRekomendasi
+    };
+    try {
+      exportSuratKunjunganToWord({
+        principal: target,
+        tanggalSupervisi: target.tanggalSupervisi,
+        fokusSupervisi: target.fokusSupervisi,
+        catatanPengawas: target.catatanPengawas,
+        rekomendasiManajerial: target.rekomendasiManajerial
+      }, settings);
+      showToast(
+        'Berhasil Ekspor Word',
+        `Surat Pemberitahuan Kunjungan Supervisi untuk ${target.satuanPendidikan} berhasil diunduh dalam format Word (.doc).`,
+        'success'
+      );
+    } catch (err) {
+      console.error('Error exporting Surat Kunjungan to Word:', err);
+      showToast('Gagal Ekspor Word', 'Terjadi kesalahan saat mengekspor dokumen Word.', 'error');
+    }
+  };
+
+  const handlePrintSuratKunjungan = (p: Principal) => {
+    const target = {
+      nama: p.nama,
+      nip: p.nip,
+      pangkatGolongan: p.pangkatGolongan || 'Pembina (IV/a)',
+      satuanPendidikan: p.satuanPendidikan,
+      npsn: p.npsn,
+      noTelepon: p.telepon,
+      email: p.email,
+      tanggalSupervisi: p.tanggalSupervisiTerakhir || new Date().toISOString().split('T')[0],
+      fokusSupervisi: p.fokusManajerial || 'Tata Kelola RKAS & Perencanaan Berbasis Data (PBD)',
+      catatanPengawas: p.catatanPengawas,
+      rekomendasiManajerial: p.rekomendasiManajerial
+    };
+    setSuratTargetData(target);
+    showToast('Menyiapkan Surat Kunjungan (PDF)', `Membuka dialog cetak Surat Kunjungan untuk ${p.satuanPendidikan}...`, 'info');
+    setTimeout(() => {
+      printDocumentElement(
+        'printable-surat-kunjungan',
+        `Surat-Kunjungan-${p.satuanPendidikan.replace(/[^a-zA-Z0-9]/g, '_')}`,
+        { orientation: 'portrait' }
+      );
+    }, 150);
+  };
+
+  const handleExportSuratKunjunganWord = (p: Principal) => {
+    try {
+      exportSuratKunjunganToWord({
+        principal: p,
+        tanggalSupervisi: p.tanggalSupervisiTerakhir,
+        fokusSupervisi: p.fokusManajerial,
+        catatanPengawas: p.catatanPengawas,
+        rekomendasiManajerial: p.rekomendasiManajerial
+      }, settings);
+      showToast(
+        'Berhasil Ekspor Word',
+        `Surat Pemberitahuan Kunjungan Supervisi untuk ${p.satuanPendidikan} berhasil diunduh dalam format Word (.doc).`,
+        'success'
+      );
+    } catch (err) {
+      console.error('Error exporting Surat Kunjungan to Word:', err);
+      showToast('Gagal Ekspor Word', 'Terjadi kesalahan saat membuat berkas Word.', 'error');
+    }
+  };
+
+  const suratActiveData = useMemo(() => {
+    if (suratTargetData) return suratTargetData;
+    if (editingPrincipal) {
+      return {
+        nama: formNama || editingPrincipal.nama,
+        nip: formNip || editingPrincipal.nip,
+        pangkatGolongan: formPangkat || editingPrincipal.pangkatGolongan || 'Pembina (IV/a)',
+        satuanPendidikan: formSekolah || editingPrincipal.satuanPendidikan,
+        npsn: formNpsn || editingPrincipal.npsn,
+        noTelepon: formTelepon || editingPrincipal.telepon,
+        email: formEmail || editingPrincipal.email,
+        tanggalSupervisi: formTanggal || editingPrincipal.tanggalSupervisiTerakhir || new Date().toISOString().split('T')[0],
+        fokusSupervisi: formFokus || editingPrincipal.fokusManajerial || 'Tata Kelola RKAS & Perencanaan Berbasis Data (PBD Rapor Pendidikan)',
+        catatanPengawas: formCatatan || editingPrincipal.catatanPengawas,
+        rekomendasiManajerial: formRekomendasi || editingPrincipal.rekomendasiManajerial
+      };
+    }
+    if (principals.length > 0) {
+      const p = principals[0];
+      return {
+        nama: p.nama,
+        nip: p.nip,
+        pangkatGolongan: p.pangkatGolongan || 'Pembina (IV/a)',
+        satuanPendidikan: p.satuanPendidikan,
+        npsn: p.npsn,
+        noTelepon: p.telepon,
+        email: p.email,
+        tanggalSupervisi: p.tanggalSupervisiTerakhir || new Date().toISOString().split('T')[0],
+        fokusSupervisi: p.fokusManajerial || 'Tata Kelola RKAS & Perencanaan Berbasis Data (PBD)',
+        catatanPengawas: p.catatanPengawas,
+        rekomendasiManajerial: p.rekomendasiManajerial
+      };
+    }
+    return null;
+  }, [suratTargetData, editingPrincipal, formNama, formNip, formPangkat, formSekolah, formNpsn, formTelepon, formEmail, formTanggal, formFokus, formCatatan, formRekomendasi, principals]);
 
   return (
     <div className="space-y-6">
@@ -699,6 +853,24 @@ export const PrincipalList: React.FC<PrincipalListProps> = ({
                       <span>Jadwal</span>
                     </button>
 
+                    {/* Surat Kunjungan Actions */}
+                    <button
+                      onClick={() => handlePrintSuratKunjungan(p)}
+                      className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-800 rounded-lg text-xs font-bold transition-colors cursor-pointer border border-amber-200"
+                      title="Cetak Surat Pemberitahuan Kunjungan Supervisi (PDF)"
+                    >
+                      <Printer className="w-3.5 h-3.5 text-amber-600" />
+                      <span>Surat PDF</span>
+                    </button>
+                    <button
+                      onClick={() => handleExportSuratKunjunganWord(p)}
+                      className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-amber-50/80 hover:bg-amber-100 text-amber-900 rounded-lg text-xs font-bold transition-colors cursor-pointer border border-amber-200"
+                      title="Unduh Surat Pemberitahuan Kunjungan Supervisi (Word .doc)"
+                    >
+                      <FileText className="w-3.5 h-3.5 text-amber-700" />
+                      <span>Surat Word</span>
+                    </button>
+
                     {evalRecord && (
                       <button
                         onClick={() => handlePrintIndividualPdf(p)}
@@ -706,7 +878,7 @@ export const PrincipalList: React.FC<PrincipalListProps> = ({
                         title="Unduh / Cetak Laporan Supervisi Manajerial Lengkap ke PDF"
                       >
                         <Printer className="w-3.5 h-3.5 text-rose-600" />
-                        <span>PDF</span>
+                        <span>PDF 8 Menu</span>
                       </button>
                     )}
 
@@ -717,7 +889,7 @@ export const PrincipalList: React.FC<PrincipalListProps> = ({
                         title="Unduh Laporan Supervisi Manajerial Lengkap ke Word (.doc)"
                       >
                         <FileDown className="w-3.5 h-3.5 text-blue-600" />
-                        <span>Word</span>
+                        <span>Word 8 Menu</span>
                       </button>
                     )}
 
@@ -823,6 +995,23 @@ export const PrincipalList: React.FC<PrincipalListProps> = ({
                             title="Jadwalkan agenda supervisi manajerial"
                           >
                             + Jadwal
+                          </button>
+                          {/* Surat Kunjungan Actions */}
+                          <button
+                            onClick={() => handlePrintSuratKunjungan(p)}
+                            className="px-2 py-1 bg-amber-50 hover:bg-amber-100 text-amber-800 rounded-md text-[11px] font-bold transition-colors cursor-pointer flex items-center gap-1 border border-amber-200"
+                            title="Cetak Surat Pemberitahuan Kunjungan Supervisi (PDF)"
+                          >
+                            <Printer className="w-3 h-3 text-amber-600" />
+                            <span>Surat PDF</span>
+                          </button>
+                          <button
+                            onClick={() => handleExportSuratKunjunganWord(p)}
+                            className="px-2 py-1 bg-amber-50/80 hover:bg-amber-100 text-amber-900 rounded-md text-[11px] font-bold transition-colors cursor-pointer flex items-center gap-1 border border-amber-200"
+                            title="Unduh Surat Pemberitahuan Kunjungan Supervisi (Word .doc)"
+                          >
+                            <FileText className="w-3 h-3 text-amber-700" />
+                            <span>Surat Word</span>
                           </button>
                           {evalRecord && (
                             <button
@@ -1097,21 +1286,79 @@ export const PrincipalList: React.FC<PrincipalListProps> = ({
                 />
               </div>
 
-              {/* Buttons */}
-              <div className="pt-4 border-t border-slate-200 flex items-center justify-end gap-2">
-                <button
-                  type="button"
-                  onClick={() => setIsModalOpen(false)}
-                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-semibold transition-colors cursor-pointer"
-                >
-                  Batal
-                </button>
-                <button
-                  type="submit"
-                  className="px-5 py-2 bg-gradient-to-r from-blue-600 to-indigo-700 hover:from-blue-700 hover:to-indigo-800 text-white rounded-xl font-bold shadow-md shadow-blue-500/20 transition-all cursor-pointer"
-                >
-                  {editingPrincipal ? 'Simpan Perubahan' : 'Tambahkan Kepala Sekolah'}
-                </button>
+              {/* Surat Kunjungan Official Action Panel */}
+              <div className="p-3 bg-gradient-to-r from-amber-50 via-orange-50 to-amber-50 rounded-xl border border-amber-200/90 flex flex-wrap items-center justify-between gap-2.5">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-lg bg-amber-600 text-white flex items-center justify-center shrink-0 shadow-xs">
+                    <Printer className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <span className="font-bold text-xs text-amber-950 block">Surat Pemberitahuan Kunjungan Supervisi</span>
+                    <span className="text-[11px] text-amber-800">Cetak/unduh surat tugas dinas resmi sesuai jadwal &amp; fokus pengawasan di atas</span>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={handlePrintSuratKunjunganFromModal}
+                    className="px-3 py-1.5 bg-white border border-rose-300 hover:bg-rose-50 text-rose-700 rounded-lg text-xs font-bold flex items-center gap-1.5 shadow-xs transition-all cursor-pointer"
+                    title="Cetak atau simpan Surat Pemberitahuan Kunjungan ke PDF"
+                  >
+                    <Printer className="w-3.5 h-3.5 text-rose-600" />
+                    <span>Cetak PDF</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleExportSuratKunjunganWordFromModal}
+                    className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 shadow-xs transition-all cursor-pointer"
+                    title="Unduh Surat Pemberitahuan Kunjungan ke format Microsoft Word (.doc)"
+                  >
+                    <FileText className="w-3.5 h-3.5 text-blue-100" />
+                    <span>Unduh Word (.doc)</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Buttons Footer */}
+              <div className="pt-4 border-t border-slate-200 flex flex-wrap items-center justify-between gap-2">
+                <div className="flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    onClick={handlePrintSuratKunjunganFromModal}
+                    className="px-3 py-2 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer"
+                    title="Cetak Surat Kunjungan (PDF)"
+                  >
+                    <Printer className="w-3.5 h-3.5 text-rose-600" />
+                    <span className="hidden sm:inline">Cetak</span>
+                    <span>Surat Kunjungan (PDF)</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleExportSuratKunjunganWordFromModal}
+                    className="px-3 py-2 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer"
+                    title="Unduh Surat Kunjungan (Word)"
+                  >
+                    <FileText className="w-3.5 h-3.5 text-blue-600" />
+                    <span className="hidden sm:inline">Unduh</span>
+                    <span>Surat Kunjungan (Word)</span>
+                  </button>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsModalOpen(false)}
+                    className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-semibold transition-colors cursor-pointer text-sm"
+                  >
+                    Batal
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-5 py-2 bg-gradient-to-r from-blue-600 to-indigo-700 hover:from-blue-700 hover:to-indigo-800 text-white rounded-xl font-bold shadow-md shadow-blue-500/20 transition-all cursor-pointer text-sm"
+                  >
+                    {editingPrincipal ? 'Simpan Perubahan' : 'Tambahkan Kepala Sekolah'}
+                  </button>
+                </div>
               </div>
             </form>
           </div>
@@ -1441,6 +1688,226 @@ export const PrincipalList: React.FC<PrincipalListProps> = ({
               <p className="text-slate-600">NIP. {settings.supervisorNip || '19820415 200801 1 007'}</p>
               <p className="text-[10px] text-slate-500">Pembina Tk. I / IV.b</p>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Hidden Printable Surat Pemberitahuan Kunjungan Supervisi Manajerial for PDF Export */}
+      {suratActiveData && (
+        <div id="printable-surat-kunjungan" className="hidden bg-white text-slate-900 p-8 font-serif leading-relaxed">
+          {/* KOP DINAS RESMI */}
+          <div className="text-center border-b-4 border-double border-slate-900 pb-3 mb-5">
+            <h3 className="text-sm font-bold uppercase tracking-wider text-slate-900">
+              {settings.governmentAgency || 'PEMERINTAH KABUPATEN SIDENRENG RAPPANG'}
+            </h3>
+            <h2 className="text-base font-black uppercase tracking-wider text-slate-900 mt-0.5">
+              DINAS PENDIDIKAN DAN KEBUDAYAAN
+            </h2>
+            <h4 className="text-xs font-bold uppercase tracking-wide text-slate-800 mt-0.5">
+              KOORDINATOR PENGAWAS SEKOLAH MENENGAH PERTAMA
+            </h4>
+            <p className="text-[10px] text-slate-600 italic mt-1 font-sans">
+              Alamat: Kompleks SKPD Jl. Harapan Baru No. 1, Pangkajene, Kab. Sidenreng Rappang, Sulawesi Selatan (91611)
+            </p>
+          </div>
+
+          {/* METADATA SURAT */}
+          <table className="w-full text-xs mb-4 border-collapse">
+            <tbody>
+              <tr>
+                <td className="w-20 align-top py-0.5">Nomor</td>
+                <td className="w-3 align-top py-0.5">:</td>
+                <td className="align-top py-0.5 font-bold">
+                  421.3 / 118 / DISDIKBUD / PS / {new Date().getFullYear()}
+                </td>
+                <td className="text-right align-top py-0.5 font-sans">
+                  {settings.schoolCity || 'Sidenreng Rappang'}, {new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}
+                </td>
+              </tr>
+              <tr>
+                <td className="align-top py-0.5">Sifat</td>
+                <td className="align-top py-0.5">:</td>
+                <td className="align-top py-0.5" colSpan={2}>Penting / Kedinasan</td>
+              </tr>
+              <tr>
+                <td className="align-top py-0.5">Lampiran</td>
+                <td className="align-top py-0.5">:</td>
+                <td className="align-top py-0.5" colSpan={2}>1 (satu) Berkas Instrumen 8 Standar Manajerial (138 Indikator)</td>
+              </tr>
+              <tr>
+                <td className="align-top py-0.5 font-bold">Hal</td>
+                <td className="align-top py-0.5 font-bold">:</td>
+                <td className="align-top py-0.5 font-bold" colSpan={2}>
+                  Pemberitahuan Kunjungan Supervisi Manajerial &amp; Verifikasi Dokumen 8 Standar
+                </td>
+              </tr>
+            </tbody>
+          </table>
+
+          {/* TUJUAN SURAT */}
+          <div className="text-xs mb-4">
+            <p>Kepada Yth.</p>
+            <p className="font-bold text-slate-900 mt-0.5">Kepala Satuan Pendidikan:</p>
+            <p className="font-bold text-slate-900 text-sm">{suratActiveData.nama}</p>
+            <p className="text-slate-800">di -</p>
+            <p className="font-bold text-slate-900">{suratActiveData.satuanPendidikan}</p>
+            <p className="text-slate-700">Kabupaten Sidenreng Rappang</p>
+          </div>
+
+          {/* ISI SURAT */}
+          <div className="text-xs text-justify space-y-2.5 leading-relaxed">
+            <p className="indent-8">
+              Dengan hormat, dalam rangka pelaksanaan tugas pokok dan fungsi Pengawas Sekolah sebagaimana diatur dalam <em>Peraturan Menteri Pendidikan, Kebudayaan, Riset, dan Teknologi Nomor 40 Tahun 2021</em> tentang Penugasan Guru sebagai Kepala Sekolah serta <em>Peraturan Direktur Jenderal Guru dan Tenaga Kependidikan Nomor 4831/B/HK.03.01/2023</em> tentang Peran Pengawas Sekolah dalam Implementasi Kebijakan Merdeka Belajar, bersama ini kami sampaikan bahwa Pengawas Sekolah Pembina akan melaksanakan <strong>Kunjungan Dinas Supervisi Manajerial</strong> pada satuan pendidikan yang Bapak/Ibu pimpin.
+            </p>
+
+            <p>
+              Adapun jadwal dan ketentuan pelaksanaan supervisi manajerial tersebut direncanakan sebagai berikut:
+            </p>
+
+            {/* JADWAL TABLE */}
+            <div className="pl-6 py-1">
+              <table className="w-full text-xs">
+                <tbody>
+                  <tr>
+                    <td className="w-36 font-semibold py-1">Hari, Tanggal</td>
+                    <td className="w-3 py-1">:</td>
+                    <td className="font-bold text-slate-900 py-1 font-sans">
+                      {suratActiveData.tanggalSupervisi
+                        ? new Date(suratActiveData.tanggalSupervisi).toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
+                        : new Date().toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+                    </td>
+                  </tr>
+                  <tr>
+                    <td className="font-semibold py-1">Waktu Pelaksanaan</td>
+                    <td className="py-1">:</td>
+                    <td className="py-1">Pukul 08.00 WITA s.d. Selesai</td>
+                  </tr>
+                  <tr>
+                    <td className="font-semibold py-1">Tempat / Ruang</td>
+                    <td className="py-1">:</td>
+                    <td className="py-1 font-bold text-slate-900">
+                      Ruang Kerja Kepala Sekolah — {suratActiveData.satuanPendidikan}
+                    </td>
+                  </tr>
+                  <tr>
+                    <td className="font-semibold py-1">Petugas Pengawas</td>
+                    <td className="py-1">:</td>
+                    <td className="py-1 font-bold text-slate-900 font-sans">
+                      {settings.supervisorName || 'HERIANSYAH, S.Si., S.Pd., M.Pd'} (NIP. {settings.supervisorNip || '19820415 200801 1 007'})
+                    </td>
+                  </tr>
+                  <tr>
+                    <td className="font-semibold py-1">Fokus Pengawasan</td>
+                    <td className="py-1">:</td>
+                    <td className="py-1 font-bold text-slate-900 font-sans">
+                      {suratActiveData.fokusSupervisi || 'Tata Kelola RKAS & Perencanaan Berbasis Data (PBD Rapor Pendidikan)'}
+                    </td>
+                  </tr>
+                  {suratActiveData.catatanPengawas && (
+                    <tr>
+                      <td className="font-semibold py-1">Arahan Khusus</td>
+                      <td className="py-1">:</td>
+                      <td className="py-1 italic text-blue-900">
+                        {suratActiveData.catatanPengawas}
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            <p className="indent-8">
+              Guna kelancaran proses telaah bukti fisik, telaah dokumen, wawancara manajerial, dan pengisian instrumen evaluasi 8 Menu Manajerial (138 Indikator Mutu), dimohon Bapak/Ibu Kepala Sekolah menyiapkan dokumen dan bukti fisik pendukung sebagai berikut:
+            </p>
+
+            {/* TABEL BUKTI 8 MENU */}
+            <table className="w-full text-[10.5px] border-collapse border border-slate-900 my-2">
+              <thead>
+                <tr className="bg-slate-100 border-b border-slate-900">
+                  <th className="border border-slate-900 p-1 w-7 text-center">No</th>
+                  <th className="border border-slate-900 p-1.5 w-48 text-left">Menu Dimensi Manajerial</th>
+                  <th className="border border-slate-900 p-1.5 text-left">Fokus Dokumen &amp; Bukti Fisik yang Disiapkan</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td className="border border-slate-900 p-1 text-center font-bold">1</td>
+                  <td className="border border-slate-900 p-1.5 font-bold">Manajemen Kurikulum &amp; Pembelajaran</td>
+                  <td className="border border-slate-900 p-1.5">KSP/KTSP sah &amp; mutakhir, SK beban jam mengajar &amp; jadwal, modul ajar/ATP, kalender akademik, laporan supervisi guru, dokumen P5, bank soal asesmen.</td>
+                </tr>
+                <tr>
+                  <td className="border border-slate-900 p-1 text-center font-bold">2</td>
+                  <td className="border border-slate-900 p-1.5 font-bold">Manajemen Kesiswaan</td>
+                  <td className="border border-slate-900 p-1.5">Dokumen PPDB, buku induk &amp; mutasi siswa, absensi siswa bulanan, program OSIS &amp; ekstrakurikuler, buku rekam prestasi, buku konseling/BK &amp; SK Tim PPKSP.</td>
+                </tr>
+                <tr>
+                  <td className="border border-slate-900 p-1 text-center font-bold">3</td>
+                  <td className="border border-slate-900 p-1.5 font-bold">Manajemen PTK (Guru &amp; Tendik)</td>
+                  <td className="border border-slate-900 p-1.5">Analisis kebutuhan guru/tendik, rekap PKG &amp; PK Tendik, sertifikat PKB/workshop, file SK &amp; ijazah kepegawaian, DUK ASN, buku pembinaan, absensi bulanan.</td>
+                </tr>
+                <tr>
+                  <td className="border border-slate-900 p-1 text-center font-bold">4</td>
+                  <td className="border border-slate-900 p-1.5 font-bold">Manajemen Sarana &amp; Prasarana</td>
+                  <td className="border border-slate-900 p-1.5">Buku Inventaris Barang aset sekolah, Kartu Inventaris Ruangan (KIR), jadwal perawatan berkala, sanitasi toilet terpisah &amp; bersih, sertifikat/IMB aset, sarana UKS.</td>
+                </tr>
+                <tr>
+                  <td className="border border-slate-900 p-1 text-center font-bold">5</td>
+                  <td className="border border-slate-900 p-1.5 font-bold">Manajemen Keuangan &amp; Pembiayaan</td>
+                  <td className="border border-slate-900 p-1.5">Dokumen RKAS disahkan komite &amp; dinas, Buku Kas Umum (BKU), kuitansi/faktur sah SPJ BOS, aplikasi ARKAS, bukti bayar pajak (e-Billing), papan transparansi dana.</td>
+                </tr>
+                <tr>
+                  <td className="border border-slate-900 p-1 text-center font-bold">6</td>
+                  <td className="border border-slate-900 p-1.5 font-bold">Manajemen Hubungan Masyarakat</td>
+                  <td className="border border-slate-900 p-1.5">SK kepengurusan Komite Sekolah &amp; AD/ART, notulen pertemuan orang tua siswa, naskah kerja sama (MoU) instansi mitra/DUDI, buletin/media publikasi sekolah.</td>
+                </tr>
+                <tr>
+                  <td className="border border-slate-900 p-1 text-center font-bold">7</td>
+                  <td className="border border-slate-900 p-1.5 font-bold">Manajemen Budaya &amp; Lingkungan</td>
+                  <td className="border border-slate-900 p-1.5">SOP tata tertib sekolah, program Adiwiyata &amp; penghijauan, pembiasaan ibadah &amp; budaya 5S, pemilahan sampah, SK Satgas Sekolah Ramah Anak / Anti-Kekerasan.</td>
+                </tr>
+                <tr>
+                  <td className="border border-slate-900 p-1 text-center font-bold">8</td>
+                  <td className="border border-slate-900 p-1.5 font-bold">Manajemen SIM &amp; Tata Usaha</td>
+                  <td className="border border-slate-900 p-1.5">Data sinkronisasi DAPODIK valid, buku agenda surat masuk/keluar teratur, database digital kepegawaian &amp; siswa, papan struktur TU, keamanan cadangan data backup.</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <p className="indent-8">
+              Sehubungan dengan hal tersebut, kami mengharapkan kehadiran Bapak/Ibu Kepala Sekolah didampingi oleh tim penjaminan mutu sekolah (Wakil Kepala Sekolah, Kepala Tata Usaha, dan Bendahara Sekolah) saat pelaksanaan supervisi berlangsung.
+            </p>
+            <p className="indent-8">
+              Demikian surat pemberitahuan kunjungan ini kami sampaikan untuk menjadi perhatian dan dipersiapkan sebagaimana mestinya. Atas kerja sama dan dedikasi Bapak/Ibu dalam memajukan mutu pendidikan, diucapkan terima kasih.
+            </p>
+          </div>
+
+          {/* TANDA TANGAN */}
+          <div className="mt-8 pt-4 grid grid-cols-2 text-xs">
+            <div></div>
+            <div className="text-left pl-8 font-sans">
+              <p>{settings.schoolCity || 'Sidenreng Rappang'}, {new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
+              <p className="font-bold text-slate-900 mt-1">Pengawas Sekolah Pembina,</p>
+              <div className="h-16"></div>
+              <p className="font-bold underline text-slate-900 text-sm">
+                {settings.supervisorName || 'HERIANSYAH, S.Si., S.Pd., M.Pd'}
+              </p>
+              <p className="text-slate-800">
+                NIP. {settings.supervisorNip || '19820415 200801 1 007'}
+              </p>
+              <p className="text-slate-600 text-[10px]">
+                Pangkat/Golongan: Pembina Tk. I / IV.b
+              </p>
+            </div>
+          </div>
+
+          {/* TEMBUSAN */}
+          <div className="mt-6 text-[10px] text-slate-600 border-t border-slate-200 pt-2 font-sans">
+            <p className="font-bold text-slate-800">Tembusan Disampaikan Kepada Yth:</p>
+            <ol className="list-decimal list-inside pl-1 space-y-0.5">
+              <li>Kepala Dinas Pendidikan dan Kebudayaan Kab. Sidenreng Rappang;</li>
+              <li>Koordinator Pengawas Sekolah Jenjang DIKDASMEN Kab. Sidenreng Rappang;</li>
+              <li>Arsip Pengawas Sekolah Pembina.</li>
+            </ol>
           </div>
         </div>
       )}

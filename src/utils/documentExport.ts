@@ -2095,3 +2095,350 @@ export function exportIndividualManagerialToWord(
   downloadBlob(wordHtml, fileName, 'application/msword;charset=utf-8');
 }
 
+/**
+ * Ekspor Surat Pemberitahuan Kunjungan Supervisi Manajerial ke format Microsoft Word (.doc)
+ */
+export function exportSuratKunjunganToWord(
+  params: {
+    principal: Partial<Principal> & { nama: string; satuanPendidikan: string };
+    tanggalSupervisi?: string;
+    fokusSupervisi?: string;
+    catatanPengawas?: string;
+    rekomendasiManajerial?: string;
+    nomorSurat?: string;
+  },
+  settings: AppSettings
+): void {
+  const { principal, tanggalSupervisi, fokusSupervisi, catatanPengawas, nomorSurat } = params;
+
+  const currentDate = new Date().toLocaleDateString('id-ID', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric'
+  });
+
+  const visitDateFormatted = tanggalSupervisi
+    ? new Date(tanggalSupervisi).toLocaleDateString('id-ID', {
+        weekday: 'long',
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric'
+      })
+    : currentDate;
+
+  const currentYear = new Date().getFullYear();
+  const letterNumber = nomorSurat || `421.3 / 118 / DISDIKBUD / PS / ${currentYear}`;
+  const cleanSchool = principal.satuanPendidikan.replace(/[/\\?%*:|"<>]/g, '_');
+  const fileName = `Surat_Kunjungan_Supervisi_Manajerial_${cleanSchool}_${currentYear}.doc`;
+
+  const wordHtml = `
+    <!DOCTYPE html>
+    <html xmlns:o="urn:schemas-microsoft-com:office:office"
+          xmlns:w="urn:schemas-microsoft-com:office:word"
+          xmlns="http://www.w3.org/TR/REC-html40">
+    <head>
+      <meta charset="utf-8">
+      <title>Surat Pemberitahuan Kunjungan Supervisi Manajerial</title>
+      <!--[if gte mso 9]>
+      <xml>
+        <w:WordDocument>
+          <w:View>Print</w:View>
+          <w:Zoom>100</w:Zoom>
+          <w:DoNotOptimizeForBrowser/>
+        </w:WordDocument>
+      </xml>
+      <![endif]-->
+      <style>
+        @page {
+          size: 21cm 29.7cm; /* A4 portrait */
+          margin: 2cm 2cm 2cm 2.5cm;
+          mso-page-orientation: portrait;
+        }
+        body {
+          font-family: 'Times New Roman', Times, serif;
+          font-size: 11pt;
+          line-height: 1.35;
+          color: #000000;
+          margin: 0;
+          padding: 0;
+        }
+        .header-kop {
+          text-align: center;
+          border-bottom: 3px double #000000;
+          padding-bottom: 8px;
+          margin-bottom: 18px;
+        }
+        .header-kop .instansi-1 {
+          font-size: 12pt;
+          font-weight: bold;
+          text-transform: uppercase;
+          margin: 0;
+        }
+        .header-kop .instansi-2 {
+          font-size: 14pt;
+          font-weight: bold;
+          text-transform: uppercase;
+          margin: 2px 0;
+        }
+        .header-kop .instansi-3 {
+          font-size: 11pt;
+          font-weight: bold;
+          text-transform: uppercase;
+          margin: 0;
+          color: #1e293b;
+        }
+        .header-kop .alamat {
+          font-size: 9pt;
+          font-style: italic;
+          margin-top: 4px;
+          color: #333333;
+        }
+        .meta-table {
+          width: 100%;
+          border-collapse: collapse;
+          margin-bottom: 16px;
+          font-size: 11pt;
+        }
+        .meta-table td {
+          padding: 2px 0;
+          vertical-align: top;
+          border: none;
+        }
+        .target-box {
+          margin-bottom: 16px;
+          font-size: 11pt;
+          line-height: 1.4;
+        }
+        .schedule-table {
+          width: 100%;
+          border-collapse: collapse;
+          margin: 10px 0 14px 20px;
+          font-size: 10.5pt;
+        }
+        .schedule-table td {
+          padding: 4px 6px;
+          vertical-align: top;
+          border: none;
+        }
+        .checklist-table {
+          width: 100%;
+          border-collapse: collapse;
+          margin: 12px 0 16px 0;
+          font-size: 9.5pt;
+        }
+        .checklist-table th, .checklist-table td {
+          border: 1px solid #000000;
+          padding: 5px 8px;
+          vertical-align: top;
+        }
+        .checklist-table th {
+          background-color: #f1f5f9;
+          font-weight: bold;
+          text-align: center;
+        }
+        .signature-table {
+          width: 100%;
+          border-collapse: collapse;
+          margin-top: 24px;
+          font-size: 11pt;
+        }
+        .signature-table td {
+          border: none;
+          vertical-align: top;
+        }
+        .tembusan-block {
+          margin-top: 20px;
+          font-size: 9pt;
+          color: #333333;
+        }
+      </style>
+    </head>
+    <body>
+
+      <!-- KOP DINAS PENDIDIKAN DAN KEBUDAYAAN -->
+      <div class="header-kop">
+        <div class="instansi-1">${escapeHtml((settings.governmentAgency || 'PEMERINTAH KABUPATEN SIDENRENG RAPPANG').toUpperCase())}</div>
+        <div class="instansi-2">DINAS PENDIDIKAN DAN KEBUDAYAAN</div>
+        <div class="instansi-3">KOORDINATOR PENGAWAS SEKOLAH MENENGAH PERTAMA</div>
+        <div class="alamat">Alamat: Kompleks SKPD Jl. Harapan Baru No. 1, Pangkajene, Kab. Sidenreng Rappang, Sulawesi Selatan (91611)</div>
+      </div>
+
+      <!-- KETERANGAN NOMOR & PERIHAL SURAT -->
+      <table class="meta-table">
+        <tr>
+          <td style="width: 12%;">Nomor</td>
+          <td style="width: 3%;">:</td>
+          <td style="width: 45%;"><strong>${escapeHtml(letterNumber)}</strong></td>
+          <td style="width: 40%; text-align: right;">${escapeHtml(settings.schoolCity || 'Sidenreng Rappang')}, ${currentDate}</td>
+        </tr>
+        <tr>
+          <td>Sifat</td>
+          <td>:</td>
+          <td>Penting / Kedinasan</td>
+          <td></td>
+        </tr>
+        <tr>
+          <td>Lampiran</td>
+          <td>:</td>
+          <td>1 (satu) Berkas Instrumen 8 Standar Manajerial (138 Indikator)</td>
+          <td></td>
+        </tr>
+        <tr>
+          <td>Hal</td>
+          <td>:</td>
+          <td><strong>Pemberitahuan Kunjungan Supervisi Manajerial &amp; Verifikasi Dokumen 8 Standar</strong></td>
+          <td></td>
+        </tr>
+      </table>
+
+      <!-- TUJUAN SURAT -->
+      <div class="target-box">
+        Kepada Yth.<br>
+        <strong>Bapak / Ibu Kepala Satuan Pendidikan:</strong><br>
+        <strong>${escapeHtml(principal.nama)}</strong><br>
+        di -<br>
+        <strong>${escapeHtml(principal.satuanPendidikan)}</strong><br>
+        Kabupaten Sidenreng Rappang
+      </div>
+
+      <!-- ISI SURAT -->
+      <p style="text-align: justify; margin: 12px 0 8px 0; text-indent: 30px;">
+        Dengan hormat,<br>
+        Dalam rangka pelaksanaan tugas pokok dan fungsi Pengawas Sekolah sebagaimana diatur dalam <em>Peraturan Menteri Pendidikan, Kebudayaan, Riset, dan Teknologi Nomor 40 Tahun 2021</em> tentang Penugasan Guru sebagai Kepala Sekolah, serta <em>Peraturan Direktur Jenderal Guru dan Tenaga Kependidikan Nomor 4831/B/HK.03.01/2023</em> tentang Peran Pengawas Sekolah dalam Implementasi Kebijakan Merdeka Belajar, bersama ini kami sampaikan bahwa Pengawas Sekolah Pembina akan melaksanakan <strong>Kunjungan Dinas Supervisi Manajerial</strong> pada satuan pendidikan yang Bapak/Ibu pimpin.
+      </p>
+
+      <p style="margin: 8px 0 6px 0;">
+        Adapun jadwal dan ketentuan pelaksanaan kunjungan supervisi manajerial tersebut direncanakan sebagai berikut:
+      </p>
+
+      <!-- JADWAL KUNJUNGAN -->
+      <table class="schedule-table">
+        <tr>
+          <td style="width: 25%; font-weight: bold;">Hari, Tanggal</td>
+          <td style="width: 3%;">:</td>
+          <td style="font-weight: bold; color: #0f172a;">${visitDateFormatted}</td>
+        </tr>
+        <tr>
+          <td style="font-weight: bold;">Waktu Pelaksanaan</td>
+          <td>:</td>
+          <td>Pukul 08.00 WITA s.d. Selesai</td>
+        </tr>
+        <tr>
+          <td style="font-weight: bold;">Tempat / Sasaran</td>
+          <td>:</td>
+          <td>Ruang Kerja Kepala Satuan Pendidikan — <strong>${escapeHtml(principal.satuanPendidikan)}</strong></td>
+        </tr>
+        <tr>
+          <td style="font-weight: bold;">Pengawas Pembina</td>
+          <td>:</td>
+          <td><strong>${escapeHtml(settings.supervisorName || 'HERIANSYAH, S.Si., S.Pd., M.Pd')}</strong> (NIP. ${escapeHtml(settings.supervisorNip || '19820415 200801 1 007')})</td>
+        </tr>
+        <tr>
+          <td style="font-weight: bold;">Fokus Pengawasan</td>
+          <td>:</td>
+          <td><strong>${escapeHtml(fokusSupervisi || 'Tata Kelola RKAS & Perencanaan Berbasis Data (PBD Rapor Pendidikan)')}</strong></td>
+        </tr>
+        ${catatanPengawas ? `
+        <tr>
+          <td style="font-weight: bold;">Arahan Khusus Pengawas</td>
+          <td>:</td>
+          <td style="font-style: italic; color: #1e3a8a;">${escapeHtml(catatanPengawas)}</td>
+        </tr>
+        ` : ''}
+      </table>
+
+      <!-- DOKUMEN YANG HARUS DISIAPKAN -->
+      <p style="text-align: justify; margin: 10px 0 6px 0;">
+        Guna kelancaran proses telaah bukti fisik, telaah dokumen, wawancara manajerial, dan pengisian instrumen evaluasi 8 Menu Manajerial (138 Indikator Mutu), dimohon Bapak/Ibu Kepala Sekolah menyiapkan dokumen dan bukti fisik pendukung sebagai berikut:
+      </p>
+
+      <table class="checklist-table">
+        <thead>
+          <tr>
+            <th style="width: 5%;">No</th>
+            <th style="width: 32%;">Menu Dimensi Manajerial</th>
+            <th style="width: 63%;">Fokus Dokumen &amp; Bukti Fisik yang Disiapkan</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td style="text-align: center; font-weight: bold;">1</td>
+            <td><strong>Manajemen Kurikulum &amp; Pembelajaran</strong></td>
+            <td>Dokumen KSP/KTSP yang sah &amp; mutakhir, SK pembagian jam mengajar &amp; jadwal, evaluasi berkala modul ajar/ATP, kalender akademik, program &amp; laporan supervisi akademik guru, dokumen P5, telaah bank soal asesmen.</td>
+          </tr>
+          <tr>
+            <td style="text-align: center; font-weight: bold;">2</td>
+            <td><strong>Manajemen Kesiswaan</strong></td>
+            <td>Dokumen PPDB tertib, data induk &amp; buku mutasi siswa, absensi siswa berkala, program kerja pembinaan OSIS &amp; ekstrakurikuler, buku rekam prestasi siswa, buku penanganan kasus BK &amp; SK Tim PPKSP (Anti-Perundungan).</td>
+          </tr>
+          <tr>
+            <td style="text-align: center; font-weight: bold;">3</td>
+            <td><strong>Manajemen PTK (Guru &amp; Tendik)</strong></td>
+            <td>Analisis kebutuhan formasi guru/staf, rekap Penilaian Kinerja Guru (PKG) &amp; Tendik, dokumen PKB/pelatihan guru, file dokumen kepegawaian (SK/ijazah), DUK ASN, buku pembinaan pegawai, rekap absensi bulanan.</td>
+          </tr>
+          <tr>
+            <td style="text-align: center; font-weight: bold;">4</td>
+            <td><strong>Manajemen Sarana &amp; Prasarana</strong></td>
+            <td>Buku Inventaris Barang (aset bergerak &amp; tetap), Kartu Inventaris Ruangan (KIR) di setiap ruang, program perawatan berkala fasilitas &amp; TIK, sanitasi toilet terpisah &amp; bersih, sertifikat kepemilikan aset/IMB, fasilitas UKS.</td>
+          </tr>
+          <tr>
+            <td style="text-align: center; font-weight: bold;">5</td>
+            <td><strong>Manajemen Keuangan &amp; Pembiayaan</strong></td>
+            <td>Dokumen RKAS yang disahkan dinas &amp; komite, Buku Kas Umum (BKU), Buku Pembantu Bank/Pajak, kuitansi/faktur sah pengeluaran BOS, keterisian laporan ARKAS, bukti bayar pajak (e-Billing/e-Faktur), transparansi BOS.</td>
+          </tr>
+          <tr>
+            <td style="text-align: center; font-weight: bold;">6</td>
+            <td><strong>Manajemen Hubungan Masyarakat</strong></td>
+            <td>SK kepengurusan Komite Sekolah &amp; AD/ART, notulen pertemuan orang tua siswa/paguyuban kelas, MoU/kerja sama instansi luar (Puskesmas/Kepolisian/DUDI), buletin/media publikasi dan media sosial sekolah.</td>
+          </tr>
+          <tr>
+            <td style="text-align: center; font-weight: bold;">7</td>
+            <td><strong>Manajemen Budaya &amp; Lingkungan</strong></td>
+            <td>SOP tata tertib sekolah, program sekolah sehat &amp; Adiwiyata/penghijauan, kegiatan pembiasaan ibadah bersama &amp; 5S (Senyum, Sapa, Salam, Sopan, Santun), fasilitas pemilahan sampah, SK Satgas Sekolah Ramah Anak.</td>
+          </tr>
+          <tr>
+            <td style="text-align: center; font-weight: bold;">8</td>
+            <td><strong>Manajemen SIM &amp; Tata Usaha</strong></td>
+            <td>Data profil DAPODIK termutakhirkan, buku agenda surat masuk &amp; surat keluar berarsip rapi, SIM kepegawaian &amp; nilai siswa, papan struktur organisasi TU terpasang, keamanan data cadangan (backup) server/cloud.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- PENUTUP -->
+      <p style="text-align: justify; margin: 12px 0 16px 0; text-indent: 30px;">
+        Sehubungan dengan kegiatan tersebut, kami mengharapkan kehadiran Bapak/Ibu Kepala Sekolah didampingi oleh tim penjaminan mutu sekolah (Wakil Kepala Sekolah, Kepala Tata Usaha, dan Bendahara Sekolah) saat pelaksanaan supervisi berlangsung.
+      </p>
+      <p style="text-align: justify; margin: 0 0 18px 0; text-indent: 30px;">
+        Demikian surat pemberitahuan kunjungan ini kami sampaikan untuk menjadi perhatian dan dipersiapkan sebagaimana mestinya. Atas kerja sama dan dedikasi Bapak/Ibu dalam meningkatkan mutu pendidikan, diucapkan terima kasih.
+      </p>
+
+      <!-- TANDA TANGAN PENGAWAS PEMBINA -->
+      <table class="signature-table">
+        <tr>
+          <td style="width: 50%;"></td>
+          <td style="width: 50%; text-align: left; padding-left: 30px;">
+            ${escapeHtml(settings.schoolCity || 'Sidenreng Rappang')}, ${currentDate}<br>
+            Pengawas Sekolah Pembina,<br>
+            <div style="height: 70px;"></div>
+            <strong><u>${escapeHtml(settings.supervisorName || 'HERIANSYAH, S.Si., S.Pd., M.Pd')}</u></strong><br>
+            NIP. ${escapeHtml(settings.supervisorNip || '19820415 200801 1 007')}<br>
+            <span style="font-size: 9.5pt; color: #333333;">Pangkat/Golongan: Pembina Tk. I / IV.b</span>
+          </td>
+        </tr>
+      </table>
+
+      <!-- TEMBUSAN -->
+      <div class="tembusan-block">
+        <strong><u>Tembusan Disampaikan Kepada Yth:</u></strong><br>
+        1. Kepala Dinas Pendidikan dan Kebudayaan Kab. Sidenreng Rappang;<br>
+        2. Koordinator Pengawas Sekolah Jenjang DIKDASMEN Kab. Sidenreng Rappang;<br>
+        3. Arsip Pengawas Sekolah Pembina.
+      </div>
+
+    </body>
+    </html>
+  `;
+
+  downloadBlob(wordHtml, fileName, 'application/msword;charset=utf-8');
+}
+
