@@ -45,6 +45,7 @@ import {
   CYCLE_META
 } from '../utils/growthTrackerUtils';
 import { exportGrowthTrackerToWord, printDocumentElement } from '../utils/documentExport';
+import { DEFAULT_SIDRAP_LOGO, DEFAULT_TUTWURI_LOGO } from '../data/defaultLogos';
 import { SignatoryModal } from './SignatoryModal';
 import { saveSettings } from '../utils/storage';
 
@@ -1404,19 +1405,41 @@ export const GrowthTrackerView: React.FC<GrowthTrackerViewProps> = ({
       <div id="growth-tracker-print-area" className="hidden">
         <div style={{ padding: '16px', fontFamily: 'Times New Roman, serif', color: '#000000', lineHeight: '1.35' }}>
           {/* KOP RESMI DINAS */}
-          <div style={{ textAlign: 'center', borderBottom: '3px double #000000', paddingBottom: '10px', marginBottom: '16px' }}>
-            <h2 style={{ margin: '0', fontSize: '13pt', textTransform: 'uppercase', fontWeight: 'bold', letterSpacing: '0.5px' }}>
-              {localSettings.governmentAgency || 'PEMERINTAH KABUPATEN SIDENRENG RAPPANG'}
-            </h2>
-            <h2 style={{ margin: '3px 0', fontSize: '14pt', textTransform: 'uppercase', fontWeight: 'bold' }}>
-              DINAS PENDIDIKAN DAN KEBUDAYAAN
-            </h2>
-            <h3 style={{ margin: '2px 0', fontSize: '11pt', textTransform: 'uppercase', fontWeight: 'bold' }}>
-              KOORDINATOR PENGAWAS SEKOLAH MENENGAH PERTAMA
-            </h3>
-            <p style={{ margin: '0', fontSize: '8.5pt', fontStyle: 'italic', color: '#333333' }}>
-              {localSettings.schoolAddress || 'Gedung Pusat Pengawas Pembina Pendidikan Terpadu'} · Kota {localSettings.schoolCity || 'Kota Pendidikan'}
-            </p>
+          <div style={{ borderBottom: '3px double #000000', paddingBottom: '10px', marginBottom: '16px' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', border: 'none' }}>
+              <tbody>
+                <tr>
+                  <td style={{ width: '80px', textAlign: 'left', verticalAlign: 'middle', border: 'none', padding: 0 }}>
+                    <img
+                      src={localSettings.logoUrl || DEFAULT_SIDRAP_LOGO}
+                      alt="Logo Pemda / Kab. Sidenreng Rappang"
+                      style={{ maxHeight: '75px', maxWidth: '75px', objectFit: 'contain', display: 'block' }}
+                    />
+                  </td>
+                  <td style={{ textAlign: 'center', verticalAlign: 'middle', border: 'none', padding: '0 10px' }}>
+                    <div style={{ fontSize: '12pt', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                      {localSettings.governmentAgency || 'PEMERINTAH KABUPATEN SIDENRENG RAPPANG'}
+                    </div>
+                    <div style={{ fontSize: '14pt', fontWeight: 'bold', textTransform: 'uppercase', marginTop: '2px' }}>
+                      DINAS PENDIDIKAN DAN KEBUDAYAAN
+                    </div>
+                    <div style={{ fontSize: '11pt', fontWeight: 'bold', textTransform: 'uppercase', marginTop: '2px' }}>
+                      KOORDINATOR PENGAWAS SEKOLAH PEMBINA SATUAN PENDIDIKAN
+                    </div>
+                    <div style={{ fontSize: '8.5pt', color: '#333', marginTop: '3px', fontStyle: 'italic' }}>
+                      {localSettings.schoolAddress || 'Jl. Harapan Baru Blok C No. 22, Pangkajene, Kecamatan Watang Pulu, Kabupaten Sidenreng Rappang, Sulawesi Selatan 91611'} · Kota {localSettings.schoolCity || 'Kota Pendidikan'}
+                    </div>
+                  </td>
+                  <td style={{ width: '80px', textAlign: 'right', verticalAlign: 'middle', border: 'none', padding: 0 }}>
+                    <img
+                      src={localSettings.logoRightUrl || DEFAULT_TUTWURI_LOGO}
+                      alt="Logo Tut Wuri Handayani / Sekolah"
+                      style={{ maxHeight: '75px', maxWidth: '75px', objectFit: 'contain', display: 'block', marginLeft: 'auto' }}
+                    />
+                  </td>
+                </tr>
+              </tbody>
+            </table>
           </div>
 
           {activeSubTab === 'detail' && activeTeacherComparison ? (

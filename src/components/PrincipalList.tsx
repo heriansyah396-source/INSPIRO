@@ -32,7 +32,10 @@ import {
   FileDown,
   FileText,
   UserCheck,
-  Save
+  Save,
+  ListOrdered,
+  Hash,
+  RefreshCw
 } from 'lucide-react';
 import {
   Principal,
@@ -50,7 +53,9 @@ import {
   printDocumentElement,
   exportPrincipalsManagerialToWord,
   exportIndividualManagerialToWord,
-  exportSuratKunjunganToWord
+  exportSuratKunjunganToWord,
+  getPrincipalNomorSurat,
+  generateNomorSurat
 } from '../utils/documentExport';
 
 interface PrincipalListProps {
@@ -133,7 +138,12 @@ export const PrincipalList: React.FC<PrincipalListProps> = ({
     fokusSupervisi?: string;
     catatanPengawas?: string;
     rekomendasiManajerial?: string;
+    nomorSurat?: string;
   } | null>(null);
+
+  // Batch Renumber Modal State
+  const [isRenumberModalOpen, setIsRenumberModalOpen] = useState(false);
+  const [renumberStartNum, setRenumberStartNum] = useState<number>(settings.nomorSuratAwal ?? 118);
 
   const logoUploadInputRef = React.useRef<HTMLInputElement>(null);
 
@@ -193,6 +203,7 @@ export const PrincipalList: React.FC<PrincipalListProps> = ({
   const [formTanggal, setFormTanggal] = useState('');
   const [formCatatan, setFormCatatan] = useState('');
   const [formRekomendasi, setFormRekomendasi] = useState('');
+  const [formNomorSurat, setFormNomorSurat] = useState('');
 
   // Distinct schools
   const distinctSchools = useMemo(() => {
@@ -263,6 +274,7 @@ export const PrincipalList: React.FC<PrincipalListProps> = ({
     setFormTanggal('');
     setFormCatatan('');
     setFormRekomendasi('');
+    setFormNomorSurat(generateNomorSurat(principals.length, settings));
     setIsModalOpen(true);
   };
 
@@ -282,7 +294,22 @@ export const PrincipalList: React.FC<PrincipalListProps> = ({
     setFormTanggal(p.tanggalSupervisiTerakhir || '');
     setFormCatatan(p.catatanPengawas || '');
     setFormRekomendasi(p.rekomendasiManajerial || '');
+    const pIndex = principals.findIndex((item) => item.id === p.id);
+    setFormNomorSurat(p.nomorSuratKunjungan || generateNomorSurat(pIndex >= 0 ? pIndex : 0, settings));
     setIsModalOpen(true);
+  };
+
+  const handleBatchRenumber = (startNum: number) => {
+    principals.forEach((p, idx) => {
+      const generated = generateNomorSurat(idx, { ...settings, nomorSuratAwal: startNum });
+      onEditPrincipal(p.id, { nomorSuratKunjungan: generated });
+    });
+    showToast(
+      'Nomor Surat Berhasil Diurutkan',
+      `Seluruh ${principals.length} sekolah binaan berhasil diberi nomor agenda surat berurutan mulai nomor ${startNum}.`,
+      'success'
+    );
+    setIsRenumberModalOpen(false);
   };
 
   const handleSubmitForm = (e: React.FormEvent) => {
@@ -310,6 +337,7 @@ export const PrincipalList: React.FC<PrincipalListProps> = ({
         tanggalSupervisiTerakhir: formTanggal || undefined,
         catatanPengawas: formCatatan.trim(),
         rekomendasiManajerial: formRekomendasi.trim(),
+        nomorSuratKunjungan: formNomorSurat.trim() || undefined,
         updatedAt: new Date().toISOString()
       });
       showToast('Data Diperbarui', `Profil Kepala Sekolah ${formNama} berhasil diperbarui.`, 'success');
@@ -328,7 +356,8 @@ export const PrincipalList: React.FC<PrincipalListProps> = ({
         fokusManajerial: formFokus.trim(),
         tanggalSupervisiTerakhir: formTanggal || undefined,
         catatanPengawas: formCatatan.trim(),
-        rekomendasiManajerial: formRekomendasi.trim()
+        rekomendasiManajerial: formRekomendasi.trim(),
+        nomorSuratKunjungan: formNomorSurat.trim() || undefined
       });
       showToast('Kepala Sekolah Ditambahkan', `Data ${formNama} berhasil disimpan ke daftar binaan.`, 'success');
     }
@@ -438,6 +467,8 @@ export const PrincipalList: React.FC<PrincipalListProps> = ({
   };
 
   const handlePrintSuratKunjunganFromModal = () => {
+    const pIndex = editingPrincipal ? principals.findIndex((item) => item.id === editingPrincipal.id) : 0;
+    const effectiveNo = formNomorSurat.trim() || generateNomorSurat(pIndex >= 0 ? pIndex : 0, settings);
     const target = {
       nama: formNama || 'Kepala Sekolah',
       nip: formNip || '-',
@@ -449,10 +480,11 @@ export const PrincipalList: React.FC<PrincipalListProps> = ({
       tanggalSupervisi: formTanggal || new Date().toISOString().split('T')[0],
       fokusSupervisi: formFokus || 'Tata Kelola RKAS & Perencanaan Berbasis Data (PBD Rapor Pendidikan)',
       catatanPengawas: formCatatan,
-      rekomendasiManajerial: formRekomendasi
+      rekomendasiManajerial: formRekomendasi,
+      nomorSurat: effectiveNo
     };
     setSuratTargetData(target);
-    showToast('Menyiapkan Surat Kunjungan (PDF)', `Membuka dialog cetak Surat Pemberitahuan Kunjungan untuk ${target.satuanPendidikan}...`, 'info');
+    showToast('Menyiapkan Surat Kunjungan (PDF)', `Nomor Surat: ${effectiveNo} (${target.satuanPendidikan})`, 'info');
     setTimeout(() => {
       printDocumentElement(
         'printable-surat-kunjungan',
@@ -463,6 +495,8 @@ export const PrincipalList: React.FC<PrincipalListProps> = ({
   };
 
   const handleExportSuratKunjunganWordFromModal = () => {
+    const pIndex = editingPrincipal ? principals.findIndex((item) => item.id === editingPrincipal.id) : 0;
+    const effectiveNo = formNomorSurat.trim() || generateNomorSurat(pIndex >= 0 ? pIndex : 0, settings);
     const target = {
       nama: formNama || 'Kepala Sekolah',
       nip: formNip || '-',
@@ -474,7 +508,8 @@ export const PrincipalList: React.FC<PrincipalListProps> = ({
       tanggalSupervisi: formTanggal || new Date().toISOString().split('T')[0],
       fokusSupervisi: formFokus || 'Tata Kelola RKAS & Perencanaan Berbasis Data (PBD Rapor Pendidikan)',
       catatanPengawas: formCatatan,
-      rekomendasiManajerial: formRekomendasi
+      rekomendasiManajerial: formRekomendasi,
+      nomorSurat: effectiveNo
     };
     try {
       exportSuratKunjunganToWord({
@@ -482,11 +517,12 @@ export const PrincipalList: React.FC<PrincipalListProps> = ({
         tanggalSupervisi: target.tanggalSupervisi,
         fokusSupervisi: target.fokusSupervisi,
         catatanPengawas: target.catatanPengawas,
-        rekomendasiManajerial: target.rekomendasiManajerial
+        rekomendasiManajerial: target.rekomendasiManajerial,
+        nomorSurat: effectiveNo
       }, settings);
       showToast(
         'Berhasil Ekspor Word',
-        `Surat Pemberitahuan Kunjungan Supervisi untuk ${target.satuanPendidikan} berhasil diunduh dalam format Word (.doc).`,
+        `Surat No. ${effectiveNo} untuk ${target.satuanPendidikan} berhasil diunduh dalam format Word (.doc).`,
         'success'
       );
     } catch (err) {
@@ -496,6 +532,8 @@ export const PrincipalList: React.FC<PrincipalListProps> = ({
   };
 
   const handlePrintSuratKunjungan = (p: Principal) => {
+    const pIndex = principals.findIndex((item) => item.id === p.id);
+    const effectiveNo = getPrincipalNomorSurat(p, pIndex >= 0 ? pIndex : 0, settings);
     const target = {
       nama: p.nama,
       nip: p.nip,
@@ -507,10 +545,11 @@ export const PrincipalList: React.FC<PrincipalListProps> = ({
       tanggalSupervisi: p.tanggalSupervisiTerakhir || new Date().toISOString().split('T')[0],
       fokusSupervisi: p.fokusManajerial || 'Tata Kelola RKAS & Perencanaan Berbasis Data (PBD)',
       catatanPengawas: p.catatanPengawas,
-      rekomendasiManajerial: p.rekomendasiManajerial
+      rekomendasiManajerial: p.rekomendasiManajerial,
+      nomorSurat: effectiveNo
     };
     setSuratTargetData(target);
-    showToast('Menyiapkan Surat Kunjungan (PDF)', `Membuka dialog cetak Surat Kunjungan untuk ${p.satuanPendidikan}...`, 'info');
+    showToast('Menyiapkan Surat Kunjungan (PDF)', `Nomor Surat: ${effectiveNo} (${p.satuanPendidikan})`, 'info');
     setTimeout(() => {
       printDocumentElement(
         'printable-surat-kunjungan',
@@ -521,17 +560,20 @@ export const PrincipalList: React.FC<PrincipalListProps> = ({
   };
 
   const handleExportSuratKunjunganWord = (p: Principal) => {
+    const pIndex = principals.findIndex((item) => item.id === p.id);
+    const effectiveNo = getPrincipalNomorSurat(p, pIndex >= 0 ? pIndex : 0, settings);
     try {
       exportSuratKunjunganToWord({
         principal: p,
         tanggalSupervisi: p.tanggalSupervisiTerakhir,
         fokusSupervisi: p.fokusManajerial,
         catatanPengawas: p.catatanPengawas,
-        rekomendasiManajerial: p.rekomendasiManajerial
+        rekomendasiManajerial: p.rekomendasiManajerial,
+        nomorSurat: effectiveNo
       }, settings);
       showToast(
         'Berhasil Ekspor Word',
-        `Surat Pemberitahuan Kunjungan Supervisi untuk ${p.satuanPendidikan} berhasil diunduh dalam format Word (.doc).`,
+        `Surat No. ${effectiveNo} untuk ${p.satuanPendidikan} berhasil diunduh dalam format Word (.doc).`,
         'success'
       );
     } catch (err) {
@@ -543,6 +585,8 @@ export const PrincipalList: React.FC<PrincipalListProps> = ({
   const suratActiveData = useMemo(() => {
     if (suratTargetData) return suratTargetData;
     if (editingPrincipal) {
+      const pIndex = principals.findIndex((item) => item.id === editingPrincipal.id);
+      const effectiveNo = formNomorSurat || getPrincipalNomorSurat(editingPrincipal, pIndex >= 0 ? pIndex : 0, settings);
       return {
         nama: formNama || editingPrincipal.nama,
         nip: formNip || editingPrincipal.nip,
@@ -554,7 +598,8 @@ export const PrincipalList: React.FC<PrincipalListProps> = ({
         tanggalSupervisi: formTanggal || editingPrincipal.tanggalSupervisiTerakhir || new Date().toISOString().split('T')[0],
         fokusSupervisi: formFokus || editingPrincipal.fokusManajerial || 'Tata Kelola RKAS & Perencanaan Berbasis Data (PBD Rapor Pendidikan)',
         catatanPengawas: formCatatan || editingPrincipal.catatanPengawas,
-        rekomendasiManajerial: formRekomendasi || editingPrincipal.rekomendasiManajerial
+        rekomendasiManajerial: formRekomendasi || editingPrincipal.rekomendasiManajerial,
+        nomorSurat: effectiveNo
       };
     }
     if (principals.length > 0) {
@@ -570,11 +615,12 @@ export const PrincipalList: React.FC<PrincipalListProps> = ({
         tanggalSupervisi: p.tanggalSupervisiTerakhir || new Date().toISOString().split('T')[0],
         fokusSupervisi: p.fokusManajerial || 'Tata Kelola RKAS & Perencanaan Berbasis Data (PBD)',
         catatanPengawas: p.catatanPengawas,
-        rekomendasiManajerial: p.rekomendasiManajerial
+        rekomendasiManajerial: p.rekomendasiManajerial,
+        nomorSurat: getPrincipalNomorSurat(p, 0, settings)
       };
     }
     return null;
-  }, [suratTargetData, editingPrincipal, formNama, formNip, formPangkat, formSekolah, formNpsn, formTelepon, formEmail, formTanggal, formFokus, formCatatan, formRekomendasi, principals]);
+  }, [suratTargetData, editingPrincipal, formNama, formNip, formPangkat, formSekolah, formNpsn, formTelepon, formEmail, formTanggal, formFokus, formCatatan, formRekomendasi, formNomorSurat, principals, settings]);
 
   return (
     <div className="space-y-6">
@@ -621,6 +667,18 @@ export const PrincipalList: React.FC<PrincipalListProps> = ({
 
             {/* Action buttons */}
             <div className="shrink-0 flex flex-wrap items-center gap-2.5">
+              <button
+                onClick={() => {
+                  setRenumberStartNum(settings.nomorSuratAwal ?? 118);
+                  setIsRenumberModalOpen(true);
+                }}
+                className="inline-flex items-center gap-2 px-3.5 py-3 bg-amber-500/25 hover:bg-amber-500/35 text-amber-200 hover:text-white font-bold text-xs sm:text-sm rounded-xl transition-all border border-amber-400/40 shadow-xs cursor-pointer backdrop-blur-xs whitespace-nowrap hover:scale-[1.02] active:scale-[0.98]"
+                title="Atur penomoran surat agenda dinas secara otomatis berurutan untuk semua sekolah binaan"
+              >
+                <ListOrdered className="w-4 h-4 text-amber-300" />
+                <span>Urutkan Nomor Surat</span>
+              </button>
+
               <button
                 onClick={handlePrintPdf}
                 className="inline-flex items-center gap-2 px-4 py-3 bg-white/10 hover:bg-white/20 text-white font-bold text-xs sm:text-sm rounded-xl transition-all border border-white/20 shadow-xs cursor-pointer backdrop-blur-xs whitespace-nowrap hover:scale-[1.02] active:scale-[0.98]"
@@ -814,6 +872,10 @@ export const PrincipalList: React.FC<PrincipalListProps> = ({
                             <span className="text-slate-600 font-sans font-medium">{p.pangkatGolongan}</span>
                           </>
                         )}
+                        <span aria-hidden="true" className="text-slate-300">·</span>
+                        <span className="text-amber-800 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200 text-[10.5px] font-bold font-mono" title="Nomor Agenda Surat Kunjungan">
+                          No. Surat: {p.nomorSuratKunjungan || getPrincipalNomorSurat(p, filteredPrincipals.findIndex((item) => item.id === p.id), settings)}
+                        </span>
                       </div>
                     </div>
 
@@ -1027,7 +1089,15 @@ export const PrincipalList: React.FC<PrincipalListProps> = ({
 
                       <td className="px-4 py-3 font-medium text-slate-800">
                         <div>{p.satuanPendidikan}</div>
-                        {p.npsn && <div className="text-[11px] text-slate-400 font-mono">NPSN: {p.npsn}</div>}
+                        <div className="flex flex-wrap items-center gap-1.5 mt-0.5">
+                          {p.npsn && <span className="text-[11px] text-slate-400 font-mono">NPSN: {p.npsn}</span>}
+                          <span
+                            className="text-[10px] text-amber-800 bg-amber-50 px-1.5 py-0.5 border border-amber-200/90 rounded font-mono font-bold"
+                            title="Nomor Surat Keluar Resmi untuk Sekolah Ini"
+                          >
+                            No. Surat: {p.nomorSuratKunjungan || getPrincipalNomorSurat(p, filteredPrincipals.findIndex((item) => item.id === p.id), settings)}
+                          </span>
+                        </div>
                       </td>
 
                       <td className="px-4 py-3">
@@ -1427,6 +1497,41 @@ export const PrincipalList: React.FC<PrincipalListProps> = ({
                       <span>Unduh Word (.doc)</span>
                     </button>
                   </div>
+                </div>
+
+                {/* Input & Konfigurasi Nomor Surat Keluar Kedinasan */}
+                <div className="p-3 bg-white rounded-xl border border-amber-300 shadow-2xs space-y-2">
+                  <div className="flex flex-wrap items-center justify-between gap-1.5">
+                    <label className="block text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                      <FileText className="w-3.5 h-3.5 text-amber-600" />
+                      <span>Nomor Surat Keluar / Agenda Dinas:</span>
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const idx = editingPrincipal ? principals.findIndex(p => p.id === editingPrincipal.id) : principals.length;
+                        setFormNomorSurat(generateNomorSurat(idx >= 0 ? idx : 0, settings));
+                      }}
+                      className="text-[10px] text-amber-800 bg-amber-100 hover:bg-amber-200 px-2 py-0.5 rounded font-semibold transition-colors cursor-pointer flex items-center gap-1"
+                      title="Kembalikan ke format penomoran standar sesuai urutan agenda dinas"
+                    >
+                      <RefreshCw className="w-3 h-3 text-amber-700" />
+                      <span>Format Standar Agenda #{editingPrincipal ? principals.findIndex(p => p.id === editingPrincipal.id) + 1 : principals.length + 1}</span>
+                    </button>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="text"
+                      value={formNomorSurat}
+                      onChange={(e) => setFormNomorSurat(e.target.value)}
+                      placeholder="421.3 / 118 / DISDIKBUD / PS / 2026"
+                      className="flex-1 px-3 py-1.5 text-xs font-mono font-bold text-blue-900 bg-slate-50 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:bg-white"
+                    />
+                  </div>
+                  <p className="text-[10.5px] text-slate-500">
+                    Nomor surat ini dicetak pada Surat Pemberitahuan Kunjungan Supervisi (PDF) dan berkas Word (.doc). Setiap sekolah binaan memiliki nomor surat unik tersendiri.
+                  </p>
                 </div>
 
                 {/* Ringkasan Profil Penandatangan yang sedang aktif */}
@@ -2006,6 +2111,131 @@ export const PrincipalList: React.FC<PrincipalListProps> = ({
         </div>
       )}
 
+      {/* MODAL URUTKAN NOMOR SURAT KELUAR OTOMATIS (BUKU AGENDA DINAS) */}
+      {isRenumberModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in">
+          <div className="bg-white rounded-2xl max-w-xl w-full max-h-[90vh] overflow-hidden flex flex-col shadow-2xl border border-amber-300">
+            {/* Modal Header */}
+            <div className="p-4 sm:p-5 bg-gradient-to-r from-amber-600 via-orange-600 to-amber-700 text-white flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 bg-white/20 rounded-xl backdrop-blur-xs">
+                  <ListOrdered className="w-5 h-5 text-amber-100" />
+                </div>
+                <div>
+                  <h3 className="text-base sm:text-lg font-bold">Urutkan Nomor Agenda Surat Keluar</h3>
+                  <p className="text-xs text-amber-100">
+                    Penomoran otomatis berurutan untuk semua sekolah binaan sesuai buku agenda dinas
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsRenumberModalOpen(false)}
+                className="p-1.5 hover:bg-white/20 rounded-lg transition-colors cursor-pointer text-white"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-5 overflow-y-auto space-y-4 text-xs">
+              <div className="p-3 bg-amber-50 rounded-xl border border-amber-200 text-amber-900 leading-relaxed">
+                Fitur ini akan secara otomatis memperbarui <strong>Nomor Surat Pemberitahuan Kunjungan Supervisi</strong> bagi seluruh <strong>{principals.length} sekolah binaan</strong> secara berurutan agar nomor surat keluar tidak sama.
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3 bg-slate-50 rounded-xl border border-slate-200">
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">
+                    Nomor Awal Agenda Keluar:
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="number"
+                      min={1}
+                      value={renumberStartNum}
+                      onChange={(e) => setRenumberStartNum(parseInt(e.target.value, 10) || 1)}
+                      className="w-full pl-8 pr-3 py-2 text-sm font-bold text-amber-950 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 font-mono"
+                    />
+                    <Hash className="w-4 h-4 text-slate-400 absolute left-2.5 top-2.5" />
+                  </div>
+                  <span className="text-[10px] text-slate-500 mt-1 block">
+                    Misal nomor 118, 119, dst.
+                  </span>
+                </div>
+
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">
+                    Format Pola Surat:
+                  </label>
+                  <input
+                    type="text"
+                    disabled
+                    value={settings.nomorSuratFormat || '421.3 / {nomor} / DISDIKBUD / PS / {tahun}'}
+                    className="w-full px-3 py-2 text-xs font-mono text-slate-600 bg-slate-100 border border-slate-200 rounded-lg"
+                  />
+                  <span className="text-[10px] text-slate-500 mt-1 block">
+                    Format aktif dari Menu Pengaturan
+                  </span>
+                </div>
+              </div>
+
+              {/* Preview Tabel Penomoran */}
+              <div>
+                <span className="block font-bold text-slate-800 mb-2">
+                  Pratinjau Hasil Penomoran Baru Tiap Sekolah:
+                </span>
+                <div className="border border-slate-200 rounded-xl overflow-hidden max-h-52 overflow-y-auto">
+                  <table className="w-full text-left text-xs">
+                    <thead className="bg-slate-100 text-slate-700 font-bold sticky top-0 border-b border-slate-200">
+                      <tr>
+                        <th className="px-3 py-2 w-10 text-center">No</th>
+                        <th className="px-3 py-2">Sekolah &amp; Kepala Sekolah</th>
+                        <th className="px-3 py-2">Nomor Surat Baru</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {principals.map((p, idx) => {
+                        const newNo = generateNomorSurat(idx, { ...settings, nomorSuratAwal: renumberStartNum });
+                        return (
+                          <tr key={p.id} className="hover:bg-amber-50/50">
+                            <td className="px-3 py-2 text-center text-slate-500 font-mono">{idx + 1}</td>
+                            <td className="px-3 py-2">
+                              <div className="font-bold text-slate-900">{p.satuanPendidikan}</div>
+                              <div className="text-[11px] text-slate-500">{p.nama}</div>
+                            </td>
+                            <td className="px-3 py-2 font-mono font-bold text-blue-900 text-[11px]">
+                              {newNo}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="p-4 bg-slate-50 border-t border-slate-200 flex items-center justify-end gap-2.5">
+              <button
+                type="button"
+                onClick={() => setIsRenumberModalOpen(false)}
+                className="px-4 py-2 bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 rounded-xl font-semibold transition-colors cursor-pointer text-xs"
+              >
+                Batal
+              </button>
+              <button
+                type="button"
+                onClick={() => handleBatchRenumber(renumberStartNum)}
+                className="px-5 py-2 bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 text-white rounded-xl font-bold shadow-md shadow-amber-500/20 transition-all cursor-pointer text-xs flex items-center gap-1.5"
+              >
+                <CheckCircle2 className="w-4 h-4" />
+                <span>Terapkan Nomor Berurutan ke Semua Sekolah</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Hidden Printable Surat Pemberitahuan Kunjungan Supervisi Manajerial for PDF Export */}
       {suratActiveData && (
         <div id="printable-surat-kunjungan" className="hidden bg-white text-slate-900 p-8 font-serif leading-relaxed">
@@ -2048,7 +2278,7 @@ export const PrincipalList: React.FC<PrincipalListProps> = ({
                 <td className="w-20 align-top py-0.5">Nomor</td>
                 <td className="w-3 align-top py-0.5">:</td>
                 <td className="align-top py-0.5 font-bold">
-                  421.3 / 118 / DISDIKBUD / PS / {new Date().getFullYear()}
+                  {suratActiveData.nomorSurat || getPrincipalNomorSurat(suratActiveData, 0, settings)}
                 </td>
                 <td className="text-right align-top py-0.5 font-sans">
                   {settings.schoolCity || 'Sidenreng Rappang'}, {new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}

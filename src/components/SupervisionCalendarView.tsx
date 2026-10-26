@@ -33,7 +33,10 @@ import {
   TrendingUp,
   BookmarkCheck,
   Check,
-  Info
+  Info,
+  ListOrdered,
+  Hash,
+  RefreshCw
 } from 'lucide-react';
 import {
   VisitAgenda,
@@ -57,7 +60,8 @@ import {
   getGoogleCalendarUrl,
   exportVisitAgendasToWord
 } from '../utils/calendarExport';
-import { printDocumentElement } from '../utils/documentExport';
+import { printDocumentElement, getVisitAgendaNomorSurat, generateNomorSurat } from '../utils/documentExport';
+import { DEFAULT_SIDRAP_LOGO, DEFAULT_TUTWURI_LOGO } from '../data/defaultLogos';
 import { SignatoryModal } from './SignatoryModal';
 
 interface SupervisionCalendarViewProps {
@@ -112,6 +116,10 @@ export const SupervisionCalendarView: React.FC<SupervisionCalendarViewProps> = (
   // Individual Visit Slip modal
   const [selectedVisitSlip, setSelectedVisitSlip] = useState<VisitAgenda | null>(null);
 
+  // Batch Renumber Agendas Modal State
+  const [isRenumberAgendasModalOpen, setIsRenumberAgendasModalOpen] = useState<boolean>(false);
+  const [renumberAgendaStartNum, setRenumberAgendaStartNum] = useState<number>(settings.nomorSuratAwal ?? 118);
+
   // Form State for Adding / Editing
   const [formTitle, setFormTitle] = useState<string>('');
   const [formSchool, setFormSchool] = useState<string>('');
@@ -125,6 +133,7 @@ export const SupervisionCalendarView: React.FC<SupervisionCalendarViewProps> = (
   const [formNotes, setFormNotes] = useState<string>('');
   const [formStatus, setFormStatus] = useState<VisitStatus>('terjadwal');
   const [formCompletionNotes, setFormCompletionNotes] = useState<string>('');
+  const [formNomorSurat, setFormNomorSurat] = useState<string>('');
 
   // Print ref
   const printAreaRef = useRef<HTMLDivElement>(null);
@@ -352,7 +361,8 @@ export const SupervisionCalendarView: React.FC<SupervisionCalendarViewProps> = (
     setEditingAgenda(null);
     setFormTitle('');
     setFormSchool(settings.schoolName || distinctSchools[0] || 'SMP Negeri 1 Merdeka Nusantara');
-    setFormDate(presetDate || selectedDateStr || '2026-10-21');
+    const targetDate = presetDate || selectedDateStr || '2026-10-21';
+    setFormDate(targetDate);
     setFormStartTime('08:00');
     setFormEndTime('12:00');
     setFormVisitType('supervisi_akademik');
@@ -362,6 +372,8 @@ export const SupervisionCalendarView: React.FC<SupervisionCalendarViewProps> = (
     setFormNotes('Membawa instrumen 12 indikator dan lembar rubrik observasi.');
     setFormStatus('terjadwal');
     setFormCompletionNotes('');
+    const nextNo = getVisitAgendaNomorSurat({ date: targetDate } as VisitAgenda, agendas.length, settings);
+    setFormNomorSurat(nextNo);
     setIsFormModalOpen(true);
   };
 
@@ -380,7 +392,24 @@ export const SupervisionCalendarView: React.FC<SupervisionCalendarViewProps> = (
     setFormNotes(agenda.notes || '');
     setFormStatus(agenda.status);
     setFormCompletionNotes(agenda.completionNotes || '');
+    const aIndex = agendas.findIndex((a) => a.id === agenda.id);
+    setFormNomorSurat(agenda.nomorSurat || getVisitAgendaNomorSurat(agenda, aIndex >= 0 ? aIndex : 0, settings));
     setIsFormModalOpen(true);
+  };
+
+  const handleBatchRenumberAgendas = (startNum: number) => {
+    const updated = agendas.map((a, idx) => {
+      const generated = `800.1 / ${startNum + idx} / ${settings.nomorSuratKode || 'DISDIKBUD / PS'} / ${new Date(a.date).getFullYear()}`;
+      return { ...a, nomorSurat: generated, updatedAt: new Date().toISOString() };
+    });
+    saveVisitAgendas(updated);
+    setAgendas(updated);
+    showToast(
+      'Nomor Berita Acara Diurutkan',
+      `Seluruh ${agendas.length} agenda kunjungan berhasil diberi nomor surat berurutan mulai nomor ${startNum}.`,
+      'success'
+    );
+    setIsRenumberAgendasModalOpen(false);
   };
 
   // Save agenda form
@@ -424,6 +453,7 @@ export const SupervisionCalendarView: React.FC<SupervisionCalendarViewProps> = (
       purposeAndTargets: formPurpose.trim(),
       notes: formNotes.trim(),
       status: formStatus,
+      nomorSurat: formNomorSurat.trim() || undefined,
       completionNotes: formStatus === 'selesai' ? formCompletionNotes.trim() : undefined,
       supervisorName: settings.supervisorName || 'HERIANSYAH, S.Si., S.Pd., M.Pd',
       createdAt: editingAgenda ? editingAgenda.createdAt : now,
@@ -482,7 +512,9 @@ export const SupervisionCalendarView: React.FC<SupervisionCalendarViewProps> = (
 
   // Print visit slip
   const handlePrintVisitSlip = (agenda: VisitAgenda) => {
-    setSelectedVisitSlip(agenda);
+    const aIndex = agendas.findIndex((a) => a.id === agenda.id);
+    const effectiveNo = agenda.nomorSurat || getVisitAgendaNomorSurat(agenda, aIndex >= 0 ? aIndex : 0, settings);
+    setSelectedVisitSlip({ ...agenda, nomorSurat: effectiveNo });
     setTimeout(() => {
       printDocumentElement(
         'visit-slip-print-area',
@@ -586,6 +618,18 @@ export const SupervisionCalendarView: React.FC<SupervisionCalendarViewProps> = (
             >
               <ExternalLink className="w-3.5 h-3.5 text-emerald-300" />
               <span>Ekspor iCal (.ics)</span>
+            </button>
+
+            <button
+              onClick={() => {
+                setRenumberAgendaStartNum(settings.nomorSuratAwal ?? 118);
+                setIsRenumberAgendasModalOpen(true);
+              }}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-200 font-semibold text-xs rounded-xl transition-all border border-indigo-400/30 cursor-pointer hover:border-indigo-400/50 whitespace-nowrap"
+              title="Urutkan nomor berita acara kunjungan secara otomatis & berurutan"
+            >
+              <ListOrdered className="w-3.5 h-3.5 text-indigo-300" />
+              <span>Urutkan Nomor Surat</span>
             </button>
 
             <button
@@ -997,6 +1041,10 @@ export const SupervisionCalendarView: React.FC<SupervisionCalendarViewProps> = (
                               <span>Guru: {agenda.targetTeacherNames.join(', ')}</span>
                             </div>
                           )}
+                          <div className="flex items-center gap-1 text-[11px] font-mono text-slate-500 bg-slate-100/90 px-2 py-0.5 rounded border border-slate-200 w-fit">
+                            <Hash className="w-3 h-3 text-slate-400 shrink-0" />
+                            <span>No: {agenda.nomorSurat || getVisitAgendaNomorSurat(agenda, 0, settings)}</span>
+                          </div>
                         </div>
 
                         <p className="text-xs text-slate-600 bg-slate-50 p-2.5 rounded-lg border border-slate-200">
@@ -1152,6 +1200,10 @@ export const SupervisionCalendarView: React.FC<SupervisionCalendarViewProps> = (
                           }`}
                         >
                           {isDone ? 'Terlaksana' : agenda.status === 'berlangsung' ? 'Sedang Berlangsung' : 'Terjadwal'}
+                        </span>
+                        <span className="flex items-center gap-1 font-mono text-[10px] text-slate-500 bg-slate-100 px-2 py-0.5 rounded border border-slate-200">
+                          <Hash className="w-3 h-3 text-slate-400" />
+                          <span>No: {agenda.nomorSurat || getVisitAgendaNomorSurat(agenda, index, settings)}</span>
                         </span>
                       </div>
 
@@ -1585,6 +1637,42 @@ export const SupervisionCalendarView: React.FC<SupervisionCalendarViewProps> = (
                 />
               </div>
 
+              {/* Nomor Berita Acara / Surat Kunjungan */}
+              <div className="p-3 bg-blue-50/60 border border-blue-200/80 rounded-xl space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                    <Hash className="w-3.5 h-3.5 text-blue-600" />
+                    <span>Nomor Surat / Berita Acara Kunjungan</span>
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const nextNo = getVisitAgendaNomorSurat(
+                        { date: formDate } as VisitAgenda,
+                        editingAgenda ? agendas.findIndex((a) => a.id === editingAgenda.id) : agendas.length,
+                        settings
+                      );
+                      setFormNomorSurat(nextNo);
+                    }}
+                    className="text-[11px] font-semibold text-blue-700 hover:text-blue-900 flex items-center gap-1 cursor-pointer bg-white px-2 py-0.5 rounded border border-blue-200 hover:border-blue-300"
+                    title="Buat nomor otomatis urut dinas"
+                  >
+                    <RefreshCw className="w-3 h-3" />
+                    <span>Generate Otomatis</span>
+                  </button>
+                </div>
+                <input
+                  type="text"
+                  value={formNomorSurat}
+                  onChange={(e) => setFormNomorSurat(e.target.value)}
+                  placeholder="Contoh: 800.1 / 118 / DISDIKBUD / PS / 2026"
+                  className="w-full px-3 py-2 text-xs sm:text-sm font-mono bg-white border border-blue-300 rounded-lg text-slate-900 focus:ring-2 focus:ring-blue-500 font-semibold"
+                />
+                <p className="text-[10.5px] text-slate-500">
+                  Nomor resmi ini akan tercetak pada Lembar Berita Acara &amp; Konfirmasi Kunjungan Pengawas.
+                </p>
+              </div>
+
               {/* Status */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
@@ -1711,23 +1799,128 @@ export const SupervisionCalendarView: React.FC<SupervisionCalendarViewProps> = (
         }}
       />
 
+      {/* 6.5. BATCH RENUMBER AGENDAS MODAL */}
+      {isRenumberAgendasModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs overflow-y-auto">
+          <div className="bg-white rounded-2xl max-w-lg w-full p-5 sm:p-6 shadow-2xl border border-slate-200 space-y-4 animate-in fade-in zoom-in-95 duration-150">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-200">
+              <div className="flex items-center gap-2 text-indigo-700">
+                <ListOrdered className="w-5 h-5 text-indigo-600" />
+                <h3 className="text-base font-extrabold text-slate-900">
+                  Urutkan Nomor Berita Acara Kunjungan
+                </h3>
+              </div>
+              <button
+                onClick={() => setIsRenumberAgendasModalOpen(false)}
+                className="text-slate-400 hover:text-slate-600 p-1 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <p className="text-xs text-slate-600 leading-relaxed">
+              Fitur ini akan menyusun ulang dan mengunci nomor surat resmi untuk seluruh <strong>{agendas.length} agenda kunjungan</strong> secara berurutan, sehingga setiap lembar Berita Acara memiliki nomor surat dinas yang unik, rapi, dan sesuai dengan tata persuratan dinas.
+            </p>
+
+            <div className="p-3.5 bg-indigo-50/70 border border-indigo-200 rounded-xl space-y-3">
+              <div>
+                <label className="block text-xs font-bold text-indigo-950 mb-1">
+                  Nomor Urut Surat Mulai Dari:
+                </label>
+                <input
+                  type="number"
+                  min="1"
+                  value={renumberAgendaStartNum}
+                  onChange={(e) => setRenumberAgendaStartNum(parseInt(e.target.value) || 1)}
+                  className="w-full px-3 py-2 text-sm font-bold bg-white border border-indigo-300 rounded-lg text-slate-900 focus:ring-2 focus:ring-indigo-500"
+                />
+                <span className="text-[11px] text-indigo-700 mt-1 block">
+                  Standar awal nomor buku agenda pengawas sekolah (contoh: 118).
+                </span>
+              </div>
+
+              <div>
+                <span className="text-[11px] font-bold text-slate-700 uppercase tracking-wider block mb-1.5">
+                  Pratinjau Hasil Penomoran (3 Agenda Pertama):
+                </span>
+                <div className="space-y-1">
+                  {agendas.slice(0, 3).map((a, i) => (
+                    <div key={a.id || i} className="p-2 bg-white rounded border border-indigo-200/80 text-[11px] font-mono text-slate-800 flex items-center justify-between">
+                      <span className="truncate max-w-[200px] font-sans font-medium text-slate-700">{a.schoolName}:</span>
+                      <span className="font-bold text-indigo-700">
+                        800.1 / {renumberAgendaStartNum + i} / {settings.nomorSuratKode || 'DISDIKBUD / PS'} / {new Date(a.date).getFullYear()}
+                      </span>
+                    </div>
+                  ))}
+                  {agendas.length > 3 && (
+                    <p className="text-[10px] text-slate-500 text-center pt-0.5">
+                      ...dan {agendas.length - 3} agenda kunjungan berikutnya
+                    </p>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <div className="pt-2 flex items-center justify-end gap-2.5">
+              <button
+                type="button"
+                onClick={() => setIsRenumberAgendasModalOpen(false)}
+                className="px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 rounded-xl transition-colors cursor-pointer"
+              >
+                Batal
+              </button>
+              <button
+                type="button"
+                onClick={() => handleBatchRenumberAgendas(renumberAgendaStartNum)}
+                className="px-5 py-2 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl transition-all shadow-md shadow-indigo-500/25 cursor-pointer flex items-center gap-1.5"
+              >
+                <ListOrdered className="w-3.5 h-3.5" />
+                <span>Terapkan Penomoran Berurutan</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* 7. HIDDEN PRINT CONTAINER: MATRIKS JADWAL BULANAN RESMI */}
       <div className="hidden">
         <div id="calendar-schedule-print-area" ref={printAreaRef} className="p-8 text-black bg-white" style={{ fontFamily: 'Times New Roman, serif' }}>
-          {/* Kop Surat Dinas */}
-          <div style={{ textAlign: 'center', borderBottom: '3px double #000', paddingBottom: '10px', marginBottom: '16px' }}>
-            <h3 style={{ margin: 0, fontSize: '13pt', textTransform: 'uppercase', fontWeight: 'bold' }}>
-              {settings.governmentAgency || 'PEMERINTAH KABUPATEN SIDENRENG RAPPANG'}
-            </h3>
-            <h2 style={{ margin: '3px 0', fontSize: '15pt', textTransform: 'uppercase', fontWeight: 'bold' }}>
-              DINAS PENDIDIKAN DAN KEBUDAYAAN
-            </h2>
-            <p style={{ margin: '2px 0', fontSize: '10.5pt', fontWeight: 'bold' }}>
-              KANTOR PENGAWAS SEKOLAH PEMBINA SATUAN PENDIDIKAN
-            </p>
-            <p style={{ margin: '2px 0', fontSize: '9pt', color: '#333' }}>
-              {settings.schoolAddress || 'Kompleks Pendidikan Terpadu'} | Telepon / Pos-el Resmi Kedinasan
-            </p>
+          {/* Kop Surat Resmi Dinas dengan Logo Kiri (Pemda) & Kanan (Tut Wuri) */}
+          <div style={{ borderBottom: '3px double #000', paddingBottom: '10px', marginBottom: '16px' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', border: 'none' }}>
+              <tbody>
+                <tr>
+                  <td style={{ width: '80px', textAlign: 'left', verticalAlign: 'middle', border: 'none', padding: 0 }}>
+                    <img
+                      src={settings.logoUrl || DEFAULT_SIDRAP_LOGO}
+                      alt="Logo Pemda / Kab. Sidenreng Rappang"
+                      style={{ maxHeight: '75px', maxWidth: '75px', objectFit: 'contain', display: 'block' }}
+                    />
+                  </td>
+                  <td style={{ textAlign: 'center', verticalAlign: 'middle', border: 'none', padding: '0 10px' }}>
+                    <div style={{ fontSize: '12pt', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                      {settings.governmentAgency || 'PEMERINTAH KABUPATEN SIDENRENG RAPPANG'}
+                    </div>
+                    <div style={{ fontSize: '14pt', fontWeight: 'bold', textTransform: 'uppercase', marginTop: '2px' }}>
+                      DINAS PENDIDIKAN DAN KEBUDAYAAN
+                    </div>
+                    <div style={{ fontSize: '11pt', fontWeight: 'bold', textTransform: 'uppercase', marginTop: '2px' }}>
+                      KANTOR PENGAWAS SEKOLAH PEMBINA SATUAN PENDIDIKAN
+                    </div>
+                    <div style={{ fontSize: '9pt', color: '#333', marginTop: '3px' }}>
+                      {settings.schoolAddress || 'Jl. Harapan Baru Blok C No. 22, Pangkajene, Kecamatan Watang Pulu, Kabupaten Sidenreng Rappang, Sulawesi Selatan 91611'} | Telepon / Pos-el Resmi Kedinasan
+                    </div>
+                  </td>
+                  <td style={{ width: '80px', textAlign: 'right', verticalAlign: 'middle', border: 'none', padding: 0 }}>
+                    <img
+                      src={settings.logoRightUrl || DEFAULT_TUTWURI_LOGO}
+                      alt="Logo Tut Wuri Handayani / Sekolah"
+                      style={{ maxHeight: '75px', maxWidth: '75px', objectFit: 'contain', display: 'block', marginLeft: 'auto' }}
+                    />
+                  </td>
+                </tr>
+              </tbody>
+            </table>
           </div>
 
           {/* Judul Dokumen */}
@@ -1846,20 +2039,42 @@ export const SupervisionCalendarView: React.FC<SupervisionCalendarViewProps> = (
       {selectedVisitSlip && (
         <div className="hidden">
           <div id="visit-slip-print-area" ref={visitSlipPrintRef} className="p-8 text-black bg-white" style={{ fontFamily: 'Times New Roman, serif' }}>
-            {/* Kop Surat Dinas */}
-            <div style={{ textAlign: 'center', borderBottom: '3px double #000', paddingBottom: '10px', marginBottom: '16px' }}>
-              <h3 style={{ margin: 0, fontSize: '13pt', textTransform: 'uppercase', fontWeight: 'bold' }}>
-                {settings.governmentAgency || 'PEMERINTAH KABUPATEN SIDENRENG RAPPANG'}
-              </h3>
-              <h2 style={{ margin: '3px 0', fontSize: '15pt', textTransform: 'uppercase', fontWeight: 'bold' }}>
-                DINAS PENDIDIKAN DAN KEBUDAYAAN
-              </h2>
-              <p style={{ margin: '2px 0', fontSize: '10.5pt', fontWeight: 'bold' }}>
-                KANTOR PENGAWAS SEKOLAH PEMBINA SATUAN PENDIDIKAN
-              </p>
-              <p style={{ margin: '2px 0', fontSize: '9pt', color: '#333' }}>
-                {settings.schoolAddress || 'Kompleks Pendidikan Terpadu'} | Telepon / Pos-el Resmi Kedinasan
-              </p>
+            {/* Kop Surat Resmi Dinas dengan Logo Kiri (Pemda) & Kanan (Tut Wuri) */}
+            <div style={{ borderBottom: '3px double #000', paddingBottom: '10px', marginBottom: '16px' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', border: 'none' }}>
+                <tbody>
+                  <tr>
+                    <td style={{ width: '80px', textAlign: 'left', verticalAlign: 'middle', border: 'none', padding: 0 }}>
+                      <img
+                        src={settings.logoUrl || DEFAULT_SIDRAP_LOGO}
+                        alt="Logo Pemda / Kab. Sidenreng Rappang"
+                        style={{ maxHeight: '75px', maxWidth: '75px', objectFit: 'contain', display: 'block' }}
+                      />
+                    </td>
+                    <td style={{ textAlign: 'center', verticalAlign: 'middle', border: 'none', padding: '0 10px' }}>
+                      <div style={{ fontSize: '12pt', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                        {settings.governmentAgency || 'PEMERINTAH KABUPATEN SIDENRENG RAPPANG'}
+                      </div>
+                      <div style={{ fontSize: '14pt', fontWeight: 'bold', textTransform: 'uppercase', marginTop: '2px' }}>
+                        DINAS PENDIDIKAN DAN KEBUDAYAAN
+                      </div>
+                      <div style={{ fontSize: '11pt', fontWeight: 'bold', textTransform: 'uppercase', marginTop: '2px' }}>
+                        KANTOR PENGAWAS SEKOLAH PEMBINA SATUAN PENDIDIKAN
+                      </div>
+                      <div style={{ fontSize: '9pt', color: '#333', marginTop: '3px' }}>
+                        {settings.schoolAddress || 'Jl. Harapan Baru Blok C No. 22, Pangkajene, Kecamatan Watang Pulu, Kabupaten Sidenreng Rappang, Sulawesi Selatan 91611'} | Telepon / Pos-el Resmi Kedinasan
+                      </div>
+                    </td>
+                    <td style={{ width: '80px', textAlign: 'right', verticalAlign: 'middle', border: 'none', padding: 0 }}>
+                      <img
+                        src={settings.logoRightUrl || DEFAULT_TUTWURI_LOGO}
+                        alt="Logo Tut Wuri Handayani / Sekolah"
+                        style={{ maxHeight: '75px', maxWidth: '75px', objectFit: 'contain', display: 'block', marginLeft: 'auto' }}
+                      />
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
 
             {/* Judul Lembar Kunjungan */}
@@ -1867,8 +2082,8 @@ export const SupervisionCalendarView: React.FC<SupervisionCalendarViewProps> = (
               <h3 style={{ margin: 0, fontSize: '13pt', textDecoration: 'underline', textTransform: 'uppercase', fontWeight: 'bold' }}>
                 BERITA ACARA &amp; LEMBAR KONFIRMASI KUNJUNGAN SUPERVISI
               </h3>
-              <p style={{ margin: '4px 0 0 0', fontSize: '10pt' }}>
-                Nomor: 800.1 / INSPIRO / {selectedVisitSlip.date.replace(/-/g, '')} / {new Date().getFullYear()}
+              <p style={{ margin: '4px 0 0 0', fontSize: '10.5pt', fontWeight: 'bold' }}>
+                Nomor: {selectedVisitSlip.nomorSurat || getVisitAgendaNomorSurat(selectedVisitSlip, 0, settings)}
               </p>
             </div>
 

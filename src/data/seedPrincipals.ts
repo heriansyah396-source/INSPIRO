@@ -22,6 +22,7 @@ export const SEED_PRINCIPALS: Principal[] = [
     tanggalSupervisiTerakhir: '2026-09-28',
     catatanPengawas: 'Kepemimpinan manajerial sangat visioner. Sinkronisasi dokumen RKAS dengan rekomendasi prioritas Rapor Pendidikan berjalan presisi. Budaya berbagi antar guru di Kombel sekolah aktif.',
     rekomendasiManajerial: 'Pertahankan sistem penjaminan mutu internal dan lanjutkan desiminasi praktik baik pengelolaan RKAS berbasis data ke forum MKKS sub-rayon.',
+    nomorSuratKunjungan: '421.3 / 118 / DISDIKBUD / PS / 2026',
     createdAt: '2026-08-15T08:00:00Z',
     updatedAt: '2026-09-28T14:00:00Z'
   },
@@ -41,6 +42,7 @@ export const SEED_PRINCIPALS: Principal[] = [
     tanggalSupervisiTerakhir: '2026-06-18',
     catatanPengawas: 'Progres aktivasi akun Belajar.id dan pemanfaatan PMM oleh guru mencapai 92%. Masih memerlukan pendampingan berkala dalam validasi dokumen 1 KOSP.',
     rekomendasiManajerial: 'Jadwalkan pendampingan supervisi manajerial berkala tanggal 24 Oktober 2026 untuk telaah dokumen KOSP dan pembinaan tata kelola aset laboratorium.',
+    nomorSuratKunjungan: '421.3 / 119 / DISDIKBUD / PS / 2026',
     createdAt: '2026-08-16T09:00:00Z',
     updatedAt: '2026-10-10T11:00:00Z'
   },
@@ -60,6 +62,7 @@ export const SEED_PRINCIPALS: Principal[] = [
     tanggalSupervisiTerakhir: '2026-05-20',
     catatanPengawas: 'Komitmen kuat dalam penataan ruang laboratorium komputer dan pengadaan pojok baca digital di tiap selasar kelas.',
     rekomendasiManajerial: 'Perkuat pemantauan berkala terhadap program pembiasaan 15 menit membaca sebelum KBM dan evaluasi ketercapaian numerasi.',
+    nomorSuratKunjungan: '421.3 / 120 / DISDIKBUD / PS / 2026',
     createdAt: '2026-08-20T10:00:00Z',
     updatedAt: '2026-10-12T08:30:00Z'
   },
@@ -79,6 +82,7 @@ export const SEED_PRINCIPALS: Principal[] = [
     tanggalSupervisiTerakhir: undefined,
     catatanPengawas: 'Sekolah swasta binaan dengan pertumbuhan murid yang pesat. Membutuhkan sinkronisasi tata kelola administrasi Kurikulum Merdeka dan instrumen supervisi klinis.',
     rekomendasiManajerial: 'Agendakan kunjungan supervisi manajerial awal semester ganjil untuk pendampingan telaah kurikulum dan standar pembiayaan yayasan.',
+    nomorSuratKunjungan: '421.3 / 121 / DISDIKBUD / PS / 2026',
     createdAt: '2026-09-01T11:00:00Z',
     updatedAt: '2026-09-01T11:00:00Z'
   }

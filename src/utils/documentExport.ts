@@ -17,7 +17,8 @@ import {
   ManagerialEvaluationRecord,
   MANAGERIAL_DIMENSIONS,
   TOTAL_MANAGERIAL_ITEMS,
-  MAX_MANAGERIAL_RAW_SCORE
+  MAX_MANAGERIAL_RAW_SCORE,
+  VisitAgenda
 } from '../types/inspiro';
 import { calculateTeacherRadarData } from '../components/TeacherRadarChart';
 import { QualityMapAnalysis } from './qualityMapUtils';
@@ -2139,11 +2140,65 @@ export function exportIndividualManagerialToWord(
 }
 
 /**
+ * Buat nomor surat keluar dinas resmi secara otomatis berdasarkan indeks urutan agenda
+ */
+export function generateNomorSurat(
+  index: number = 0,
+  settings?: Partial<AppSettings>,
+  year?: number
+): string {
+  const start = settings?.nomorSuratAwal ?? 118;
+  const currentYear = year || new Date().getFullYear();
+  const format = settings?.nomorSuratFormat || '421.3 / {nomor} / DISDIKBUD / PS / {tahun}';
+  const numberVal = start + index;
+  const kode = settings?.nomorSuratKode || 'DISDIKBUD / PS';
+
+  return format
+    .replace('{nomor}', String(numberVal))
+    .replace('{tahun}', String(currentYear))
+    .replace('{kode}', kode);
+}
+
+/**
+ * Dapatkan nomor surat resmi untuk kepala sekolah / sekolah binaan.
+ * Mengutamakan nomorSuratKunjungan yang telah diisi manual, atau jika belum, membuat nomor urut dinas otomatis.
+ */
+export function getPrincipalNomorSurat(
+  principal?: Partial<Principal> | null,
+  index: number = 0,
+  settings?: Partial<AppSettings>
+): string {
+  if (principal?.nomorSuratKunjungan && principal.nomorSuratKunjungan.trim()) {
+    return principal.nomorSuratKunjungan.trim();
+  }
+  return generateNomorSurat(index, settings);
+}
+
+/**
+ * Dapatkan nomor surat / berita acara resmi untuk agenda kunjungan supervisi.
+ * Mengutamakan agenda.nomorSurat jika diisi manual, atau membuat nomor urut dinas otomatis unik.
+ */
+export function getVisitAgendaNomorSurat(
+  agenda?: Partial<VisitAgenda> | null,
+  index: number = 0,
+  settings?: Partial<AppSettings>
+): string {
+  if (agenda?.nomorSurat && agenda.nomorSurat.trim()) {
+    return agenda.nomorSurat.trim();
+  }
+  const start = settings?.nomorSuratAwal ?? 118;
+  const currentYear = agenda?.date ? new Date(agenda.date).getFullYear() : new Date().getFullYear();
+  const numberVal = start + index;
+  const kode = settings?.nomorSuratKode || 'DISDIKBUD / PS';
+  return `800.1 / ${numberVal} / ${kode} / ${currentYear}`;
+}
+
+/**
  * Ekspor Surat Pemberitahuan Kunjungan Supervisi Manajerial ke format Microsoft Word (.doc)
  */
 export function exportSuratKunjunganToWord(
   params: {
-    principal: Partial<Principal> & { nama: string; satuanPendidikan: string };
+    principal: Partial<Principal> & { nama: string; satuanPendidikan: string; nomorSuratKunjungan?: string };
     tanggalSupervisi?: string;
     fokusSupervisi?: string;
     catatanPengawas?: string;
@@ -2170,7 +2225,7 @@ export function exportSuratKunjunganToWord(
     : currentDate;
 
   const currentYear = new Date().getFullYear();
-  const letterNumber = nomorSurat || `421.3 / 118 / DISDIKBUD / PS / ${currentYear}`;
+  const letterNumber = nomorSurat || getPrincipalNomorSurat(principal, 0, settings);
   const cleanSchool = principal.satuanPendidikan.replace(/[/\\?%*:|"<>]/g, '_');
   const fileName = `Surat_Kunjungan_Supervisi_Manajerial_${cleanSchool}_${currentYear}.doc`;
 

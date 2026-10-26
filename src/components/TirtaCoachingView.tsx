@@ -51,6 +51,7 @@ import {
 } from '../utils/storage';
 import { exportCoachingJournalToWord } from '../utils/coachingExport';
 import { printDocumentElement } from '../utils/documentExport';
+import { DEFAULT_SIDRAP_LOGO, DEFAULT_TUTWURI_LOGO } from '../data/defaultLogos';
 import { SignatoryModal } from './SignatoryModal';
 
 interface TirtaCoachingViewProps {
@@ -1408,20 +1409,42 @@ export const TirtaCoachingView: React.FC<TirtaCoachingViewProps> = ({
             className="p-8 text-black bg-white"
             style={{ fontFamily: 'Times New Roman, serif' }}
           >
-            {/* Kop Surat Dinas */}
-            <div style={{ textAlign: 'center', borderBottom: '3px double #000', paddingBottom: '10px', marginBottom: '16px' }}>
-              <h3 style={{ margin: 0, fontSize: '13pt', textTransform: 'uppercase', fontWeight: 'bold' }}>
-                {settings.governmentAgency || 'PEMERINTAH KABUPATEN SIDENRENG RAPPANG'}
-              </h3>
-              <h2 style={{ margin: '3px 0', fontSize: '15pt', textTransform: 'uppercase', fontWeight: 'bold' }}>
-                DINAS PENDIDIKAN DAN KEBUDAYAAN
-              </h2>
-              <p style={{ margin: '2px 0', fontSize: '10.5pt', fontWeight: 'bold' }}>
-                KANTOR PENGAWAS SEKOLAH PEMBINA SATUAN PENDIDIKAN
-              </p>
-              <p style={{ margin: '2px 0', fontSize: '9pt', color: '#333' }}>
-                {settings.schoolAddress || 'Kompleks Pendidikan Terpadu'} | Telepon / Pos-el Resmi Kedinasan
-              </p>
+            {/* Kop Surat Resmi Dinas dengan Logo Kiri (Pemda) & Kanan (Tut Wuri) */}
+            <div style={{ borderBottom: '3px double #000', paddingBottom: '10px', marginBottom: '16px' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', border: 'none' }}>
+                <tbody>
+                  <tr>
+                    <td style={{ width: '80px', textAlign: 'left', verticalAlign: 'middle', border: 'none', padding: 0 }}>
+                      <img
+                        src={settings.logoUrl || DEFAULT_SIDRAP_LOGO}
+                        alt="Logo Pemda / Kab. Sidenreng Rappang"
+                        style={{ maxHeight: '75px', maxWidth: '75px', objectFit: 'contain', display: 'block' }}
+                      />
+                    </td>
+                    <td style={{ textAlign: 'center', verticalAlign: 'middle', border: 'none', padding: '0 10px' }}>
+                      <div style={{ fontSize: '12pt', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                        {settings.governmentAgency || 'PEMERINTAH KABUPATEN SIDENRENG RAPPANG'}
+                      </div>
+                      <div style={{ fontSize: '14pt', fontWeight: 'bold', textTransform: 'uppercase', marginTop: '2px' }}>
+                        DINAS PENDIDIKAN DAN KEBUDAYAAN
+                      </div>
+                      <div style={{ fontSize: '11pt', fontWeight: 'bold', textTransform: 'uppercase', marginTop: '2px' }}>
+                        KANTOR PENGAWAS SEKOLAH PEMBINA SATUAN PENDIDIKAN
+                      </div>
+                      <div style={{ fontSize: '9pt', color: '#333', marginTop: '3px' }}>
+                        {settings.schoolAddress || 'Jl. Harapan Baru Blok C No. 22, Pangkajene, Kecamatan Watang Pulu, Kabupaten Sidenreng Rappang, Sulawesi Selatan 91611'} | Telepon / Pos-el Resmi Kedinasan
+                      </div>
+                    </td>
+                    <td style={{ width: '80px', textAlign: 'right', verticalAlign: 'middle', border: 'none', padding: 0 }}>
+                      <img
+                        src={settings.logoRightUrl || DEFAULT_TUTWURI_LOGO}
+                        alt="Logo Tut Wuri Handayani / Sekolah"
+                        style={{ maxHeight: '75px', maxWidth: '75px', objectFit: 'contain', display: 'block', marginLeft: 'auto' }}
+                      />
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
 
             {/* Judul Dokumen */}

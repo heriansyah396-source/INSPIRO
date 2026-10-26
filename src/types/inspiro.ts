@@ -44,6 +44,7 @@ export interface Principal {
   tanggalSupervisiTerakhir?: string;
   catatanPengawas?: string;
   rekomendasiManajerial?: string;
+  nomorSuratKunjungan?: string; // Nomor Surat Keluar Resmi (misal: '421.3 / 118 / DISDIKBUD / PS / 2026')
   createdAt: string;
   updatedAt?: string;
 }
@@ -149,6 +150,9 @@ export interface AppSettings {
   documentDate?: string;
   logoUrl?: string; // Data URL atau path logo Pemkab / Instansi (JPG, PNG)
   logoRightUrl?: string; // Data URL atau path logo kedua / Tut Wuri Handayani / Sekolah (JPG, PNG)
+  nomorSuratFormat?: string; // Format pola nomor surat, default: '421.3 / {nomor} / DISDIKBUD / PS / {tahun}'
+  nomorSuratAwal?: number; // Nomor urut awal agenda surat keluar (misal: 118)
+  nomorSuratKode?: string; // Kode klasifikasi surat dinas (misal: 'DISDIKBUD / PS')
 }
 
 export interface AnalysisBreakdown {
@@ -749,6 +753,7 @@ export interface VisitAgenda {
   completionNotes?: string;
   signedAt?: string;
   supervisorName?: string;
+  nomorSurat?: string; // Nomor Berita Acara / Surat Kunjungan (misal: '800.1 / 118 / DISDIKBUD / PS / 2026')
   createdAt: string;
   updatedAt: string;
 }

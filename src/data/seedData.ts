@@ -21,7 +21,10 @@ export const DEFAULT_SETTINGS: AppSettings = {
   pengawasPembinaRole: 'Koordinator Pengawas / Kepala Dinas Pendidikan',
   pengawasPembinaRank: 'Pembina Utama Muda / IV.c',
   logoUrl: DEFAULT_SIDRAP_LOGO,
-  logoRightUrl: DEFAULT_TUTWURI_LOGO
+  logoRightUrl: DEFAULT_TUTWURI_LOGO,
+  nomorSuratFormat: '421.3 / {nomor} / DISDIKBUD / PS / {tahun}',
+  nomorSuratAwal: 118,
+  nomorSuratKode: 'DISDIKBUD / PS'
 };
 
 export const SEED_TEACHERS: Teacher[] = [
