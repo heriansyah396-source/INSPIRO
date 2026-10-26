@@ -201,12 +201,17 @@ export default function App() {
           cloudSettings.supervisorName.includes('Heriansyah.') ||
           cloudSettings.supervisorName.includes('HERIANSYAH.') ||
           cloudSettings.supervisorName === 'Heriansyah, S.Si., S.Pd., M.Pd' ||
-          cloudSettings.supervisorNip?.replace(/\s+/g, '') === '196812311995122017'
+          cloudSettings.supervisorNip?.replace(/\s+/g, '') === '196812311995122017' ||
+          cloudSettings.supervisorNip?.includes('19820415')
         ) {
           cloudSettings.supervisorName = 'HERIANSYAH, S.Si., S.Pd., M.Pd';
-          cloudSettings.supervisorNip = '19820415 200801 1 007';
-          cloudSettings.supervisorRole = 'Pengawas Sekolah';
+          cloudSettings.supervisorNip = '19830819 201001 1 002';
+          cloudSettings.supervisorRole = 'Pengawas Sekolah Pembina';
+          cloudSettings.supervisorRank = 'Penata Tk. I / III.d';
           syncSettingsToCloud(cloudSettings).catch(() => {});
+        }
+        if (!cloudSettings.supervisorRank) {
+          cloudSettings.supervisorRank = 'Penata Tk. I / III.d';
         }
         setSettings(cloudSettings);
         saveSettings(cloudSettings);
@@ -789,6 +794,7 @@ export default function App() {
                   onDeletePrincipal={handleDeletePrincipal}
                   onScheduleManagerialSupervision={handleScheduleManagerialSupervision}
                   onNavigateToCalendar={() => setCurrentTab('calendar')}
+                  onUpdateSettings={handleSaveSettings}
                   showToast={showToast}
                 />
               )}

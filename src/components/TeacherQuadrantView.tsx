@@ -965,7 +965,7 @@ export const TeacherQuadrantView: React.FC<TeacherQuadrantViewProps> = ({
               <tr>
                 <td style={{ border: 'none', padding: '3px 0' }}><strong>NIP Pengawas</strong></td>
                 <td style={{ border: 'none', padding: '3px 0' }}>:</td>
-                <td style={{ border: 'none', padding: '3px 0' }}>{settings.supervisorNip || '19820415 200801 1 007'}</td>
+                <td style={{ border: 'none', padding: '3px 0' }}>{settings.supervisorNip || '19830819 201001 1 002'}</td>
                 <td style={{ border: 'none', padding: '3px 0' }}><strong>Distribusi Kuadran</strong></td>
                 <td style={{ border: 'none', padding: '3px 0' }}>:</td>
                 <td style={{ border: 'none', padding: '3px 0' }}>Q1: {counts.q1} | Q2: {counts.q2} | Q3: {counts.q3} | Q4: {counts.q4}</td>
@@ -1234,7 +1234,7 @@ export const TeacherQuadrantView: React.FC<TeacherQuadrantViewProps> = ({
                     {settings.supervisorName || 'HERIANSYAH, S.Si., S.Pd., M.Pd'}
                   </strong>
                   <br />
-                  <span>NIP. {settings.supervisorNip || '19820415 200801 1 007'}</span>
+                  <span>NIP. {settings.supervisorNip || '19830819 201001 1 002'}</span>
                 </td>
               </tr>
             </tbody>

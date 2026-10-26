@@ -18,7 +18,7 @@ export const SEED_PARTNERSHIP_PM_RECORDS: PMLearningPartnershipRecord[] = [
     date: '2026-10-20',
     assessorName: 'HERIANSYAH, S.Si., S.Pd., M.Pd',
     assessorRole: 'Pengawas Sekolah',
-    assessorNip: '19820415 200801 1 007',
+    assessorNip: '19830819 201001 1 002',
     headmasterName: 'Dra. Hj. Nurhasanah, M.Pd.',
     headmasterNip: '19720815 199802 2 003',
 
@@ -106,7 +106,7 @@ export const SEED_PARTNERSHIP_PM_RECORDS: PMLearningPartnershipRecord[] = [
     date: '2026-10-15',
     assessorName: 'HERIANSYAH, S.Si., S.Pd., M.Pd',
     assessorRole: 'Pengawas Sekolah',
-    assessorNip: '19820415 200801 1 007',
+    assessorNip: '19830819 201001 1 002',
     headmasterName: 'Drs. H. Mulyadi, M.Pd.',
     headmasterNip: '19690312 199412 1 002',
 

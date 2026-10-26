@@ -393,7 +393,7 @@ export function exportPartnershipPMToWord(record: PMLearningPartnershipRecord, s
             ${schoolCity}, ${documentDate}<br/>
             Pengawas Sekolah Pembina,<br/><br/><br/><br/>
             <strong>${record.assessorName || 'HERIANSYAH, S.Si., S.Pd., M.Pd'}</strong><br/>
-            NIP. ${record.assessorNip || '19820415 200801 1 007'}
+            NIP. ${record.assessorNip || '19830819 201001 1 002'}
           </td>
         </tr>
       </table>

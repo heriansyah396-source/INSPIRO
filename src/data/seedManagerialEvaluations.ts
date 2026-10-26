@@ -46,7 +46,7 @@ function createSeedEvaluation(
     catatanPengawas: catatan,
     rekomendasiManajerial: rekomendasi,
     supervisorName: 'HERIANSYAH, S.Si., S.Pd., M.Pd',
-    supervisorNip: '19820415 200801 1 007',
+    supervisorNip: '19830819 201001 1 002',
     status: 'selesai',
     createdAt: `${date}T10:00:00Z`,
     updatedAt: `${date}T13:30:00Z`

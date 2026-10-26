@@ -4,6 +4,7 @@
  */
 
 import { AppSettings, SupervisionRecord, Teacher } from '../types/inspiro';
+import { DEFAULT_SIDRAP_LOGO, DEFAULT_TUTWURI_LOGO } from './defaultLogos';
 
 export const DEFAULT_SETTINGS: AppSettings = {
   governmentAgency: 'PEMERINTAH KABUPATEN SIDENRENG RAPPANG',
@@ -12,11 +13,15 @@ export const DEFAULT_SETTINGS: AppSettings = {
   schoolCity: 'Kabupaten Sidenreng Rappang',
   schoolAddress: 'Jl. Harapan Baru Blok C No. 22, Pangkajene, Kecamatan Watang Pulu, Kabupaten Sidenreng Rappang, Sulawesi Selatan 91611',
   supervisorName: 'HERIANSYAH, S.Si., S.Pd., M.Pd',
-  supervisorNip: '19820415 200801 1 007',
-  supervisorRole: 'Pengawas Sekolah',
+  supervisorNip: '19830819 201001 1 002',
+  supervisorRole: 'Pengawas Sekolah Pembina',
+  supervisorRank: 'Penata Tk. I / III.d',
   pengawasPembinaName: 'Dr. Hj. Endang Sulastri, M.Pd.',
   pengawasPembinaNip: '19650410 199103 2 001',
-  pengawasPembinaRole: 'Koordinator Pengawas / Kepala Dinas Pendidikan'
+  pengawasPembinaRole: 'Koordinator Pengawas / Kepala Dinas Pendidikan',
+  pengawasPembinaRank: 'Pembina Utama Muda / IV.c',
+  logoUrl: DEFAULT_SIDRAP_LOGO,
+  logoRightUrl: DEFAULT_TUTWURI_LOGO
 };
 
 export const SEED_TEACHERS: Teacher[] = [
@@ -88,7 +93,7 @@ export const SEED_SUPERVISIONS: SupervisionRecord[] = [
       namaGuru: 'Siti Rahmawati, M.Pd.',
       nipGuru: '19881120 201101 2 015',
       namaSupervisor: 'HERIANSYAH, S.Si., S.Pd., M.Pd',
-      nipSupervisor: '19820415 200801 1 007',
+      nipSupervisor: '19830819 201001 1 002',
       jabatanSupervisor: 'Pengawas Sekolah',
       mapel: 'Bahasa Indonesia',
       kelasSemester: 'VIII-A / Ganjil',
@@ -172,7 +177,7 @@ export const SEED_SUPERVISIONS: SupervisionRecord[] = [
       namaGuru: 'Ahmad Fauzi, S.Pd.',
       nipGuru: '19850714 201001 1 012',
       namaSupervisor: 'HERIANSYAH, S.Si., S.Pd., M.Pd',
-      nipSupervisor: '19820415 200801 1 007',
+      nipSupervisor: '19830819 201001 1 002',
       jabatanSupervisor: 'Pengawas Sekolah',
       mapel: 'Matematika',
       kelasSemester: 'VII-B / Ganjil',
@@ -256,7 +261,7 @@ export const SEED_SUPERVISIONS: SupervisionRecord[] = [
       namaGuru: 'Budi Santoso, S.Pd.',
       nipGuru: '19920315 201903 1 008',
       namaSupervisor: 'HERIANSYAH, S.Si., S.Pd., M.Pd',
-      nipSupervisor: '19820415 200801 1 007',
+      nipSupervisor: '19830819 201001 1 002',
       jabatanSupervisor: 'Pengawas Sekolah',
       mapel: 'Ilmu Pengetahuan Alam (IPA)',
       kelasSemester: 'VII-C / Ganjil',

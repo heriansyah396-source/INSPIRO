@@ -122,7 +122,7 @@ export function exportVisitAgendasToWord(
 ): void {
   const cleanSchool = settings.schoolName || 'KOTA PENDIDIKAN';
   const supervisorName = settings.supervisorName || 'HERIANSYAH, S.Si., S.Pd., M.Pd';
-  const supervisorNip = settings.supervisorNip || '19820415 200801 1 007';
+  const supervisorNip = settings.supervisorNip || '19830819 201001 1 002';
   const supervisorRole = settings.supervisorRole || 'Pengawas Sekolah';
   const approverName = settings.pengawasPembinaName || 'Dr. Hj. Endang Sulastri, M.Pd.';
   const approverNip = settings.pengawasPembinaNip || '19650410 199103 2 001';

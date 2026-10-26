@@ -140,10 +140,15 @@ export interface AppSettings {
   supervisorName: string;
   supervisorNip: string;
   supervisorRole: string;
+  supervisorRank?: string; // e.g. 'Penata Tk. I / III.d' atau 'Pembina / IV.a'
+  supervisorPangkat?: string; // alias
   pengawasPembinaName: string;
   pengawasPembinaNip: string;
   pengawasPembinaRole?: string;
+  pengawasPembinaRank?: string;
   documentDate?: string;
+  logoUrl?: string; // Data URL atau path logo Pemkab / Instansi (JPG, PNG)
+  logoRightUrl?: string; // Data URL atau path logo kedua / Tut Wuri Handayani / Sekolah (JPG, PNG)
 }
 
 export interface AnalysisBreakdown {

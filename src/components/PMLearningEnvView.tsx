@@ -179,7 +179,7 @@ export const PMLearningEnvView: React.FC<PMLearningEnvViewProps> = ({
       date: new Date().toISOString().split('T')[0],
       assessorName: settings.supervisorName || 'HERIANSYAH, S.Si., S.Pd., M.Pd',
       assessorRole: 'Pengawas Sekolah',
-      assessorNip: settings.supervisorNip || '19820415 200801 1 007',
+      assessorNip: settings.supervisorNip || '19830819 201001 1 002',
       headmasterName: settings.pengawasPembinaName || 'Dra. Hj. Nurhasanah, M.Pd.',
       headmasterNip: settings.pengawasPembinaNip || '19720815 199802 2 003',
 

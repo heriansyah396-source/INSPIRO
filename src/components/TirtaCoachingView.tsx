@@ -296,7 +296,7 @@ export const TirtaCoachingView: React.FC<TirtaCoachingViewProps> = ({
       },
 
       supervisorName: settings.supervisorName || 'HERIANSYAH, S.Si., S.Pd., M.Pd',
-      supervisorNip: settings.supervisorNip || '19820415 200801 1 007',
+      supervisorNip: settings.supervisorNip || '19830819 201001 1 002',
       supervisorRole: settings.supervisorRole || 'Pengawas Sekolah Pembina',
       coachFeedback: formCoachFeedback.trim() || undefined,
       createdAt: editingRecord ? editingRecord.createdAt : now,
@@ -371,7 +371,7 @@ export const TirtaCoachingView: React.FC<TirtaCoachingViewProps> = ({
             <div className="flex flex-wrap items-center gap-2 text-xs text-cyan-300 font-semibold tracking-wide">
               <span>Coach / Pengawas: {settings.supervisorName || 'HERIANSYAH, S.Si., S.Pd., M.Pd'}</span>
               <span aria-hidden="true" className="text-white/40">·</span>
-              <span>NIP: {settings.supervisorNip || '19820415 200801 1 007'}</span>
+              <span>NIP: {settings.supervisorNip || '19830819 201001 1 002'}</span>
               <span aria-hidden="true" className="text-white/40">·</span>
               <span className="text-blue-200">Model Refleksi Guru Penggerak</span>
             </div>
@@ -1636,7 +1636,7 @@ export const TirtaCoachingView: React.FC<TirtaCoachingViewProps> = ({
                     <strong style={{ textDecoration: 'underline' }}>
                       {settings.supervisorName || activeRecord.supervisorName || 'HERIANSYAH, S.Si., S.Pd., M.Pd'}
                     </strong><br />
-                    <span>NIP. {settings.supervisorNip || activeRecord.supervisorNip || '19820415 200801 1 007'}</span>
+                    <span>NIP. {settings.supervisorNip || activeRecord.supervisorNip || '19830819 201001 1 002'}</span>
                   </td>
                 </tr>
               </tbody>

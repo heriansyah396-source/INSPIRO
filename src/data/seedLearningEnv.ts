@@ -18,7 +18,7 @@ export const SEED_LEARNING_ENV_RECORDS: PMLearningEnvRecord[] = [
     date: '2026-10-15',
     assessorName: 'HERIANSYAH, S.Si., S.Pd., M.Pd',
     assessorRole: 'Pengawas Sekolah',
-    assessorNip: '19820415 200801 1 007',
+    assessorNip: '19830819 201001 1 002',
     headmasterName: 'Dra. Hj. Nurhasanah, M.Pd.',
     headmasterNip: '19720815 199802 2 003',
 
@@ -117,7 +117,7 @@ export const SEED_LEARNING_ENV_RECORDS: PMLearningEnvRecord[] = [
     date: '2026-10-17',
     assessorName: 'HERIANSYAH, S.Si., S.Pd., M.Pd',
     assessorRole: 'Pengawas Sekolah',
-    assessorNip: '19820415 200801 1 007',
+    assessorNip: '19830819 201001 1 002',
     headmasterName: 'Dra. Hj. Nurhasanah, M.Pd.',
     headmasterNip: '19720815 199802 2 003',
 
@@ -216,7 +216,7 @@ export const SEED_LEARNING_ENV_RECORDS: PMLearningEnvRecord[] = [
     date: '2026-10-19',
     assessorName: 'HERIANSYAH, S.Si., S.Pd., M.Pd',
     assessorRole: 'Pengawas Sekolah',
-    assessorNip: '19820415 200801 1 007',
+    assessorNip: '19830819 201001 1 002',
     headmasterName: 'Drs. Bambang Irawan, M.Pd.',
     headmasterNip: '19690312 199512 1 001',
 

@@ -116,7 +116,7 @@ export const PMManagementView: React.FC<PMManagementViewProps> = ({
       const defaultAssessorNip =
         currentUser?.nip ||
         settings?.supervisorNip ||
-        '19820415 200801 1 007';
+        '19830819 201001 1 002';
 
       const defaultHeadmasterName = isSupervisor
         ? (settings?.schoolName && settings?.supervisorRole && settings.supervisorRole.toLowerCase().includes('kepala')

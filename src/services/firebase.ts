@@ -124,7 +124,7 @@ export async function signInWithGoogle(): Promise<UserRoleProfile> {
       email: user.email || '',
       name: user.displayName || 'HERIANSYAH, S.Si., S.Pd., M.Pd',
       role: user.email?.includes('heriansyah') ? 'pengawas' : 'kepala_sekolah',
-      nip: '19820415 200801 1 007',
+      nip: '19830819 201001 1 002',
       schoolName: 'SMP Negeri 1 Merdeka Nusantara',
       createdAt: new Date().toISOString()
     };
@@ -153,7 +153,7 @@ export async function loginWithEmail(email: string, pass: string): Promise<UserR
       email: res.user.email || email,
       name: isSupervisor ? 'HERIANSYAH, S.Si., S.Pd., M.Pd' : email.split('@')[0],
       role: isSupervisor ? 'pengawas' : 'kepala_sekolah',
-      nip: isSupervisor ? '19820415 200801 1 007' : '',
+      nip: isSupervisor ? '19830819 201001 1 002' : '',
       schoolName: isSupervisor ? 'Dinas Pendidikan / Seluruh Sekolah Binaan' : 'SMP Negeri 1 Merdeka Nusantara',
       createdAt: new Date().toISOString()
     };
@@ -187,7 +187,7 @@ export async function registerWithEmail(
       email: res.user.email || email,
       name,
       role: 'pengawas',
-      nip: '19820415 200801 1 007',
+      nip: '19830819 201001 1 002',
       schoolName: schoolName || 'Dinas Pendidikan / Seluruh Sekolah Binaan',
       createdAt: new Date().toISOString()
     };
@@ -332,8 +332,9 @@ export async function fetchCloudSettings(): Promise<AppSettings | null> {
         data.supervisorNip?.replace(/\s+/g, '') === '196812311995122017'
       ) {
         data.supervisorName = 'HERIANSYAH, S.Si., S.Pd., M.Pd';
-        data.supervisorNip = '19820415 200801 1 007';
-        data.supervisorRole = 'Pengawas Sekolah';
+        data.supervisorNip = '19830819 201001 1 002';
+        data.supervisorRole = 'Pengawas Sekolah Pembina';
+        data.supervisorRank = 'Penata Tk. I / III.d';
         setDoc(doc(db, 'settings', 'app_config'), data).catch(() => {});
       }
       return data;

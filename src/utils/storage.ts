@@ -13,6 +13,7 @@ import { SEED_PARTNERSHIP_PM_RECORDS } from '../data/seedLearningPartnership';
 import { SEED_SOAR_RECORDS } from '../data/seedSOAR';
 import { SEED_PRINCIPALS } from '../data/seedPrincipals';
 import { SEED_MANAGERIAL_EVALUATIONS } from '../data/seedManagerialEvaluations';
+import { DEFAULT_SIDRAP_LOGO, DEFAULT_TUTWURI_LOGO } from '../data/defaultLogos';
 import {
   AppSettings,
   ManagedAccount,
@@ -239,8 +240,8 @@ export function getSupervisions(): SupervisionRecord[] {
         identity: {
           ...r.identity,
           namaSupervisor: currentSettings.supervisorName || 'HERIANSYAH, S.Si., S.Pd., M.Pd',
-          nipSupervisor: currentSettings.supervisorNip || '19820415 200801 1 007',
-          jabatanSupervisor: currentSettings.supervisorRole || 'Pengawas Sekolah'
+          nipSupervisor: currentSettings.supervisorNip || '19830819 201001 1 002',
+          jabatanSupervisor: currentSettings.supervisorRole || 'Pengawas Sekolah Pembina'
         }
       };
     }
@@ -299,12 +300,24 @@ export function getSettings(): AppSettings {
     current.supervisorNip.replace(/\s+/g, '') === '196805121994121002' ||
     current.supervisorRole === 'Kepala Sekolah / Supervisor Akademik';
 
+  const isOldNip =
+    !current.supervisorNip ||
+    current.supervisorNip.includes('19820415') ||
+    current.supervisorNip.replace(/\s+/g, '') === '198204152008011007';
+
+  const needsRankMigrate =
+    !current.supervisorRank ||
+    current.supervisorRank.includes('Pembina Tk. I / IV.b') ||
+    current.supervisorRank.includes('IV.b');
+
   const needsGovMigrate =
     !current.governmentAgency ||
     current.governmentAgency.includes('PROVINSI / KABUPATEN / KOTA') ||
-    current.schoolCity === 'Kota Pendidikan';
+    current.governmentAgency.includes('KABUPATEN / KOTA');
 
-  if (isRustinaOrLegacy || needsGovMigrate) {
+  const needsLogoMigrate = !current.logoUrl;
+
+  if (isRustinaOrLegacy || isOldNip || needsRankMigrate || needsGovMigrate || needsLogoMigrate) {
     const updated: AppSettings = {
       ...current,
       governmentAgency: current.governmentAgency && !current.governmentAgency.includes('PROVINSI / KABUPATEN / KOTA')
@@ -315,8 +328,13 @@ export function getSettings(): AppSettings {
         ? 'Jl. Harapan Baru Blok C No. 22, Pangkajene, Watang Pulu, Kab. Sidenreng Rappang'
         : (current.schoolAddress || 'Jl. Harapan Baru Blok C No. 22, Pangkajene, Watang Pulu, Kab. Sidenreng Rappang'),
       supervisorName: 'HERIANSYAH, S.Si., S.Pd., M.Pd',
-      supervisorRole: 'Pengawas Sekolah',
-      supervisorNip: '19820415 200801 1 007'
+      supervisorRole: current.supervisorRole && current.supervisorRole !== 'Kepala Sekolah / Supervisor Akademik'
+        ? current.supervisorRole
+        : 'Pengawas Sekolah Pembina',
+      supervisorNip: isOldNip ? '19830819 201001 1 002' : (current.supervisorNip || '19830819 201001 1 002'),
+      supervisorRank: needsRankMigrate ? 'Penata Tk. I / III.d' : (current.supervisorRank || 'Penata Tk. I / III.d'),
+      logoUrl: current.logoUrl || DEFAULT_SIDRAP_LOGO,
+      logoRightUrl: current.logoRightUrl || DEFAULT_TUTWURI_LOGO
     };
     saveSettings(updated);
     return updated;
@@ -618,7 +636,7 @@ export const DEFAULT_ACCOUNTS: ManagedAccount[] = [
     email: 'heriansyah396@gmail.com',
     password: '19081983',
     name: 'HERIANSYAH, S.Si., S.Pd., M.Pd',
-    nip: '19820415 200801 1 007',
+    nip: '19830819 201001 1 002',
     role: 'pengawas',
     schoolName: 'Dinas Pendidikan / Seluruh Sekolah Binaan',
     createdAt: '2026-09-01T08:00:00Z'
@@ -669,10 +687,11 @@ export function getManagedAccounts(): ManagedAccount[] {
       accounts[pengawasIdx].name.includes('HERIANSYAH.') ||
       accounts[pengawasIdx].name === 'Heriansyah, S.Si., S.Pd., M.Pd' ||
       accounts[pengawasIdx].nip?.replace(/\s+/g, '') === '196812311995122017' ||
+      accounts[pengawasIdx].nip?.includes('19820415') ||
       accounts[pengawasIdx].name !== 'HERIANSYAH, S.Si., S.Pd., M.Pd'
     ) {
       accounts[pengawasIdx].name = 'HERIANSYAH, S.Si., S.Pd., M.Pd';
-      accounts[pengawasIdx].nip = '19820415 200801 1 007';
+      accounts[pengawasIdx].nip = '19830819 201001 1 002';
       accounts[pengawasIdx].email = 'heriansyah396@gmail.com';
       changed = true;
     }
@@ -795,7 +814,7 @@ export const DEFAULT_PM_REPORTS: PMReport[] = [
     academicYear: '2026/2027',
     assessorName: 'HERIANSYAH, S.Si., S.Pd., M.Pd',
     assessorRole: 'Pengawas Sekolah',
-    assessorNip: '19820415 200801 1 007',
+    assessorNip: '19830819 201001 1 002',
     headmasterName: 'Dra. Hj. Nurhasanah, M.Pd.',
     headmasterNip: '19720815 199802 2 003',
     evalDate: '2026-09-28',
@@ -839,7 +858,7 @@ export const DEFAULT_PM_REPORTS: PMReport[] = [
     academicYear: '2026/2027',
     assessorName: 'HERIANSYAH, S.Si., S.Pd., M.Pd',
     assessorRole: 'Pengawas Sekolah',
-    assessorNip: '19820415 200801 1 007',
+    assessorNip: '19830819 201001 1 002',
     headmasterName: 'Drs. Bambang Irawan, M.Pd.',
     headmasterNip: '19690312 199512 1 001',
     evalDate: '2026-09-30',
@@ -1267,7 +1286,7 @@ export function exportSOARToWord(record: SOARAnalysisRecord, settings: AppSettin
   const agency = settings.governmentAgency || 'PEMERINTAH KABUPATEN SIDENRENG RAPPANG';
   const schoolCity = settings.schoolCity || 'Kabupaten Sidenreng Rappang';
   const supervisorName = record.leadSupervisor || settings.supervisorName || 'HERIANSYAH, S.Si., S.Pd., M.Pd';
-  const supervisorNip = record.supervisorNip || settings.supervisorNip || '19820415 200801 1 007';
+  const supervisorNip = record.supervisorNip || settings.supervisorNip || '19830819 201001 1 002';
   const supervisorRole = record.supervisorRole || settings.supervisorRole || 'Pengawas Sekolah Madya';
   const headmasterName = record.headmasterName || 'Dra. Hj. Nurhasanah, M.Pd.';
   const headmasterNip = record.headmasterNip || '19720815 199802 2 003';

@@ -313,7 +313,7 @@ export const ManagerialSupervisionModal: React.FC<ManagerialSupervisionModalProp
       catatanPengawas,
       rekomendasiManajerial,
       supervisorName: settings.supervisorName || 'HERIANSYAH, S.Si., S.Pd., M.Pd',
-      supervisorNip: settings.supervisorNip || '19820415 200801 1 007',
+      supervisorNip: settings.supervisorNip || '19830819 201001 1 002',
       status,
       createdAt: existingEvaluation?.createdAt || new Date().toISOString(),
       updatedAt: new Date().toISOString()
@@ -347,7 +347,7 @@ export const ManagerialSupervisionModal: React.FC<ManagerialSupervisionModalProp
       catatanPengawas,
       rekomendasiManajerial,
       supervisorName: settings.supervisorName || 'HERIANSYAH, S.Si., S.Pd., M.Pd',
-      supervisorNip: settings.supervisorNip || '19820415 200801 1 007',
+      supervisorNip: settings.supervisorNip || '19830819 201001 1 002',
       status: existingEvaluation?.status || 'selesai',
       createdAt: existingEvaluation?.createdAt || new Date().toISOString(),
       updatedAt: new Date().toISOString()
@@ -449,7 +449,7 @@ export const ManagerialSupervisionModal: React.FC<ManagerialSupervisionModalProp
                 </div>
                 <div className="flex">
                   <span className="w-40 font-semibold text-slate-600">NIP Pengawas</span>
-                  <span className="text-slate-800">: {settings.supervisorNip || '19820415 200801 1 007'}</span>
+                  <span className="text-slate-800">: {settings.supervisorNip || '19830819 201001 1 002'}</span>
                 </div>
                 <div className="flex">
                   <span className="w-40 font-semibold text-slate-600">Hari / Tanggal Supervisi</span>
@@ -556,10 +556,11 @@ export const ManagerialSupervisionModal: React.FC<ManagerialSupervisionModalProp
               </div>
               <div>
                 <p>{settings.schoolCity || 'Kabupaten Sidenreng Rappang'}, {new Date(date).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
-                <p className="font-bold text-slate-900 mt-1">Pengawas Sekolah Pembina,</p>
+                <p className="font-bold text-slate-900 mt-1">{settings.supervisorRole || 'Pengawas Sekolah Pembina'},</p>
                 <div className="h-20"></div>
                 <p className="font-bold underline text-slate-900">{settings.supervisorName || 'HERIANSYAH, S.Si., S.Pd., M.Pd'}</p>
-                <p className="text-slate-600">NIP. {settings.supervisorNip || '19820415 200801 1 007'}</p>
+                <p className="text-slate-600">NIP. {settings.supervisorNip || '19830819 201001 1 002'}</p>
+                <p className="text-[10px] text-slate-500">Pangkat/Golongan: {settings.supervisorRank || 'Penata Tk. I / III.d'}</p>
               </div>
             </div>
           </div>

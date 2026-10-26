@@ -50,8 +50,9 @@ export const SignatoryModal: React.FC<SignatoryModalProps> = ({
   const [supervisorName, setSupervisorName] = useState(
     settings.supervisorName || 'HERIANSYAH, S.Si., S.Pd., M.Pd'
   );
-  const [supervisorNip, setSupervisorNip] = useState(settings.supervisorNip || '19820415 200801 1 007');
+  const [supervisorNip, setSupervisorNip] = useState(settings.supervisorNip || '19830819 201001 1 002');
   const [supervisorRole, setSupervisorRole] = useState(settings.supervisorRole || 'Pengawas Sekolah Pembina');
+  const [supervisorRank, setSupervisorRank] = useState(settings.supervisorRank || 'Penata Tk. I / III.d');
 
   const [pengawasPembinaName, setPengawasPembinaName] = useState(
     settings.pengawasPembinaName || 'Dr. Hj. Endang Sulastri, M.Pd.'
@@ -90,8 +91,13 @@ export const SignatoryModal: React.FC<SignatoryModalProps> = ({
           : settings.supervisorName;
 
       setSupervisorName(cleanSupervisorName);
-      setSupervisorNip(settings.supervisorNip || '19820415 200801 1 007');
+      setSupervisorNip(
+        settings.supervisorNip?.includes('19820415')
+          ? '19830819 201001 1 002'
+          : (settings.supervisorNip || '19830819 201001 1 002')
+      );
       setSupervisorRole(settings.supervisorRole || 'Pengawas Sekolah Pembina');
+      setSupervisorRank(settings.supervisorRank || 'Penata Tk. I / III.d');
       setPengawasPembinaName(settings.pengawasPembinaName || 'Dr. Hj. Endang Sulastri, M.Pd.');
       setPengawasPembinaNip(settings.pengawasPembinaNip || '19650410 199103 2 001');
       setPengawasPembinaRole(
@@ -130,8 +136,9 @@ export const SignatoryModal: React.FC<SignatoryModalProps> = ({
 
   const handleResetDefaults = () => {
     setSupervisorName('HERIANSYAH, S.Si., S.Pd., M.Pd');
-    setSupervisorNip('19820415 200801 1 007');
+    setSupervisorNip('19830819 201001 1 002');
     setSupervisorRole('Pengawas Sekolah Pembina');
+    setSupervisorRank('Penata Tk. I / III.d');
     setPengawasPembinaName('Dr. Hj. Endang Sulastri, M.Pd.');
     setPengawasPembinaNip('19650410 199103 2 001');
     setPengawasPembinaRole('Koordinator Pengawas / Kepala Dinas Pendidikan');
@@ -147,8 +154,9 @@ export const SignatoryModal: React.FC<SignatoryModalProps> = ({
       ...settings,
       governmentAgency: governmentAgency.trim() || 'PEMERINTAH KABUPATEN SIDENRENG RAPPANG',
       supervisorName: supervisorName.trim() || 'HERIANSYAH, S.Si., S.Pd., M.Pd',
-      supervisorNip: supervisorNip.trim() || '19820415 200801 1 007',
+      supervisorNip: supervisorNip.trim() || '19830819 201001 1 002',
       supervisorRole: supervisorRole.trim() || 'Pengawas Sekolah Pembina',
+      supervisorRank: supervisorRank.trim() || 'Penata Tk. I / III.d',
       pengawasPembinaName: pengawasPembinaName.trim() || 'Dr. Hj. Endang Sulastri, M.Pd.',
       pengawasPembinaNip: pengawasPembinaNip.trim() || '19650410 199103 2 001',
       pengawasPembinaRole:
@@ -241,12 +249,33 @@ export const SignatoryModal: React.FC<SignatoryModalProps> = ({
                   required
                   value={supervisorNip}
                   onChange={(e) => setSupervisorNip(e.target.value)}
-                  placeholder="19820415 200801 1 007"
-                  className="w-full px-3 py-2 text-xs rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono bg-white"
+                  placeholder="19830819 201001 1 002"
+                  className="w-full px-3 py-2 text-xs rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono bg-white font-medium"
                 />
               </div>
 
-              <div className="sm:col-span-3">
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  Pangkat / Golongan Ruang
+                </label>
+                <input
+                  type="text"
+                  list="rank-options-signatory"
+                  value={supervisorRank}
+                  onChange={(e) => setSupervisorRank(e.target.value)}
+                  placeholder="Penata Tk. I / III.d"
+                  className="w-full px-3 py-2 text-xs rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white font-semibold text-blue-900"
+                />
+                <datalist id="rank-options-signatory">
+                  <option value="Penata Tk. I / III.d" />
+                  <option value="Penata / III.c" />
+                  <option value="Pembina / IV.a" />
+                  <option value="Pembina Tk. I / IV.b" />
+                  <option value="Pembina Utama Muda / IV.c" />
+                </datalist>
+              </div>
+
+              <div className="sm:col-span-2">
                 <label className="block text-xs font-semibold text-slate-700 mb-1">
                   Jabatan Penilai pada Kolom Tanda Tangan
                 </label>
@@ -509,7 +538,10 @@ export const SignatoryModal: React.FC<SignatoryModalProps> = ({
                     {supervisorName || 'HERIANSYAH, S.Si., S.Pd., M.Pd'}
                   </p>
                   <p className="text-[11px] text-slate-500 font-mono">
-                    NIP. {supervisorNip || '19820415 200801 1 007'}
+                    NIP. {supervisorNip || '19830819 201001 1 002'}
+                  </p>
+                  <p className="text-[10px] text-slate-500">
+                    Pangkat/Golongan: {supervisorRank || 'Penata Tk. I / III.d'}
                   </p>
                 </div>
               </div>

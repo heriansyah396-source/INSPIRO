@@ -518,7 +518,7 @@ export const SupervisionCalendarView: React.FC<SupervisionCalendarViewProps> = (
               <span className="font-semibold text-white">Pengawas Pembina:</span>
               <span className="text-cyan-200 font-bold">{settings.supervisorName || 'HERIANSYAH, S.Si., S.Pd., M.Pd'}</span>
               <span aria-hidden="true" className="text-white/30 hidden sm:inline">·</span>
-              <span className="text-blue-200 font-mono tabular-nums">NIP: {settings.supervisorNip || '19820415 200801 1 007'}</span>
+              <span className="text-blue-200 font-mono tabular-nums">NIP: {settings.supervisorNip || '19830819 201001 1 002'}</span>
               <span aria-hidden="true" className="text-white/30 hidden sm:inline">·</span>
               <span className="text-indigo-200">Semester Ganjil 2026/2027</span>
             </div>
@@ -1754,7 +1754,7 @@ export const SupervisionCalendarView: React.FC<SupervisionCalendarViewProps> = (
               <tr>
                 <td style={{ border: 'none', padding: '3px 0' }}><strong>NIP Pengawas</strong></td>
                 <td style={{ border: 'none', padding: '3px 0' }}>:</td>
-                <td style={{ border: 'none', padding: '3px 0' }}>{settings.supervisorNip || '19820415 200801 1 007'}</td>
+                <td style={{ border: 'none', padding: '3px 0' }}>{settings.supervisorNip || '19830819 201001 1 002'}</td>
                 <td style={{ border: 'none', padding: '3px 0' }}><strong>Jabatan</strong></td>
                 <td style={{ border: 'none', padding: '3px 0' }}>:</td>
                 <td style={{ border: 'none', padding: '3px 0' }}>{settings.supervisorRole || 'Pengawas Sekolah'}</td>
@@ -1834,7 +1834,7 @@ export const SupervisionCalendarView: React.FC<SupervisionCalendarViewProps> = (
                     {settings.supervisorName || 'HERIANSYAH, S.Si., S.Pd., M.Pd'}
                   </strong>
                   <br />
-                  <span>NIP. {settings.supervisorNip || '19820415 200801 1 007'}</span>
+                  <span>NIP. {settings.supervisorNip || '19830819 201001 1 002'}</span>
                 </td>
               </tr>
             </tbody>
@@ -1886,7 +1886,7 @@ export const SupervisionCalendarView: React.FC<SupervisionCalendarViewProps> = (
                 <tr>
                   <td style={{ padding: '5px 0', border: 'none' }}><strong>2. NIP Pengawas</strong></td>
                   <td style={{ padding: '5px 0', border: 'none' }}>:</td>
-                  <td style={{ padding: '5px 0', border: 'none' }}>{settings.supervisorNip || '19820415 200801 1 007'}</td>
+                  <td style={{ padding: '5px 0', border: 'none' }}>{settings.supervisorNip || '19830819 201001 1 002'}</td>
                 </tr>
                 <tr>
                   <td style={{ padding: '5px 0', border: 'none' }}><strong>3. Satuan Pendidikan</strong></td>
@@ -1954,7 +1954,7 @@ export const SupervisionCalendarView: React.FC<SupervisionCalendarViewProps> = (
                     <strong style={{ textDecoration: 'underline' }}>
                       {settings.supervisorName || 'HERIANSYAH, S.Si., S.Pd., M.Pd'}
                     </strong><br />
-                    <span>NIP. {settings.supervisorNip || '19820415 200801 1 007'}</span>
+                    <span>NIP. {settings.supervisorNip || '19830819 201001 1 002'}</span>
                   </td>
                 </tr>
               </tbody>

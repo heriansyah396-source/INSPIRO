@@ -29,6 +29,7 @@ import {
 import { SignatoryModal } from './SignatoryModal';
 import { saveSettings } from '../utils/storage';
 import { FileSignature } from 'lucide-react';
+import { DEFAULT_SIDRAP_LOGO, DEFAULT_TUTWURI_LOGO } from '../data/defaultLogos';
 
 interface OfficialReportPrintProps {
   supervision: SupervisionRecord;
@@ -194,20 +195,42 @@ export const OfficialReportPrint: React.FC<OfficialReportPrintProps> = ({
         id="official-supervision-print-page"
         className="print-page bg-white p-8 sm:p-12 border border-slate-300 rounded-lg shadow-sm text-slate-900 text-xs font-serif leading-relaxed"
       >
-        {/* Kop Surat Resmi */}
-        <div className="border-b-2 border-slate-900 pb-3 mb-6 text-center">
-          <div className="text-[11px] uppercase tracking-widest font-sans font-semibold text-slate-600">
-            KEMENTERIAN PENDIDIKAN, KEBUDAYAAN, RISET, DAN TEKNOLOGI
-          </div>
-          <div className="text-[11px] uppercase tracking-widest font-sans font-semibold text-slate-600">
-            DINAS PENDIDIKAN KABUPATEN / KOTA {settings.schoolCity.toUpperCase()}
-          </div>
-          <h1 className="text-base sm:text-lg font-bold font-sans tracking-wide uppercase mt-0.5 text-slate-950">
-            {settings.schoolName.toUpperCase()}
-          </h1>
-          <p className="text-[10px] text-slate-600 font-sans mt-0.5">
-            {settings.schoolAddress} · NPSN: {settings.schoolNpsn}
-          </p>
+        {/* Kop Surat Resmi dengan Logo Kabupaten & Tut Wuri */}
+        <div className="border-b-4 border-double border-slate-900 pb-3 mb-6">
+          <table className="w-full border-collapse">
+            <tbody>
+              <tr>
+                <td className="w-20 align-middle text-left p-0">
+                  <img
+                    src={settings.logoUrl || DEFAULT_SIDRAP_LOGO}
+                    alt="Logo Daerah / Kabupaten"
+                    className="w-16 h-16 sm:w-20 sm:h-20 object-contain mx-auto"
+                  />
+                </td>
+                <td className="align-middle text-center px-3">
+                  <div className="text-[11px] sm:text-xs font-bold uppercase tracking-wider font-sans text-slate-800 leading-tight">
+                    PEMERINTAH KABUPATEN {settings.schoolCity ? settings.schoolCity.toUpperCase() : 'SIDENRENG RAPPANG'}
+                  </div>
+                  <div className="text-[12px] sm:text-sm font-black uppercase tracking-wider font-sans text-slate-900 leading-tight mt-0.5">
+                    DINAS PENDIDIKAN DAN KEBUDAYAAN
+                  </div>
+                  <h1 className="text-sm sm:text-base font-extrabold font-sans tracking-wide uppercase mt-1 text-slate-950 leading-tight">
+                    {settings.schoolName.toUpperCase()}
+                  </h1>
+                  <p className="text-[10px] text-slate-600 font-sans mt-0.5 leading-snug">
+                    {settings.schoolAddress} · NPSN: {settings.schoolNpsn}
+                  </p>
+                </td>
+                <td className="w-20 align-middle text-right p-0">
+                  <img
+                    src={settings.logoRightUrl || DEFAULT_TUTWURI_LOGO}
+                    alt="Logo Tut Wuri Handayani"
+                    className="w-16 h-16 sm:w-20 sm:h-20 object-contain mx-auto"
+                  />
+                </td>
+              </tr>
+            </tbody>
+          </table>
         </div>
 
         {/* Judul Dokumen */}
@@ -510,6 +533,7 @@ export const OfficialReportPrint: React.FC<OfficialReportPrintProps> = ({
               <div>
                 <p className="font-bold underline text-slate-950">{localSettings.supervisorName || identity.namaSupervisor}</p>
                 <p className="text-[11px] font-mono text-slate-600">NIP: {localSettings.supervisorNip || identity.nipSupervisor || '-'}</p>
+                <p className="text-[10.5px] text-slate-600">Pangkat/Golongan: {localSettings.supervisorRank || 'Penata Tk. I / III.d'}</p>
               </div>
             </div>
 

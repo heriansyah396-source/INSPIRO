@@ -67,7 +67,7 @@ export const WizardContainer: React.FC<WizardContainerProps> = ({
         namaGuru: preselectedTeacher ? preselectedTeacher.nama : '',
         nipGuru: preselectedTeacher ? preselectedTeacher.nip : '',
         namaSupervisor: settings.supervisorName || 'HERIANSYAH, S.Si., S.Pd., M.Pd',
-        nipSupervisor: settings.supervisorNip || '19820415 200801 1 007',
+        nipSupervisor: settings.supervisorNip || '19830819 201001 1 002',
         jabatanSupervisor: settings.supervisorRole || 'Pengawas Sekolah',
         mapel: preselectedTeacher ? preselectedTeacher.mapel : '',
         kelasSemester: preselectedTeacher ? `${preselectedTeacher.kelas} / Ganjil` : 'VII / Ganjil',

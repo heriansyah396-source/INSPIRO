@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   School,
   Plus,
@@ -30,7 +30,9 @@ import {
   ExternalLink,
   Printer,
   FileDown,
-  FileText
+  FileText,
+  UserCheck,
+  Save
 } from 'lucide-react';
 import {
   Principal,
@@ -40,9 +42,10 @@ import {
   TOTAL_MANAGERIAL_ITEMS,
   MAX_MANAGERIAL_RAW_SCORE
 } from '../types/inspiro';
-import { getManagerialEvaluations, saveManagerialEvaluation, getManagerialEvaluationByPrincipalId } from '../utils/storage';
+import { getManagerialEvaluations, saveManagerialEvaluation, getManagerialEvaluationByPrincipalId, saveSettings } from '../utils/storage';
 import { syncManagerialEvaluationToCloud } from '../services/firebase';
 import { ManagerialSupervisionModal } from './ManagerialSupervisionModal';
+import { DEFAULT_SIDRAP_LOGO, DEFAULT_TUTWURI_LOGO } from '../data/defaultLogos';
 import {
   printDocumentElement,
   exportPrincipalsManagerialToWord,
@@ -58,6 +61,7 @@ interface PrincipalListProps {
   onDeletePrincipal: (id: string) => void;
   onScheduleManagerialSupervision: (principal: Principal) => void;
   onNavigateToCalendar?: () => void;
+  onUpdateSettings?: (newSettings: AppSettings) => void;
   showToast: (title: string, message: string, type: 'success' | 'error' | 'info' | 'warning') => void;
 }
 
@@ -69,6 +73,7 @@ export const PrincipalList: React.FC<PrincipalListProps> = ({
   onDeletePrincipal,
   onScheduleManagerialSupervision,
   onNavigateToCalendar,
+  onUpdateSettings,
   showToast
 }) => {
   // UI states
@@ -76,6 +81,36 @@ export const PrincipalList: React.FC<PrincipalListProps> = ({
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [filterSchool, setFilterSchool] = useState<string>('all');
   const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid');
+
+  // Signatory Profile in modal
+  const [showSignatoryEditor, setShowSignatoryEditor] = useState(false);
+  const [sigName, setSigName] = useState(settings.supervisorName || 'HERIANSYAH, S.Si., S.Pd., M.Pd');
+  const [sigNip, setSigNip] = useState(settings.supervisorNip || '19830819 201001 1 002');
+  const [sigRank, setSigRank] = useState(settings.supervisorRank || 'Penata Tk. I / III.d');
+  const [sigRole, setSigRole] = useState(settings.supervisorRole || 'Pengawas Sekolah Pembina');
+
+  useEffect(() => {
+    setSigName(settings.supervisorName || 'HERIANSYAH, S.Si., S.Pd., M.Pd');
+    setSigNip(settings.supervisorNip || '19830819 201001 1 002');
+    setSigRank(settings.supervisorRank || 'Penata Tk. I / III.d');
+    setSigRole(settings.supervisorRole || 'Pengawas Sekolah Pembina');
+  }, [settings]);
+
+  const handleSaveSignatoryProfile = () => {
+    const updated: AppSettings = {
+      ...settings,
+      supervisorName: sigName.trim() || 'HERIANSYAH, S.Si., S.Pd., M.Pd',
+      supervisorNip: sigNip.trim() || '19830819 201001 1 002',
+      supervisorRank: sigRank.trim() || 'Penata Tk. I / III.d',
+      supervisorRole: sigRole.trim() || 'Pengawas Sekolah Pembina'
+    };
+    saveSettings(updated);
+    if (onUpdateSettings) {
+      onUpdateSettings(updated);
+    }
+    showToast('Profil Penandatangan Disimpan', 'NIP, Pangkat/Golongan, dan Jabatan berhasil diperbarui.', 'success');
+    setShowSignatoryEditor(false);
+  };
 
   // Modal states
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -99,6 +134,49 @@ export const PrincipalList: React.FC<PrincipalListProps> = ({
     catatanPengawas?: string;
     rekomendasiManajerial?: string;
   } | null>(null);
+
+  const logoUploadInputRef = React.useRef<HTMLInputElement>(null);
+
+  const handleQuickLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      showToast('Format Tidak Didukung', 'Harap pilih berkas gambar berformat JPG, JPEG, PNG, atau WEBP.', 'error');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const maxDim = 320;
+        let w = img.width;
+        let h = img.height;
+        if (w > h && w > maxDim) {
+          h = Math.round((h * maxDim) / w);
+          w = maxDim;
+        } else if (h > maxDim) {
+          w = Math.round((w * maxDim) / h);
+          h = maxDim;
+        }
+        canvas.width = w;
+        canvas.height = h;
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.drawImage(img, 0, 0, w, h);
+          const dataUrl = canvas.toDataURL(file.type === 'image/png' ? 'image/png' : 'image/jpeg', 0.9);
+          const updatedSettings: AppSettings = { ...settings, logoUrl: dataUrl };
+          saveSettings(updatedSettings);
+          showToast('Logo Kop Berhasil Diunggah', 'Logo Kabupaten Sidenreng Rappang berhasil diunggah (JPG/PNG) dan tersimpan ke Kop Surat.', 'success');
+        }
+      };
+      img.src = event.target?.result as string;
+    };
+    reader.readAsDataURL(file);
+    e.target.value = '';
+  };
 
   // Form states
   const [formNama, setFormNama] = useState('');
@@ -512,7 +590,9 @@ export const PrincipalList: React.FC<PrincipalListProps> = ({
               <span className="font-semibold text-white">Pengawas Pembina:</span>
               <span className="text-cyan-200 font-bold">{settings.supervisorName || 'HERIANSYAH, S.Si., S.Pd., M.Pd'}</span>
               <span aria-hidden="true" className="text-white/30 hidden sm:inline">·</span>
-              <span className="text-blue-200 font-mono tabular-nums">NIP: {settings.supervisorNip || '19820415 200801 1 007'}</span>
+              <span className="text-blue-200 font-mono tabular-nums">NIP: {settings.supervisorNip || '19830819 201001 1 002'}</span>
+              <span aria-hidden="true" className="text-white/30 hidden sm:inline">·</span>
+              <span className="text-amber-200 font-semibold">{settings.supervisorRank || 'Penata Tk. I / III.d'}</span>
               <span aria-hidden="true" className="text-white/30 hidden sm:inline">·</span>
               <span className="text-indigo-200">{settings.governmentAgency || 'PEMERINTAH KABUPATEN SIDENRENG RAPPANG'}</span>
             </div>
@@ -1287,36 +1367,238 @@ export const PrincipalList: React.FC<PrincipalListProps> = ({
               </div>
 
               {/* Surat Kunjungan Official Action Panel */}
-              <div className="p-3 bg-gradient-to-r from-amber-50 via-orange-50 to-amber-50 rounded-xl border border-amber-200/90 flex flex-wrap items-center justify-between gap-2.5">
-                <div className="flex items-center gap-2.5">
-                  <div className="w-8 h-8 rounded-lg bg-amber-600 text-white flex items-center justify-center shrink-0 shadow-xs">
-                    <Printer className="w-4 h-4" />
+              <div className="p-3.5 bg-gradient-to-r from-amber-50 via-orange-50 to-amber-50 rounded-xl border border-amber-200/90 space-y-3">
+                <input
+                  type="file"
+                  ref={logoUploadInputRef}
+                  onChange={handleQuickLogoUpload}
+                  accept="image/png, image/jpeg, image/jpg, image/webp"
+                  className="hidden"
+                />
+
+                <div className="flex flex-wrap items-center justify-between gap-2.5">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-10 h-10 rounded-lg bg-white border border-amber-300 p-0.5 flex items-center justify-center shrink-0 shadow-xs overflow-hidden">
+                      <img
+                        src={settings.logoUrl || DEFAULT_SIDRAP_LOGO}
+                        alt="Logo Kop"
+                        className="max-h-full max-w-full object-contain"
+                      />
+                    </div>
+                    <div>
+                      <span className="font-bold text-xs text-amber-950 block">Surat Pemberitahuan Kunjungan Supervisi</span>
+                      <span className="text-[11px] text-amber-800">Cetak/unduh surat tugas dinas resmi ber-Kop Kabupaten Sidenreng Rappang</span>
+                    </div>
                   </div>
-                  <div>
-                    <span className="font-bold text-xs text-amber-950 block">Surat Pemberitahuan Kunjungan Supervisi</span>
-                    <span className="text-[11px] text-amber-800">Cetak/unduh surat tugas dinas resmi sesuai jadwal &amp; fokus pengawasan di atas</span>
+
+                  <div className="flex flex-wrap items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setShowSignatoryEditor(!showSignatoryEditor)}
+                      className="px-2.5 py-1.5 bg-white hover:bg-slate-50 text-blue-800 border border-blue-300 rounded-lg text-xs font-bold flex items-center gap-1 shadow-2xs transition-all cursor-pointer"
+                      title="Ubah NIP, Pangkat/Golongan, atau Jabatan Penandatangan Surat"
+                    >
+                      <span>✏️ {showSignatoryEditor ? 'Tutup Input NIP/Pangkat' : 'Ubah NIP / Pangkat Pengawas'}</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => logoUploadInputRef.current?.click()}
+                      className="px-2.5 py-1.5 bg-amber-100 hover:bg-amber-200 text-amber-900 border border-amber-300 rounded-lg text-xs font-semibold flex items-center gap-1 shadow-2xs transition-all cursor-pointer"
+                      title="Ganti atau unggah file logo baru (JPG / PNG)"
+                    >
+                      <span>🖼️ Upload Logo Kop</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handlePrintSuratKunjunganFromModal}
+                      className="px-3 py-1.5 bg-white border border-rose-300 hover:bg-rose-50 text-rose-700 rounded-lg text-xs font-bold flex items-center gap-1.5 shadow-xs transition-all cursor-pointer"
+                      title="Cetak atau simpan Surat Pemberitahuan Kunjungan ke PDF"
+                    >
+                      <Printer className="w-3.5 h-3.5 text-rose-600" />
+                      <span>Cetak PDF</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleExportSuratKunjunganWordFromModal}
+                      className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 shadow-xs transition-all cursor-pointer"
+                      title="Unduh Surat Pemberitahuan Kunjungan ke format Microsoft Word (.doc)"
+                    >
+                      <FileText className="w-3.5 h-3.5 text-blue-100" />
+                      <span>Unduh Word (.doc)</span>
+                    </button>
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={handlePrintSuratKunjunganFromModal}
-                    className="px-3 py-1.5 bg-white border border-rose-300 hover:bg-rose-50 text-rose-700 rounded-lg text-xs font-bold flex items-center gap-1.5 shadow-xs transition-all cursor-pointer"
-                    title="Cetak atau simpan Surat Pemberitahuan Kunjungan ke PDF"
-                  >
-                    <Printer className="w-3.5 h-3.5 text-rose-600" />
-                    <span>Cetak PDF</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleExportSuratKunjunganWordFromModal}
-                    className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 shadow-xs transition-all cursor-pointer"
-                    title="Unduh Surat Pemberitahuan Kunjungan ke format Microsoft Word (.doc)"
-                  >
-                    <FileText className="w-3.5 h-3.5 text-blue-100" />
-                    <span>Unduh Word (.doc)</span>
-                  </button>
+
+                {/* Ringkasan Profil Penandatangan yang sedang aktif */}
+                <div className="p-2.5 bg-white/90 border border-amber-200/80 rounded-lg flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-800">
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                    <span><strong>Penandatangan:</strong> {settings.supervisorName || 'HERIANSYAH, S.Si., S.Pd., M.Pd'}</span>
+                    <span className="text-slate-300">|</span>
+                    <span><strong>NIP:</strong> <span className="font-mono text-blue-900 font-semibold">{settings.supervisorNip || '19830819 201001 1 002'}</span></span>
+                    <span className="text-slate-300">|</span>
+                    <span><strong>Pangkat:</strong> <span className="text-amber-900 font-semibold">{settings.supervisorRank || 'Penata Tk. I / III.d'}</span></span>
+                    <span className="text-slate-300">|</span>
+                    <span><strong>Jabatan:</strong> {settings.supervisorRole || 'Pengawas Sekolah Pembina'}</span>
+                  </div>
+                  {!showSignatoryEditor && (
+                    <button
+                      type="button"
+                      onClick={() => setShowSignatoryEditor(true)}
+                      className="text-[10.5px] font-bold text-blue-700 hover:underline cursor-pointer"
+                    >
+                      Edit di sini &rarr;
+                    </button>
+                  )}
                 </div>
+
+                {/* Panel Form Edit Profil Penandatangan (NIP & Pangkat/Golongan) */}
+                {showSignatoryEditor && (
+                  <div className="p-3.5 bg-white border-2 border-blue-400 rounded-xl shadow-sm space-y-3">
+                    <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+                      <div className="flex items-center gap-1.5 text-blue-900 font-bold text-xs">
+                        <UserCheck className="w-4 h-4 text-blue-600" />
+                        <span>Input Menu Profil Penandatangan (NIP, Pangkat/Golongan, Jabatan)</span>
+                      </div>
+                      <span className="text-[10px] text-emerald-700 font-semibold bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                        Langsung aktif ke PDF &amp; Word
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                      {/* NIP Pengawas */}
+                      <div>
+                        <div className="flex items-center justify-between mb-1">
+                          <label className="block font-bold text-slate-700 text-[11px]">
+                            NIP Pengawas Penandatangan
+                          </label>
+                          <button
+                            type="button"
+                            onClick={() => setSigNip('19830819 201001 1 002')}
+                            className="text-[10px] text-blue-600 hover:underline font-semibold cursor-pointer"
+                          >
+                            Set 19830819 201001 1 002
+                          </button>
+                        </div>
+                        <input
+                          type="text"
+                          value={sigNip}
+                          onChange={(e) => setSigNip(e.target.value)}
+                          placeholder="19830819 201001 1 002"
+                          className="w-full px-2.5 py-1.5 text-xs rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 font-mono font-medium"
+                        />
+                        <div className="flex items-center gap-1 mt-1">
+                          <button
+                            type="button"
+                            onClick={() => setSigNip('19830819 201001 1 002')}
+                            className="text-[9.5px] px-1.5 py-0.5 rounded bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 cursor-pointer"
+                          >
+                            19830819 201001 1 002
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setSigNip('19830819201001102')}
+                            className="text-[9.5px] px-1.5 py-0.5 rounded bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 cursor-pointer"
+                          >
+                            19830819201001102
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Pangkat / Golongan Ruang */}
+                      <div>
+                        <label className="block font-bold text-slate-700 text-[11px] mb-1">
+                          Pangkat / Golongan Ruang
+                        </label>
+                        <input
+                          type="text"
+                          list="rank-options-modal-input"
+                          value={sigRank}
+                          onChange={(e) => setSigRank(e.target.value)}
+                          placeholder="Penata Tk. I / III.d"
+                          className="w-full px-2.5 py-1.5 text-xs rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 font-semibold text-blue-900"
+                        />
+                        <datalist id="rank-options-modal-input">
+                          <option value="Penata Tk. I / III.d" />
+                          <option value="Penata / III.c" />
+                          <option value="Penata Muda Tk. I / III.b" />
+                          <option value="Penata Muda / III.a" />
+                          <option value="Pembina / IV.a" />
+                          <option value="Pembina Tk. I / IV.b" />
+                          <option value="Pembina Utama Muda / IV.c" />
+                        </datalist>
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          {['Penata Tk. I / III.d', 'Pembina / IV.a', 'Pembina Tk. I / IV.b'].map((r) => (
+                            <button
+                              key={r}
+                              type="button"
+                              onClick={() => setSigRank(r)}
+                              className={`text-[9.5px] px-1.5 py-0.5 rounded border transition-colors cursor-pointer ${
+                                sigRank === r
+                                  ? 'bg-blue-600 text-white border-blue-600 font-bold'
+                                  : 'bg-slate-100 text-slate-600 border-slate-200 hover:bg-slate-200'
+                              }`}
+                            >
+                              {r}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                      <div>
+                        <label className="block font-bold text-slate-700 text-[11px] mb-1">
+                          Jabatan Penandatangan
+                        </label>
+                        <input
+                          type="text"
+                          list="role-options-modal-input"
+                          value={sigRole}
+                          onChange={(e) => setSigRole(e.target.value)}
+                          placeholder="Pengawas Sekolah Pembina"
+                          className="w-full px-2.5 py-1.5 text-xs rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500"
+                        />
+                        <datalist id="role-options-modal-input">
+                          <option value="Pengawas Sekolah Pembina" />
+                          <option value="Pengawas Sekolah Muda" />
+                          <option value="Pengawas Sekolah Madya" />
+                          <option value="Pengawas Sekolah" />
+                        </datalist>
+                      </div>
+
+                      <div>
+                        <label className="block font-bold text-slate-700 text-[11px] mb-1">
+                          Nama Lengkap &amp; Gelar Pengawas
+                        </label>
+                        <input
+                          type="text"
+                          value={sigName}
+                          onChange={(e) => setSigName(e.target.value)}
+                          placeholder="HERIANSYAH, S.Si., S.Pd., M.Pd"
+                          className="w-full px-2.5 py-1.5 text-xs rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 font-bold text-slate-900"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+                      <button
+                        type="button"
+                        onClick={() => setShowSignatoryEditor(false)}
+                        className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-semibold cursor-pointer"
+                      >
+                        Tutup
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleSaveSignatoryProfile}
+                        className="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold shadow-xs cursor-pointer flex items-center gap-1.5"
+                      >
+                        <Save className="w-3.5 h-3.5" />
+                        <span>Simpan &amp; Terapkan ke Dokumen</span>
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Buttons Footer */}
@@ -1383,17 +1665,33 @@ export const PrincipalList: React.FC<PrincipalListProps> = ({
 
       {/* Hidden Printable Report for PDF Export */}
       <div id="printable-principals-managerial-report" className="hidden bg-white text-slate-900 p-8 font-sans">
-        {/* KOP DINAS */}
-        <div className="text-center border-b-2 border-slate-900 pb-3 mb-5">
-          <h3 className="text-sm font-bold uppercase tracking-wider text-slate-800">
-            {settings.governmentAgency || 'PEMERINTAH KABUPATEN SIDENRENG RAPPANG'}
-          </h3>
-          <h4 className="text-xs font-bold uppercase tracking-wider text-slate-700">
-            DINAS PENDIDIKAN DAN KEBUDAYAAN
-          </h4>
-          <p className="text-[10px] text-slate-500 mt-0.5">
-            Alamat: Kompleks SKPD Jl. Harapan Baru No. 1, Pangkajene, Kab. Sidenreng Rappang, Sulawesi Selatan
-          </p>
+        {/* KOP DINAS RESMI DENGAN LOGO */}
+        <div className="flex items-center justify-between border-b-2 border-slate-900 pb-3 mb-5 gap-3">
+          <div className="w-16 h-16 shrink-0 flex items-center justify-center">
+            <img
+              src={settings.logoUrl || DEFAULT_SIDRAP_LOGO}
+              alt="Logo Kabupaten"
+              className="max-h-16 max-w-16 object-contain"
+            />
+          </div>
+          <div className="flex-1 text-center">
+            <h3 className="text-sm font-bold uppercase tracking-wider text-slate-800 leading-tight">
+              {settings.governmentAgency || 'PEMERINTAH KABUPATEN SIDENRENG RAPPANG'}
+            </h3>
+            <h4 className="text-xs font-bold uppercase tracking-wider text-slate-700 mt-0.5 leading-tight">
+              DINAS PENDIDIKAN DAN KEBUDAYAAN
+            </h4>
+            <p className="text-[10px] text-slate-500 mt-0.5">
+              Alamat: Kompleks SKPD Jl. Harapan Baru No. 1, Pangkajene, Kab. Sidenreng Rappang, Sulawesi Selatan
+            </p>
+          </div>
+          <div className="w-16 h-16 shrink-0 flex items-center justify-center">
+            <img
+              src={settings.logoRightUrl || DEFAULT_TUTWURI_LOGO}
+              alt="Logo Tut Wuri"
+              className="max-h-16 max-w-16 object-contain"
+            />
+          </div>
         </div>
 
         {/* Title */}
@@ -1405,7 +1703,7 @@ export const PrincipalList: React.FC<PrincipalListProps> = ({
             Instrumen Pemantauan 8 Dimensi Pengelolaan Satuan Pendidikan (Skala 1 – 4 / 138 Indikator Mutu)
           </p>
           <p className="text-[11px] text-slate-500 mt-0.5">
-            Wilayah Binaan Pengawas: <strong>{settings.supervisorName || 'HERIANSYAH, S.Si., S.Pd., M.Pd'}</strong> (NIP: {settings.supervisorNip || '19820415 200801 1 007'})
+            Wilayah Binaan Pengawas: <strong>{settings.supervisorName || 'HERIANSYAH, S.Si., S.Pd., M.Pd'}</strong> (NIP: {settings.supervisorNip || '19830819 201001 1 002'})
           </p>
         </div>
 
@@ -1513,11 +1811,11 @@ export const PrincipalList: React.FC<PrincipalListProps> = ({
           </div>
           <div className="text-left w-72">
             <p>{settings.schoolCity || 'Kabupaten Sidenreng Rappang'}, {new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
-            <p className="font-bold text-slate-900 mt-1">Pengawas Sekolah Pembina,</p>
+            <p className="font-bold text-slate-900 mt-1">{settings.supervisorRole || 'Pengawas Sekolah Pembina'},</p>
             <div className="h-16"></div>
             <p className="font-bold underline text-slate-900">{settings.supervisorName || 'HERIANSYAH, S.Si., S.Pd., M.Pd'}</p>
-            <p className="text-slate-600">NIP. {settings.supervisorNip || '19820415 200801 1 007'}</p>
-            <p className="text-[10px] text-slate-500">Pembina Tk. I / IV.b</p>
+            <p className="text-slate-600">NIP. {settings.supervisorNip || '19830819 201001 1 002'}</p>
+            <p className="text-[10px] text-slate-500">Pangkat/Golongan: {settings.supervisorRank || 'Penata Tk. I / III.d'}</p>
           </div>
         </div>
       </div>
@@ -1525,20 +1823,36 @@ export const PrincipalList: React.FC<PrincipalListProps> = ({
       {/* Hidden Printable Report for Individual Principal PDF Export */}
       {printTargetPrincipal && printTargetEval && (
         <div id="printable-individual-managerial-report" className="hidden bg-white text-slate-900 p-8 font-sans">
-          {/* KOP DINAS */}
-          <div className="text-center border-b-2 border-slate-900 pb-3 mb-5">
-            <h3 className="text-xs uppercase tracking-widest font-bold text-slate-700">
-              {settings.governmentAgency || 'PEMERINTAH KABUPATEN SIDENRENG RAPPANG'}
-            </h3>
-            <h4 className="text-xs uppercase tracking-widest font-semibold text-slate-600">
-              DINAS PENDIDIKAN DAN KEBUDAYAAN
-            </h4>
-            <h2 className="text-base font-black uppercase text-slate-900 mt-1">
-              INSTRUMEN SUPERVISI MANAJERIAL KEPALA SEKOLAH
-            </h2>
-            <p className="text-[11px] text-slate-600 mt-0.5">
-              Evaluasi 8 Dimensi Manajemen Sekolah Berdasarkan Standar Pengelolaan Pendidikan (Skala 1 – 4)
-            </p>
+          {/* KOP DINAS RESMI DENGAN LOGO */}
+          <div className="flex items-center justify-between border-b-2 border-slate-900 pb-3 mb-5 gap-3">
+            <div className="w-16 h-16 shrink-0 flex items-center justify-center">
+              <img
+                src={settings.logoUrl || DEFAULT_SIDRAP_LOGO}
+                alt="Logo Kabupaten"
+                className="max-h-16 max-w-16 object-contain"
+              />
+            </div>
+            <div className="flex-1 text-center">
+              <h3 className="text-xs uppercase tracking-widest font-bold text-slate-700 leading-tight">
+                {settings.governmentAgency || 'PEMERINTAH KABUPATEN SIDENRENG RAPPANG'}
+              </h3>
+              <h4 className="text-xs uppercase tracking-widest font-semibold text-slate-600 mt-0.5 leading-tight">
+                DINAS PENDIDIKAN DAN KEBUDAYAAN
+              </h4>
+              <h2 className="text-base font-black uppercase text-slate-900 mt-1 leading-tight">
+                INSTRUMEN SUPERVISI MANAJERIAL KEPALA SEKOLAH
+              </h2>
+              <p className="text-[11px] text-slate-600 mt-0.5">
+                Evaluasi 8 Dimensi Manajemen Sekolah Berdasarkan Standar Pengelolaan Pendidikan (Skala 1 – 4)
+              </p>
+            </div>
+            <div className="w-16 h-16 shrink-0 flex items-center justify-center">
+              <img
+                src={settings.logoRightUrl || DEFAULT_TUTWURI_LOGO}
+                alt="Logo Tut Wuri"
+                className="max-h-16 max-w-16 object-contain"
+              />
+            </div>
           </div>
 
           {/* Identity Grid */}
@@ -1568,7 +1882,7 @@ export const PrincipalList: React.FC<PrincipalListProps> = ({
               </div>
               <div className="flex">
                 <span className="w-36 font-semibold text-slate-600">NIP Pengawas</span>
-                <span className="text-slate-800">: {settings.supervisorNip || '19820415 200801 1 007'}</span>
+                <span className="text-slate-800">: {settings.supervisorNip || '19830819 201001 1 002'}</span>
               </div>
               <div className="flex">
                 <span className="w-36 font-semibold text-slate-600">Hari / Tanggal Supervisi</span>
@@ -1682,11 +1996,11 @@ export const PrincipalList: React.FC<PrincipalListProps> = ({
             </div>
             <div>
               <p>{settings.schoolCity || 'Kabupaten Sidenreng Rappang'}, {new Date(printTargetEval.date).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
-              <p className="font-bold text-slate-900 mt-1">Pengawas Sekolah Pembina,</p>
+              <p className="font-bold text-slate-900 mt-1">{settings.supervisorRole || 'Pengawas Sekolah Pembina'},</p>
               <div className="h-16"></div>
               <p className="font-bold underline text-slate-900">{settings.supervisorName || 'HERIANSYAH, S.Si., S.Pd., M.Pd'}</p>
-              <p className="text-slate-600">NIP. {settings.supervisorNip || '19820415 200801 1 007'}</p>
-              <p className="text-[10px] text-slate-500">Pembina Tk. I / IV.b</p>
+              <p className="text-slate-600">NIP. {settings.supervisorNip || '19830819 201001 1 002'}</p>
+              <p className="text-[10px] text-slate-500">Pangkat/Golongan: {settings.supervisorRank || 'Penata Tk. I / III.d'}</p>
             </div>
           </div>
         </div>
@@ -1695,20 +2009,36 @@ export const PrincipalList: React.FC<PrincipalListProps> = ({
       {/* Hidden Printable Surat Pemberitahuan Kunjungan Supervisi Manajerial for PDF Export */}
       {suratActiveData && (
         <div id="printable-surat-kunjungan" className="hidden bg-white text-slate-900 p-8 font-serif leading-relaxed">
-          {/* KOP DINAS RESMI */}
-          <div className="text-center border-b-4 border-double border-slate-900 pb-3 mb-5">
-            <h3 className="text-sm font-bold uppercase tracking-wider text-slate-900">
-              {settings.governmentAgency || 'PEMERINTAH KABUPATEN SIDENRENG RAPPANG'}
-            </h3>
-            <h2 className="text-base font-black uppercase tracking-wider text-slate-900 mt-0.5">
-              DINAS PENDIDIKAN DAN KEBUDAYAAN
-            </h2>
-            <h4 className="text-xs font-bold uppercase tracking-wide text-slate-800 mt-0.5">
-              KOORDINATOR PENGAWAS SEKOLAH MENENGAH PERTAMA
-            </h4>
-            <p className="text-[10px] text-slate-600 italic mt-1 font-sans">
-              Alamat: Kompleks SKPD Jl. Harapan Baru No. 1, Pangkajene, Kab. Sidenreng Rappang, Sulawesi Selatan (91611)
-            </p>
+          {/* KOP DINAS RESMI DENGAN LOGO KABUPATEN SIDENRENG RAPPANG */}
+          <div className="flex items-center justify-between border-b-4 border-double border-slate-900 pb-3 mb-5 gap-3">
+            <div className="w-20 h-20 shrink-0 flex items-center justify-center">
+              <img
+                src={settings.logoUrl || DEFAULT_SIDRAP_LOGO}
+                alt="Logo Kabupaten Sidenreng Rappang"
+                className="max-h-20 max-w-20 object-contain"
+              />
+            </div>
+            <div className="flex-1 text-center font-serif px-2">
+              <h3 className="text-sm font-bold uppercase tracking-wider text-slate-900 leading-tight">
+                {settings.governmentAgency || 'PEMERINTAH KABUPATEN SIDENRENG RAPPANG'}
+              </h3>
+              <h2 className="text-base font-black uppercase tracking-wider text-slate-900 mt-0.5 leading-tight">
+                DINAS PENDIDIKAN DAN KEBUDAYAAN
+              </h2>
+              <h4 className="text-xs font-bold uppercase tracking-wide text-slate-800 mt-0.5">
+                KOORDINATOR PENGAWAS SEKOLAH MENENGAH PERTAMA
+              </h4>
+              <p className="text-[10px] text-slate-600 italic mt-1 font-sans">
+                Alamat: Kompleks SKPD Jl. Harapan Baru No. 1, Pangkajene, Kab. Sidenreng Rappang, Sulawesi Selatan (91611)
+              </p>
+            </div>
+            <div className="w-20 h-20 shrink-0 flex items-center justify-center">
+              <img
+                src={settings.logoRightUrl || DEFAULT_TUTWURI_LOGO}
+                alt="Logo Tut Wuri Handayani"
+                className="max-h-20 max-w-20 object-contain"
+              />
+            </div>
           </div>
 
           {/* METADATA SURAT */}
@@ -1793,7 +2123,7 @@ export const PrincipalList: React.FC<PrincipalListProps> = ({
                     <td className="font-semibold py-1">Petugas Pengawas</td>
                     <td className="py-1">:</td>
                     <td className="py-1 font-bold text-slate-900 font-sans">
-                      {settings.supervisorName || 'HERIANSYAH, S.Si., S.Pd., M.Pd'} (NIP. {settings.supervisorNip || '19820415 200801 1 007'})
+                      {settings.supervisorName || 'HERIANSYAH, S.Si., S.Pd., M.Pd'} (NIP. {settings.supervisorNip || '19830819 201001 1 002'})
                     </td>
                   </tr>
                   <tr>
@@ -1886,16 +2216,16 @@ export const PrincipalList: React.FC<PrincipalListProps> = ({
             <div></div>
             <div className="text-left pl-8 font-sans">
               <p>{settings.schoolCity || 'Sidenreng Rappang'}, {new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
-              <p className="font-bold text-slate-900 mt-1">Pengawas Sekolah Pembina,</p>
+              <p className="font-bold text-slate-900 mt-1">{settings.supervisorRole || 'Pengawas Sekolah Pembina'},</p>
               <div className="h-16"></div>
               <p className="font-bold underline text-slate-900 text-sm">
                 {settings.supervisorName || 'HERIANSYAH, S.Si., S.Pd., M.Pd'}
               </p>
               <p className="text-slate-800">
-                NIP. {settings.supervisorNip || '19820415 200801 1 007'}
+                NIP. {settings.supervisorNip || '19830819 201001 1 002'}
               </p>
               <p className="text-slate-600 text-[10px]">
-                Pangkat/Golongan: Pembina Tk. I / IV.b
+                Pangkat/Golongan: {settings.supervisorRank || 'Penata Tk. I / III.d'}
               </p>
             </div>
           </div>

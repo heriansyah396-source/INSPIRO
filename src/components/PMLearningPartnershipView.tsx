@@ -158,7 +158,7 @@ export const PMLearningPartnershipView: React.FC<PMLearningPartnershipViewProps>
       date: new Date().toISOString().split('T')[0],
       assessorName: settings.supervisorName || 'HERIANSYAH, S.Si., S.Pd., M.Pd',
       assessorRole: settings.supervisorRole || 'Pengawas Sekolah',
-      assessorNip: settings.supervisorNip || '19820415 200801 1 007',
+      assessorNip: settings.supervisorNip || '19830819 201001 1 002',
       headmasterName: 'Dra. Hj. Nurhasanah, M.Pd.',
       headmasterNip: '19720815 199802 2 003',
 
@@ -1571,7 +1571,7 @@ export const PMLearningPartnershipView: React.FC<PMLearningPartnershipViewProps>
               <p className="font-semibold">Pengawas Sekolah Pembina,</p>
               <div className="h-16" />
               <p className="font-bold underline">{selectedRecordForDetail.assessorName || 'HERIANSYAH, S.Si., S.Pd., M.Pd'}</p>
-              <p className="text-[10px]">NIP. {selectedRecordForDetail.assessorNip || '19820415 200801 1 007'}</p>
+              <p className="text-[10px]">NIP. {selectedRecordForDetail.assessorNip || '19830819 201001 1 002'}</p>
             </div>
           </div>
         </div>

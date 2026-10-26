@@ -13,7 +13,7 @@ export function exportCoachingJournalToWord(
   settings: AppSettings
 ): void {
   const supervisorName = settings.supervisorName || record.supervisorName || 'HERIANSYAH, S.Si., S.Pd., M.Pd';
-  const supervisorNip = settings.supervisorNip || record.supervisorNip || '19820415 200801 1 007';
+  const supervisorNip = settings.supervisorNip || record.supervisorNip || '19830819 201001 1 002';
   const supervisorRole = settings.supervisorRole || record.supervisorRole || 'Pengawas Sekolah Pembina';
   const contextCfg = COACHING_CONTEXT_LABELS[record.context] || { label: record.context, badge: record.context };
 

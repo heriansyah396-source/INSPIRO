@@ -21,6 +21,7 @@ import {
 } from '../types/inspiro';
 import { calculateTeacherRadarData } from '../components/TeacherRadarChart';
 import { QualityMapAnalysis } from './qualityMapUtils';
+import { DEFAULT_SIDRAP_LOGO, DEFAULT_TUTWURI_LOGO } from '../data/defaultLogos';
 
 /**
  * Robust Isolated Iframe Printer
@@ -317,6 +318,9 @@ export function exportSupervisionToWord(
       year: 'numeric'
     });
 
+  const leftLogo = settings.logoUrl || DEFAULT_SIDRAP_LOGO;
+  const rightLogo = settings.logoRightUrl || DEFAULT_TUTWURI_LOGO;
+
   const wordHtml = `
     <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">
     <head>
@@ -362,19 +366,19 @@ export function exportSupervisionToWord(
           font-size: 10pt;
           font-weight: bold;
           letter-spacing: 1px;
-          color: #444444;
+          color: #111827;
           text-transform: uppercase;
         }
         .header-kop .sekolah {
-          font-size: 15pt;
+          font-size: 14pt;
           font-weight: bold;
           color: #000000;
           text-transform: uppercase;
-          margin: 3px 0;
+          margin: 2px 0;
         }
         .header-kop .alamat {
-          font-size: 9pt;
-          color: #555555;
+          font-size: 8.5pt;
+          color: #4b5563;
         }
         .doc-title {
           text-align: center;
@@ -424,13 +428,31 @@ export function exportSupervisionToWord(
     </head>
     <body>
 
-      <!-- KOP SURAT RESMI -->
-      <div class="header-kop">
-        <div class="instansi">KEMENTERIAN PENDIDIKAN, KEBUDAYAAN, RISET, DAN TEKNOLOGI</div>
-        <div class="instansi">DINAS PENDIDIKAN KABUPATEN / KOTA ${(settings.schoolCity || 'KOTA').toUpperCase()}</div>
-        <div class="sekolah">${(settings.schoolName || 'SEKOLAH PENGGERAK').toUpperCase()}</div>
-        <div class="alamat">${settings.schoolAddress || 'Alamat Sekolah'} · NPSN: ${settings.schoolNpsn || '-'}</div>
-      </div>
+      <!-- KOP SURAT RESMI 3 KOLOM -->
+      <table style="width: 100%; border-bottom: 3px double #000000; padding-bottom: 8px; margin-bottom: 16px; border-collapse: collapse;">
+        <tr>
+          <td style="width: 75px; vertical-align: middle; text-align: center; border: none; padding: 0;">
+            <img src="${leftLogo}" alt="Logo Daerah" width="65" height="65" style="width:65px; height:65px; object-fit:contain;" />
+          </td>
+          <td style="vertical-align: middle; text-align: center; border: none; padding: 0 10px;">
+            <div style="font-size: 9.5pt; font-weight: bold; letter-spacing: 0.5px; color: #1f2937; text-transform: uppercase; line-height: 1.2;">
+              PEMERINTAH KABUPATEN ${(settings.schoolCity || 'SIDENRENG RAPPANG').toUpperCase()}
+            </div>
+            <div style="font-size: 11pt; font-weight: 800; letter-spacing: 0.5px; color: #111827; text-transform: uppercase; line-height: 1.2; margin-top: 2px;">
+              DINAS PENDIDIKAN DAN KEBUDAYAAN
+            </div>
+            <div style="font-size: 13pt; font-weight: 900; color: #000000; text-transform: uppercase; margin: 3px 0 1px 0; line-height: 1.2;">
+              ${(settings.schoolName || 'SEKOLAH PENGGERAK').toUpperCase()}
+            </div>
+            <div style="font-size: 8.5pt; color: #4b5563; line-height: 1.3;">
+              ${settings.schoolAddress || 'Alamat Sekolah'} · NPSN: ${settings.schoolNpsn || '-'}
+            </div>
+          </td>
+          <td style="width: 75px; vertical-align: middle; text-align: center; border: none; padding: 0;">
+            <img src="${rightLogo}" alt="Logo Tut Wuri" width="65" height="65" style="width:65px; height:65px; object-fit:contain;" />
+          </td>
+        </tr>
+      </table>
 
       <!-- JUDUL RESMI DOKUMEN -->
       <div class="doc-title">
@@ -1732,19 +1754,29 @@ export function exportPrincipalsManagerialToWord(
       </style>
     </head>
     <body>
-      <!-- KOP DINAS -->
-      <div class="header-kop">
-        <h2>${escapeHtml(settings.governmentAgency || 'PEMERINTAH KABUPATEN SIDENRENG RAPPANG')}</h2>
-        <h3>DINAS PENDIDIKAN DAN KEBUDAYAAN</h3>
-        <p>Alamat: Kompleks SKPD Jl. Harapan Baru No. 1, Pangkajene, Kab. Sidenreng Rappang, Sulawesi Selatan</p>
-      </div>
+      <!-- KOP DINAS DENGAN LOGO RESMI -->
+      <table style="width:100%; border:none; border-bottom:3px double #0f172a; padding-bottom:8px; margin-bottom:16px;">
+        <tr>
+          <td style="width:70px; text-align:center; vertical-align:middle; border:none;">
+            <img src="${settings.logoUrl || DEFAULT_SIDRAP_LOGO}" width="65" height="70" style="object-fit:contain;" alt="Logo Kabupaten" />
+          </td>
+          <td style="text-align:center; vertical-align:middle; border:none; padding:0 10px;">
+            <div style="font-size:12pt; font-weight:bold; margin:0; text-transform:uppercase;">${escapeHtml(settings.governmentAgency || 'PEMERINTAH KABUPATEN SIDENRENG RAPPANG')}</div>
+            <div style="font-size:13.5pt; font-weight:bold; margin:2px 0 0 0; text-transform:uppercase;">DINAS PENDIDIKAN DAN KEBUDAYAAN</div>
+            <p style="font-size:8.5pt; color:#475569; margin:2px 0 0 0;">Alamat: Kompleks SKPD Jl. Harapan Baru No. 1, Pangkajene, Kab. Sidenreng Rappang, Sulawesi Selatan</p>
+          </td>
+          <td style="width:70px; text-align:center; vertical-align:middle; border:none;">
+            <img src="${settings.logoRightUrl || DEFAULT_TUTWURI_LOGO}" width="65" height="70" style="object-fit:contain;" alt="Logo Tut Wuri" />
+          </td>
+        </tr>
+      </table>
 
       <!-- JUDUL LAPORAN -->
       <div class="title-doc">
         <h1>REKAPITULASI DATA KEPALA SEKOLAH &amp; LAPORAN SUPERVISI MANAJERIAL</h1>
         <p>Instrumen Pemantauan 8 Dimensi Pengelolaan Sekolah (Skala 1 – 4 / 138 Indikator Mutu)</p>
         <p style="font-size:8.5pt; color:#475569; margin-top:2px;">
-          Wilayah Binaan Pengawas: <strong>${escapeHtml(settings.supervisorName || 'HERIANSYAH, S.Si., S.Pd., M.Pd')}</strong> (NIP: ${escapeHtml(settings.supervisorNip || '19820415 200801 1 007')})
+          Wilayah Binaan Pengawas: <strong>${escapeHtml(settings.supervisorName || 'HERIANSYAH, S.Si., S.Pd., M.Pd')}</strong> (NIP: ${escapeHtml(settings.supervisorNip || '19830819 201001 1 002')})
         </p>
       </div>
 
@@ -1794,11 +1826,11 @@ export function exportPrincipalsManagerialToWord(
           <td style="width:60%;"></td>
           <td style="width:40%; text-align:left; padding-left:30px;">
             ${escapeHtml(settings.schoolCity || 'Kabupaten Sidenreng Rappang')}, ${currentDate}<br>
-            Pengawas Sekolah Pembina,<br>
+            ${escapeHtml(settings.supervisorRole || 'Pengawas Sekolah Pembina')},<br>
             <div style="height:65px;"></div>
             <strong><u>${escapeHtml(settings.supervisorName || 'HERIANSYAH, S.Si., S.Pd., M.Pd')}</u></strong><br>
-            NIP. ${escapeHtml(settings.supervisorNip || '19820415 200801 1 007')}<br>
-            <span style="font-size:8pt; color:#64748b;">Pembina Tk. I / IV.b</span>
+            NIP. ${escapeHtml(settings.supervisorNip || '19830819 201001 1 002')}<br>
+            <span style="font-size:8.5pt; color:#475569;">Pangkat/Golongan: ${escapeHtml(settings.supervisorRank || 'Penata Tk. I / III.d')}</span>
           </td>
         </tr>
       </table>
@@ -1993,12 +2025,22 @@ export function exportIndividualManagerialToWord(
       </style>
     </head>
     <body>
-      <!-- KOP -->
-      <div class="header-kop">
-        <h2>${escapeHtml(settings.governmentAgency || 'PEMERINTAH KABUPATEN SIDENRENG RAPPANG')}</h2>
-        <h3>DINAS PENDIDIKAN DAN KEBUDAYAAN</h3>
-        <p style="font-size:8pt; color:#475569; margin:2px 0 0 0;">Alamat: Kompleks SKPD Jl. Harapan Baru No. 1, Pangkajene, Kab. Sidenreng Rappang</p>
-      </div>
+      <!-- KOP RESMI DENGAN LOGO -->
+      <table style="width:100%; border:none; border-bottom:3px double #0f172a; padding-bottom:6px; margin-bottom:14px;">
+        <tr>
+          <td style="width:65px; text-align:center; vertical-align:middle; border:none;">
+            <img src="${settings.logoUrl || DEFAULT_SIDRAP_LOGO}" width="60" height="65" style="object-fit:contain;" alt="Logo Kabupaten" />
+          </td>
+          <td style="text-align:center; vertical-align:middle; border:none; padding:0 8px;">
+            <div style="font-size:11pt; font-weight:bold; margin:0; text-transform:uppercase;">${escapeHtml(settings.governmentAgency || 'PEMERINTAH KABUPATEN SIDENRENG RAPPANG')}</div>
+            <div style="font-size:12.5pt; font-weight:bold; margin:2px 0 0 0; text-transform:uppercase; color:#1e293b;">DINAS PENDIDIKAN DAN KEBUDAYAAN</div>
+            <div style="font-size:8pt; color:#475569; margin:2px 0 0 0;">Alamat: Kompleks SKPD Jl. Harapan Baru No. 1, Pangkajene, Kab. Sidenreng Rappang</div>
+          </td>
+          <td style="width:65px; text-align:center; vertical-align:middle; border:none;">
+            <img src="${settings.logoRightUrl || DEFAULT_TUTWURI_LOGO}" width="60" height="65" style="object-fit:contain;" alt="Logo Tut Wuri" />
+          </td>
+        </tr>
+      </table>
 
       <!-- JUDUL -->
       <div class="title-doc">
@@ -2018,7 +2060,7 @@ export function exportIndividualManagerialToWord(
           <td style="font-weight:bold; color:#475569;">NIP Kepala Sekolah</td>
           <td>: ${escapeHtml(principal.nip || '-')}</td>
           <td style="font-weight:bold; color:#475569;">NIP Pengawas</td>
-          <td>: ${escapeHtml(settings.supervisorNip || '19820415 200801 1 007')}</td>
+          <td>: ${escapeHtml(settings.supervisorNip || '19830819 201001 1 002')}</td>
         </tr>
         <tr>
           <td style="font-weight:bold; color:#475569;">Pangkat / Golongan</td>
@@ -2079,10 +2121,11 @@ export function exportIndividualManagerialToWord(
           </td>
           <td style="width:50%;">
             ${escapeHtml(settings.schoolCity || 'Kabupaten Sidenreng Rappang')}, ${evalDate}<br>
-            Pengawas Sekolah Pembina,<br>
+            ${escapeHtml(settings.supervisorRole || 'Pengawas Sekolah Pembina')},<br>
             <div style="height:60px;"></div>
             <strong><u>${escapeHtml(settings.supervisorName || 'HERIANSYAH, S.Si., S.Pd., M.Pd')}</u></strong><br>
-            NIP. ${escapeHtml(settings.supervisorNip || '19820415 200801 1 007')}
+            NIP. ${escapeHtml(settings.supervisorNip || '19830819 201001 1 002')}<br>
+            <span style="font-size:8.5pt; color:#475569;">Pangkat/Golongan: ${escapeHtml(settings.supervisorRank || 'Penata Tk. I / III.d')}</span>
           </td>
         </tr>
       </table>
@@ -2255,13 +2298,31 @@ export function exportSuratKunjunganToWord(
     </head>
     <body>
 
-      <!-- KOP DINAS PENDIDIKAN DAN KEBUDAYAAN -->
-      <div class="header-kop">
-        <div class="instansi-1">${escapeHtml((settings.governmentAgency || 'PEMERINTAH KABUPATEN SIDENRENG RAPPANG').toUpperCase())}</div>
-        <div class="instansi-2">DINAS PENDIDIKAN DAN KEBUDAYAAN</div>
-        <div class="instansi-3">KOORDINATOR PENGAWAS SEKOLAH MENENGAH PERTAMA</div>
-        <div class="alamat">Alamat: Kompleks SKPD Jl. Harapan Baru No. 1, Pangkajene, Kab. Sidenreng Rappang, Sulawesi Selatan (91611)</div>
-      </div>
+      <!-- KOP DINAS PENDIDIKAN DAN KEBUDAYAAN DENGAN LOGO RESMI -->
+      <table style="width:100%; border:none; border-bottom:3px double #000000; padding-bottom:8px; margin-bottom:18px;">
+        <tr>
+          <td style="width:75px; text-align:center; vertical-align:middle; border:none; padding-right:8px;">
+            <img src="${settings.logoUrl || DEFAULT_SIDRAP_LOGO}" width="70" height="75" style="object-fit:contain;" alt="Logo Kabupaten Sidenreng Rappang" />
+          </td>
+          <td style="text-align:center; vertical-align:middle; border:none; padding:0 8px;">
+            <div style="font-size:12pt; font-weight:bold; text-transform:uppercase; margin:0; line-height:1.2;">
+              ${escapeHtml((settings.governmentAgency || 'PEMERINTAH KABUPATEN SIDENRENG RAPPANG').toUpperCase())}
+            </div>
+            <div style="font-size:13.5pt; font-weight:bold; text-transform:uppercase; margin:2px 0; line-height:1.2;">
+              DINAS PENDIDIKAN DAN KEBUDAYAAN
+            </div>
+            <div style="font-size:10.5pt; font-weight:bold; text-transform:uppercase; margin:0; color:#1e293b; line-height:1.2;">
+              KOORDINATOR PENGAWAS SEKOLAH MENENGAH PERTAMA
+            </div>
+            <div style="font-size:8.5pt; font-style:italic; margin-top:3px; color:#333333; line-height:1.2;">
+              Alamat: Kompleks SKPD Jl. Harapan Baru No. 1, Pangkajene, Kab. Sidenreng Rappang, Sulawesi Selatan (91611)
+            </div>
+          </td>
+          <td style="width:75px; text-align:center; vertical-align:middle; border:none; padding-left:8px;">
+            <img src="${settings.logoRightUrl || DEFAULT_TUTWURI_LOGO}" width="70" height="75" style="object-fit:contain;" alt="Logo Tut Wuri Handayani" />
+          </td>
+        </tr>
+      </table>
 
       <!-- KETERANGAN NOMOR & PERIHAL SURAT -->
       <table class="meta-table">
@@ -2331,7 +2392,7 @@ export function exportSuratKunjunganToWord(
         <tr>
           <td style="font-weight: bold;">Pengawas Pembina</td>
           <td>:</td>
-          <td><strong>${escapeHtml(settings.supervisorName || 'HERIANSYAH, S.Si., S.Pd., M.Pd')}</strong> (NIP. ${escapeHtml(settings.supervisorNip || '19820415 200801 1 007')})</td>
+          <td><strong>${escapeHtml(settings.supervisorName || 'HERIANSYAH, S.Si., S.Pd., M.Pd')}</strong> (NIP. ${escapeHtml(settings.supervisorNip || '19830819 201001 1 002')})</td>
         </tr>
         <tr>
           <td style="font-weight: bold;">Fokus Pengawasan</td>
@@ -2418,11 +2479,11 @@ export function exportSuratKunjunganToWord(
           <td style="width: 50%;"></td>
           <td style="width: 50%; text-align: left; padding-left: 30px;">
             ${escapeHtml(settings.schoolCity || 'Sidenreng Rappang')}, ${currentDate}<br>
-            Pengawas Sekolah Pembina,<br>
+            ${escapeHtml(settings.supervisorRole || 'Pengawas Sekolah Pembina')},<br>
             <div style="height: 70px;"></div>
             <strong><u>${escapeHtml(settings.supervisorName || 'HERIANSYAH, S.Si., S.Pd., M.Pd')}</u></strong><br>
-            NIP. ${escapeHtml(settings.supervisorNip || '19820415 200801 1 007')}<br>
-            <span style="font-size: 9.5pt; color: #333333;">Pangkat/Golongan: Pembina Tk. I / IV.b</span>
+            NIP. ${escapeHtml(settings.supervisorNip || '19830819 201001 1 002')}<br>
+            <span style="font-size: 9.5pt; color: #333333;">Pangkat/Golongan: ${escapeHtml(settings.supervisorRank || 'Penata Tk. I / III.d')}</span>
           </td>
         </tr>
       </table>

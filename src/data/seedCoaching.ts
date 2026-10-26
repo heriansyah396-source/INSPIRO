@@ -47,7 +47,7 @@ export const SEED_COACHING_RECORDS: TirtaCoachingRecord[] = [
       catatanTindakLanjut: 'Pada supervisi dan pemantauan lanjutan 20 Oktober 2026, 100% siswa tuntas mengisi kartu refleksi 7 menit sebelum bel selesai.'
     },
     supervisorName: 'HERIANSYAH, S.Si., S.Pd., M.Pd',
-    supervisorNip: '19820415 200801 1 007',
+    supervisorNip: '19830819 201001 1 002',
     supervisorRole: 'Pengawas Sekolah Pembina',
     coachFeedback: 'Ibu Siti menunjukkan kesadaran metakognitif yang luar biasa. Gagasan kartu tiga warna lahir murni dari refleksi Ibu Siti sendiri, membuktikan efektivitas coaching dialogis yang memberdayakan.',
     createdAt: '2026-10-06T13:45:00Z',
@@ -93,7 +93,7 @@ export const SEED_COACHING_RECORDS: TirtaCoachingRecord[] = [
       catatanTindakLanjut: 'Draf lembar tangga bantuan telah selesai dibuat. Uji coba perdana dijadwalkan pada hari Jumat pekan ini.'
     },
     supervisorName: 'HERIANSYAH, S.Si., S.Pd., M.Pd',
-    supervisorNip: '19820415 200801 1 007',
+    supervisorNip: '19830819 201001 1 002',
     supervisorRole: 'Pengawas Sekolah Pembina',
     coachFeedback: 'Pak Ahmad sangat solutif. Mengubah keluhan energi yang terkuras menjadi strategi sistemik Learning Station dan Duta Belajar adalah lompatan kepemimpinan pembelajaran yang hebat.',
     createdAt: '2026-10-10T11:15:00Z',
@@ -139,7 +139,7 @@ export const SEED_COACHING_RECORDS: TirtaCoachingRecord[] = [
       catatanTindakLanjut: 'Piagam Lab telah dirumuskan dan dipasang di dinding laboratorium IPA.'
     },
     supervisorName: 'HERIANSYAH, S.Si., S.Pd., M.Pd',
-    supervisorNip: '19820415 200801 1 007',
+    supervisorNip: '19830819 201001 1 002',
     supervisorRole: 'Pengawas Sekolah Pembina',
     coachFeedback: 'Pendekatan humanis Pak Budi dalam menerapkan Kompetensi Sosial Emosional (KSE) di ruang laboratorium merupakan bukti nyata transformasi budaya belajar merdeka.',
     createdAt: '2026-10-18T10:00:00Z',
