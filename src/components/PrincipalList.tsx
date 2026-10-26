@@ -648,7 +648,7 @@ export const PrincipalList: React.FC<PrincipalListProps> = ({
             </div>
           </div>
 
-          {/* Title & Primary Action */}
+          {/* Row 2: Title & Primary CTA */}
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 sm:gap-6">
             <div className="space-y-2 flex-1 min-w-0">
               <div className="flex items-center gap-3">
@@ -659,62 +659,67 @@ export const PrincipalList: React.FC<PrincipalListProps> = ({
                   Data Kepala Sekolah &amp; Supervisi Manajerial
                 </h2>
               </div>
-              <p className="text-xs sm:text-sm text-blue-100/80 leading-relaxed max-w-4xl">
+              <p className="text-xs sm:text-sm text-blue-100/80 leading-relaxed max-w-3xl">
                 Direktori kepemimpinan satuan pendidikan binaan: instrumen pemantauan 8 Standar Nasional Pendidikan (SNP),
                 audit Perencanaan Berbasis Data (PBD/RKAS), pengelolaan kinerja guru di PMM, serta penjadwalan supervisi manajerial.
               </p>
             </div>
 
-            {/* Action buttons */}
-            <div className="shrink-0 flex flex-wrap items-center gap-2.5">
-              <button
-                onClick={() => {
-                  setRenumberStartNum(settings.nomorSuratAwal ?? 118);
-                  setIsRenumberModalOpen(true);
-                }}
-                className="inline-flex items-center gap-2 px-3.5 py-3 bg-amber-500/25 hover:bg-amber-500/35 text-amber-200 hover:text-white font-bold text-xs sm:text-sm rounded-xl transition-all border border-amber-400/40 shadow-xs cursor-pointer backdrop-blur-xs whitespace-nowrap hover:scale-[1.02] active:scale-[0.98]"
-                title="Atur penomoran surat agenda dinas secara otomatis berurutan untuk semua sekolah binaan"
-              >
-                <ListOrdered className="w-4 h-4 text-amber-300" />
-                <span>Urutkan Nomor Surat</span>
-              </button>
-
-              <button
-                onClick={handlePrintPdf}
-                className="inline-flex items-center gap-2 px-4 py-3 bg-white/10 hover:bg-white/20 text-white font-bold text-xs sm:text-sm rounded-xl transition-all border border-white/20 shadow-xs cursor-pointer backdrop-blur-xs whitespace-nowrap hover:scale-[1.02] active:scale-[0.98]"
-                title="Cetak atau Simpan ke format PDF resmi dokumen Data Kepala Sekolah & Supervisi Manajerial"
-              >
-                <Printer className="w-4 h-4 text-cyan-300" />
-                <span>Cetak PDF</span>
-              </button>
-
-              <button
-                onClick={handleExportWord}
-                className="inline-flex items-center gap-2 px-4 py-3 bg-blue-600/90 hover:bg-blue-600 text-white font-bold text-xs sm:text-sm rounded-xl transition-all border border-blue-400/40 shadow-xs cursor-pointer backdrop-blur-xs whitespace-nowrap hover:scale-[1.02] active:scale-[0.98]"
-                title="Unduh rekapitulasi lengkap Data Kepala Sekolah & Supervisi Manajerial ke Microsoft Word (.doc)"
-              >
-                <FileDown className="w-4 h-4 text-cyan-200" />
-                <span>Ekspor Word (.doc)</span>
-              </button>
-
+            {/* Primary Action Button */}
+            <div className="shrink-0 flex items-center">
               <button
                 onClick={handleOpenAddModal}
-                className="inline-flex items-center gap-2 px-5 py-3 bg-gradient-to-r from-cyan-400 via-cyan-300 to-blue-400 hover:from-cyan-300 hover:to-blue-300 text-slate-950 font-black text-xs sm:text-sm rounded-xl transition-all shadow-lg shadow-cyan-500/20 cursor-pointer hover:scale-[1.02] active:scale-[0.98] whitespace-nowrap"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-3 bg-gradient-to-r from-cyan-400 via-cyan-300 to-blue-400 hover:from-cyan-300 hover:to-blue-300 text-slate-950 font-black text-xs sm:text-sm rounded-xl transition-all shadow-lg shadow-cyan-500/20 cursor-pointer hover:scale-[1.02] active:scale-[0.98] whitespace-nowrap"
               >
                 <Plus className="w-4 h-4 text-slate-950 stroke-[3]" />
-                <span>+ Tambah Kepala Sekolah</span>
+                <span>Tambah Kepala Sekolah</span>
               </button>
-
-              {onNavigateToCalendar && (
-                <button
-                  onClick={onNavigateToCalendar}
-                  className="inline-flex items-center gap-2 px-4 py-3 bg-white/10 hover:bg-white/15 text-white font-semibold text-xs sm:text-sm rounded-xl transition-all border border-white/15 cursor-pointer backdrop-blur-xs whitespace-nowrap"
-                >
-                  <Calendar className="w-4 h-4 text-cyan-300" />
-                  <span>Lihat di Kalender Agenda</span>
-                </button>
-              )}
             </div>
+          </div>
+
+          {/* Row 3: Action Toolbar for Document Exports & Configurations */}
+          <div className="flex flex-wrap items-center gap-2 pt-1">
+            <span className="text-xs font-semibold text-blue-200/80 mr-1 hidden sm:inline">Aksi Dokumen:</span>
+
+            <button
+              onClick={() => {
+                setRenumberStartNum(settings.nomorSuratAwal ?? 118);
+                setIsRenumberModalOpen(true);
+              }}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-amber-500/20 hover:bg-amber-500/30 text-amber-200 font-semibold text-xs rounded-xl transition-all border border-amber-400/30 cursor-pointer hover:border-amber-400/50 hover:text-white whitespace-nowrap shadow-xs"
+              title="Atur penomoran surat agenda dinas secara otomatis berurutan untuk semua sekolah binaan"
+            >
+              <ListOrdered className="w-3.5 h-3.5 text-amber-300" />
+              <span>Urutkan Nomor Surat</span>
+            </button>
+
+            <button
+              onClick={handlePrintPdf}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-white/10 hover:bg-white/15 text-white font-semibold text-xs rounded-xl transition-all border border-white/15 backdrop-blur-xs cursor-pointer hover:border-white/30 hover:text-cyan-200 whitespace-nowrap shadow-xs"
+              title="Cetak atau Simpan ke format PDF resmi dokumen Data Kepala Sekolah & Supervisi Manajerial"
+            >
+              <Printer className="w-3.5 h-3.5 text-cyan-300" />
+              <span>Cetak PDF</span>
+            </button>
+
+            <button
+              onClick={handleExportWord}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-white/10 hover:bg-white/15 text-white font-semibold text-xs rounded-xl transition-all border border-white/15 backdrop-blur-xs cursor-pointer hover:border-white/30 hover:text-blue-200 whitespace-nowrap shadow-xs"
+              title="Unduh rekapitulasi lengkap Data Kepala Sekolah & Supervisi Manajerial ke Microsoft Word (.doc)"
+            >
+              <FileDown className="w-3.5 h-3.5 text-cyan-200" />
+              <span>Ekspor Word (.doc)</span>
+            </button>
+
+            {onNavigateToCalendar && (
+              <button
+                onClick={onNavigateToCalendar}
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-white/10 hover:bg-white/15 text-white font-semibold text-xs rounded-xl transition-all border border-white/15 backdrop-blur-xs cursor-pointer hover:border-white/30 hover:text-emerald-200 whitespace-nowrap shadow-xs"
+              >
+                <Calendar className="w-3.5 h-3.5 text-emerald-300" />
+                <span>Lihat di Kalender Agenda</span>
+              </button>
+            )}
           </div>
         </div>
 

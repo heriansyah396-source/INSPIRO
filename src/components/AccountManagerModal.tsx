@@ -144,7 +144,7 @@ export const AccountManagerModal: React.FC<AccountManagerModalProps> = ({
                 className="shrink-0 flex items-center gap-1 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold shadow-xs transition-colors cursor-pointer"
               >
                 <UserPlus className="w-3.5 h-3.5" />
-                <span>+ Buat Akun Baru</span>
+                <span>Buat Akun Baru</span>
               </button>
             )}
           </div>

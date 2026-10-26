@@ -1173,7 +1173,7 @@ export const PMManagementView: React.FC<PMManagementViewProps> = ({
               className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white text-xs font-bold rounded-lg shadow-xs transition-colors cursor-pointer"
             >
               <Plus className="w-3.5 h-3.5" />
-              <span>+ Buat Evaluasi PM Baru</span>
+              <span>Buat Evaluasi PM Baru</span>
             </button>
           </div>
         </div>

@@ -395,7 +395,7 @@ export const TirtaCoachingView: React.FC<TirtaCoachingViewProps> = ({
               className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-cyan-400 via-cyan-300 to-blue-400 hover:from-cyan-300 hover:to-blue-300 text-slate-950 font-extrabold text-xs sm:text-sm rounded-xl transition-all shadow-md shadow-cyan-500/20 cursor-pointer hover:scale-[1.02] active:scale-[0.98]"
             >
               <Plus className="w-4 h-4 text-slate-950 stroke-[3]" />
-              <span>+ Mulai Sesi Coaching Baru</span>
+              <span>Mulai Sesi Coaching Baru</span>
             </button>
 
             {activeRecord && (
