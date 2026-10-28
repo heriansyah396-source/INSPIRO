@@ -23,6 +23,7 @@ import {
   SupervisionRecord,
   Teacher,
   Principal,
+  ManagerialActivityPhoto,
   ManagerialEvaluationRecord,
   PMReport,
   VisitAgenda,
@@ -198,9 +199,36 @@ export function saveManagerialEvaluation(record: ManagerialEvaluationRecord): vo
       predikatManajerial: record.predicate,
       tanggalSupervisiTerakhir: record.date,
       catatanPengawas: record.catatanPengawas,
-      rekomendasiManajerial: record.rekomendasiManajerial
+      rekomendasiManajerial: record.rekomendasiManajerial,
+      documentationPhotos: record.documentationPhotos
     });
   }
+}
+
+/**
+ * Update foto kegiatan supervisi manajerial untuk seorang kepala sekolah
+ * Sekaligus menyinkronkan foto ke evaluasi manajerial jika sudah ada
+ */
+export function updatePrincipalPhotos(
+  principalId: string,
+  photos: ManagerialActivityPhoto[]
+): boolean {
+  const updatedPrincipal = updatePrincipal(principalId, {
+    documentationPhotos: photos
+  });
+
+  const evaluations = getManagerialEvaluations();
+  const evalIdx = evaluations.findIndex((e) => e.principalId === principalId);
+  if (evalIdx >= 0) {
+    evaluations[evalIdx] = {
+      ...evaluations[evalIdx],
+      documentationPhotos: photos,
+      updatedAt: new Date().toISOString()
+    };
+    saveManagerialEvaluations(evaluations);
+  }
+
+  return updatedPrincipal;
 }
 
 export function deleteManagerialEvaluation(id: string): boolean {

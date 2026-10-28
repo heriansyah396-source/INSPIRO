@@ -2110,6 +2110,65 @@ export function exportIndividualManagerialToWord(
         <p style="margin:0; color:#334155; line-height:1.4; white-space:pre-wrap;">${escapeHtml(evaluation.rekomendasiManajerial || 'Lanjutkan pemenuhan standar mutu dan pemutakhiran data secara berkelanjutan.')}</p>
       </div>
 
+      <!-- C. DOKUMENTASI FOTO KEGIATAN & BUKTI FISIK -->
+      ${(() => {
+        const photos = (evaluation.documentationPhotos && evaluation.documentationPhotos.length > 0)
+          ? evaluation.documentationPhotos
+          : (principal.documentationPhotos && principal.documentationPhotos.length > 0)
+            ? principal.documentationPhotos
+            : [];
+
+        if (photos.length === 0) {
+          return `
+            <div style="margin-top:14px; padding:10px; border:1px dashed #cbd5e1; background-color:#f8fafc; border-radius:4px; font-size:8.5pt; color:#64748b; page-break-inside:avoid;">
+              <strong style="color:#0f172a; font-size:9pt; display:block; margin-bottom:4px;">C. DOKUMENTASI FOTO KEGIATAN &amp; BUKTI FISIK SUPERVISI MANAJERIAL:</strong>
+              <em>(Dokumentasi foto kegiatan supervisi manajerial belum dilampirkan atau dapat disematkan secara terpisah).</em>
+            </div>
+          `;
+        }
+
+        let rowsHtml = '';
+        for (let i = 0; i < photos.length; i += 2) {
+          const p1 = photos[i];
+          const p2 = photos[i + 1];
+
+          const renderCell = (photo?: typeof photos[0]) => {
+            if (!photo) return '<td style="width:50%; padding:6px;"></td>';
+            const dateStr = photo.takenAt ? `<span style="font-size:7.5pt; color:#64748b; display:block; margin-top:2px;">Tanggal: ${escapeHtml(photo.takenAt)}</span>` : '';
+            return `
+              <td style="width:50%; padding:8px; vertical-align:top; border:1px solid #cbd5e1; background-color:#f8fafc; border-radius:4px;">
+                <div style="text-align:center; margin-bottom:6px;">
+                  <img src="${photo.url}" alt="${escapeHtml(photo.caption || 'Foto Dokumentasi')}" style="max-width:100%; height:auto; max-height:220px; border:1px solid #94a3b8; border-radius:3px;" />
+                </div>
+                <div style="font-size:8.5pt; color:#0f172a; font-weight:bold; line-height:1.3;">
+                  ${escapeHtml(photo.caption || 'Dokumentasi Supervisi Manajerial')}
+                </div>
+                ${dateStr}
+                <div style="font-size:7.5pt; color:#16a34a; font-weight:bold; margin-top:3px;">
+                  &#10003; Bukti Fisik Otentik Lapangan
+                </div>
+              </td>
+            `;
+          };
+
+          rowsHtml += `
+            <tr>
+              ${renderCell(p1)}
+              ${renderCell(p2)}
+            </tr>
+          `;
+        }
+
+        return `
+          <div style="margin-top:14px; page-break-inside:avoid;">
+            <strong style="color:#0f172a; font-size:9pt; display:block; margin-bottom:6px;">C. DOKUMENTASI FOTO KEGIATAN &amp; BUKTI FISIK SUPERVISI MANAJERIAL:</strong>
+            <table style="width:100%; border-collapse:separate; border-spacing:8px 8px; margin-bottom:12px;">
+              ${rowsHtml}
+            </table>
+          </div>
+        `;
+      })()}
+
       <!-- TANDA TANGAN -->
       <table class="signature-table">
         <tr>

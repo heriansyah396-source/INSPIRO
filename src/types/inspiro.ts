@@ -45,8 +45,17 @@ export interface Principal {
   catatanPengawas?: string;
   rekomendasiManajerial?: string;
   nomorSuratKunjungan?: string; // Nomor Surat Keluar Resmi (misal: '421.3 / 118 / DISDIKBUD / PS / 2026')
+  documentationPhotos?: ManagerialActivityPhoto[];
   createdAt: string;
   updatedAt?: string;
+}
+
+export interface ManagerialActivityPhoto {
+  id: string;
+  url: string; // base64 data url or image url
+  caption: string; // Keterangan foto (misal: "Pemeriksaan SPJ BOSP & Dokumen KOSP bersama Kepala Sekolah")
+  takenAt?: string; // Tanggal kegiatan (YYYY-MM-DD)
+  category?: string; // Kategori bukti fisik
 }
 
 export interface PreObservationData {
@@ -2179,6 +2188,7 @@ export interface ManagerialEvaluationRecord {
   rekomendasiManajerial?: string;
   supervisorName: string;
   supervisorNip: string;
+  documentationPhotos?: ManagerialActivityPhoto[];
   status: 'draft' | 'selesai';
   createdAt: string;
   updatedAt?: string;

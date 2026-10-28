@@ -30,11 +30,17 @@ import {
   ArrowRight,
   Search,
   RotateCcw,
-  FileDown
+  FileDown,
+  Camera,
+  Upload,
+  Trash2,
+  Image as ImageIcon,
+  Plus
 } from 'lucide-react';
 import {
   Principal,
   AppSettings,
+  ManagerialActivityPhoto,
   ManagerialEvaluationRecord,
   MANAGERIAL_DIMENSIONS,
   TOTAL_MANAGERIAL_ITEMS,
@@ -42,6 +48,7 @@ import {
   calculateManagerialScore
 } from '../types/inspiro';
 import { exportIndividualManagerialToWord } from '../utils/documentExport';
+import { compressImageFile } from '../utils/imageCompressor';
 
 interface ManagerialSupervisionModalProps {
   isOpen: boolean;
@@ -89,6 +96,13 @@ export const ManagerialSupervisionModal: React.FC<ManagerialSupervisionModalProp
   const [catatanPengawas, setCatatanPengawas] = useState(() => existingEvaluation?.catatanPengawas || '');
   const [rekomendasiManajerial, setRekomendasiManajerial] = useState(() => existingEvaluation?.rekomendasiManajerial || '');
 
+  // Activity Photos state
+  const [documentationPhotos, setDocumentationPhotos] = useState<ManagerialActivityPhoto[]>(() => {
+    return existingEvaluation?.documentationPhotos || principal.documentationPhotos || [];
+  });
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
+  const photoInputRef = React.useRef<HTMLInputElement>(null);
+
   // Print mode
   const [isPrintMode, setIsPrintMode] = useState(false);
 
@@ -106,16 +120,67 @@ export const ManagerialSupervisionModal: React.FC<ManagerialSupervisionModalProp
       setItemNotes({ ...existingEvaluation.notes });
       setCatatanPengawas(existingEvaluation.catatanPengawas || '');
       setRekomendasiManajerial(existingEvaluation.rekomendasiManajerial || '');
+      setDocumentationPhotos(existingEvaluation.documentationPhotos || principal.documentationPhotos || []);
     } else {
       setDate(new Date().toISOString().split('T')[0]);
       setScores({});
       setItemNotes({});
       setCatatanPengawas('');
       setRekomendasiManajerial('');
+      setDocumentationPhotos(principal.documentationPhotos || []);
     }
     setFilterStatus('all');
     setSearchQuery('');
-  }, [existingEvaluation, principal.id]);
+  }, [existingEvaluation, principal.id, principal.documentationPhotos]);
+
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    setIsUploadingPhoto(true);
+    try {
+      const newPhotos: ManagerialActivityPhoto[] = [];
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        if (!file.type.startsWith('image/')) continue;
+        const compressedUrl = await compressImageFile(file, 1024, 1024, 0.75);
+        newPhotos.push({
+          id: `photo-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+          url: compressedUrl,
+          caption: `Pemeriksaan & Supervisi Manajerial di ${principal.satuanPendidikan}`,
+          takenAt: date || new Date().toISOString().split('T')[0]
+        });
+      }
+      setDocumentationPhotos((prev) => [...prev, ...newPhotos]);
+      showToast(
+        'Foto Berhasil Dimuat',
+        `${newPhotos.length} foto kegiatan berhasil dikompresi dan ditambahkan ke instrumen.`,
+        'success'
+      );
+    } catch (err) {
+      console.error('Error uploading photo:', err);
+      showToast('Gagal Memuat Foto', 'Terjadi kesalahan saat mengompresi gambar.', 'error');
+    } finally {
+      setIsUploadingPhoto(false);
+      if (photoInputRef.current) photoInputRef.current.value = '';
+    }
+  };
+
+  const handleUpdatePhotoCaption = (id: string, caption: string) => {
+    setDocumentationPhotos((prev) =>
+      prev.map((p) => (p.id === id ? { ...p, caption } : p))
+    );
+  };
+
+  const handleUpdatePhotoDate = (id: string, takenAt: string) => {
+    setDocumentationPhotos((prev) =>
+      prev.map((p) => (p.id === id ? { ...p, takenAt } : p))
+    );
+  };
+
+  const handleDeletePhoto = (id: string) => {
+    setDocumentationPhotos((prev) => prev.filter((p) => p.id !== id));
+  };
 
   // Real-time score calculation
   const scoreStats = useMemo(() => {
@@ -312,6 +377,7 @@ export const ManagerialSupervisionModal: React.FC<ManagerialSupervisionModalProp
       predicate: scoreStats.predicate,
       catatanPengawas,
       rekomendasiManajerial,
+      documentationPhotos,
       supervisorName: settings.supervisorName || 'HERIANSYAH, S.Si., S.Pd., M.Pd',
       supervisorNip: settings.supervisorNip || '19830819 201001 1 002',
       status,
@@ -346,6 +412,7 @@ export const ManagerialSupervisionModal: React.FC<ManagerialSupervisionModalProp
       predicate: scoreStats.predicate,
       catatanPengawas,
       rekomendasiManajerial,
+      documentationPhotos,
       supervisorName: settings.supervisorName || 'HERIANSYAH, S.Si., S.Pd., M.Pd',
       supervisorNip: settings.supervisorNip || '19830819 201001 1 002',
       status: existingEvaluation?.status || 'selesai',
@@ -543,6 +610,31 @@ export const ManagerialSupervisionModal: React.FC<ManagerialSupervisionModalProp
                 <h5 className="font-bold text-slate-900 mb-2">B. Rekomendasi Tindak Lanjut Manajerial:</h5>
                 <p className="text-slate-700 whitespace-pre-wrap leading-relaxed">{rekomendasiManajerial || 'Pertahankan kinerja yang telah tercapai.'}</p>
               </div>
+            </div>
+
+            {/* C. Dokumentasi Foto Kegiatan & Bukti Fisik */}
+            <div className="mt-6 text-xs">
+              <h5 className="font-bold text-slate-900 mb-2">C. Dokumentasi Foto Kegiatan &amp; Bukti Fisik Supervisi Manajerial:</h5>
+              {documentationPhotos.length === 0 ? (
+                <div className="p-3 bg-slate-50 rounded-lg border border-dashed border-slate-300 text-slate-500 italic text-center">
+                  (Dokumentasi foto kegiatan supervisi manajerial belum dilampirkan atau dapat disematkan secara terpisah).
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 gap-3">
+                  {documentationPhotos.map((photo, pIdx) => (
+                    <div key={photo.id || pIdx} className="p-2.5 bg-slate-50 rounded-lg border border-slate-200 space-y-1.5">
+                      <div className="w-full h-40 bg-slate-200 rounded-md overflow-hidden flex items-center justify-center border border-slate-300">
+                        <img src={photo.url} alt={photo.caption} className="w-full h-full object-cover" />
+                      </div>
+                      <p className="font-bold text-slate-800 text-[11px] leading-snug">{photo.caption}</p>
+                      <div className="flex items-center justify-between text-[10px] text-slate-500 pt-0.5">
+                        <span>Tanggal: {photo.takenAt || date}</span>
+                        <span className="text-emerald-700 font-bold">&#10003; Bukti Fisik Lapangan</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Signature Block */}
@@ -1105,6 +1197,147 @@ export const ManagerialSupervisionModal: React.FC<ManagerialSupervisionModalProp
                     />
                   </div>
                 </div>
+              </div>
+
+              {/* Photo Documentation Section */}
+              <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-purple-50/50 via-slate-50 to-indigo-50/50 border border-slate-200 space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200/80 pb-3">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-8 h-8 rounded-lg bg-purple-600 text-white flex items-center justify-center shadow-xs">
+                      <Camera className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <h4 className="text-xs font-bold uppercase tracking-wider text-slate-900">
+                          Dokumentasi Foto Bukti Fisik Supervisi Lapangan
+                        </h4>
+                        <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-purple-100 text-purple-800 border border-purple-200">
+                          {documentationPhotos.length} Foto Terlampir
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-slate-500">
+                        Unggah bukti visual fisik otentik (pemeriksaan berkas SPJ BOSP, telaah KOSP, observasi sarpras, dll.)
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <input
+                      ref={photoInputRef}
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      onChange={handlePhotoUpload}
+                      className="hidden"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => photoInputRef.current?.click()}
+                      disabled={isUploadingPhoto}
+                      className="px-3.5 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer disabled:opacity-50"
+                    >
+                      <Upload className="w-3.5 h-3.5" />
+                      <span>{isUploadingPhoto ? 'Mengompresi...' : '+ Tambah Foto Dokumentasi'}</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Preset caption chips for quick tagging */}
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <span className="text-[10px] font-bold text-slate-500 uppercase">Saran Label Cepat:</span>
+                  {[
+                    'Pemeriksaan SPJ BOSP & BKU',
+                    'Telaah Dokumen KOSP & RPP',
+                    'Supervisi Sarana Laboratorium & Perpustakaan',
+                    'Wawancara Refleksi Kepala Sekolah',
+                    'Verifikasi Dokumen PBD & RKAS'
+                  ].map((preset) => (
+                    <button
+                      key={preset}
+                      type="button"
+                      onClick={() => {
+                        if (documentationPhotos.length > 0) {
+                          handleUpdatePhotoCaption(documentationPhotos[documentationPhotos.length - 1].id, preset);
+                        }
+                      }}
+                      className="px-2 py-0.5 rounded text-[10px] font-medium bg-white hover:bg-purple-50 text-slate-600 hover:text-purple-700 border border-slate-200 transition-colors cursor-pointer"
+                      title="Terapkan label ini ke foto terakhir"
+                    >
+                      + {preset}
+                    </button>
+                  ))}
+                </div>
+
+                {documentationPhotos.length === 0 ? (
+                  <div
+                    onClick={() => photoInputRef.current?.click()}
+                    className="p-6 border-2 border-dashed border-purple-200 hover:border-purple-400 bg-white/70 hover:bg-purple-50/40 rounded-xl text-center cursor-pointer transition-colors space-y-2"
+                  >
+                    <div className="w-10 h-10 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center mx-auto">
+                      <ImageIcon className="w-5 h-5" />
+                    </div>
+                    <p className="text-xs font-bold text-slate-800">
+                      Belum ada foto dokumentasi supervisi manajerial
+                    </p>
+                    <p className="text-[11px] text-slate-500 max-w-sm mx-auto">
+                      Klik di sini untuk mengunggah foto kegiatan. Foto dikompresi otomatis tanpa membebani memori dan tampil resmi pada berkas cetak serta dokumen Word.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                    {documentationPhotos.map((photo, idx) => (
+                      <div
+                        key={photo.id}
+                        className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-xs flex flex-col justify-between"
+                      >
+                        <div className="relative group aspect-video bg-slate-100 overflow-hidden">
+                          <img
+                            src={photo.url}
+                            alt={photo.caption}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => handleDeletePhoto(photo.id)}
+                            className="absolute top-2 right-2 p-1.5 rounded-lg bg-rose-600/90 hover:bg-rose-700 text-white shadow-md transition-colors cursor-pointer"
+                            title="Hapus foto"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                          <span className="absolute bottom-2 left-2 px-1.5 py-0.5 rounded bg-black/60 text-white text-[10px] font-mono">
+                            Foto #{idx + 1}
+                          </span>
+                        </div>
+                        <div className="p-2.5 space-y-2 text-xs">
+                          <div>
+                            <label className="block text-[10px] font-bold text-slate-500 mb-0.5">
+                              Keterangan / Bukti Fisik:
+                            </label>
+                            <input
+                              type="text"
+                              value={photo.caption}
+                              onChange={(e) => handleUpdatePhotoCaption(photo.id, e.target.value)}
+                              placeholder="Keterangan foto kegiatan..."
+                              className="w-full text-xs px-2 py-1 bg-slate-50 border border-slate-200 rounded focus:outline-hidden focus:border-purple-400 text-slate-800 font-medium"
+                            />
+                          </div>
+                          <div className="flex items-center justify-between gap-2 pt-1 border-t border-slate-100">
+                            <input
+                              type="date"
+                              value={photo.takenAt || date}
+                              onChange={(e) => handleUpdatePhotoDate(photo.id, e.target.value)}
+                              className="text-[10px] px-1.5 py-0.5 bg-slate-50 border border-slate-200 rounded text-slate-600 font-mono"
+                            />
+                            <span className="text-[10px] font-bold text-emerald-600 flex items-center gap-0.5">
+                              <CheckCircle2 className="w-3 h-3" />
+                              <span>Valid</span>
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
 

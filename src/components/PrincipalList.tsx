@@ -35,17 +35,28 @@ import {
   Save,
   ListOrdered,
   Hash,
-  RefreshCw
+  RefreshCw,
+  Camera,
+  Upload,
+  Image as ImageIcon
 } from 'lucide-react';
 import {
   Principal,
   AppSettings,
+  ManagerialActivityPhoto,
   ManagerialEvaluationRecord,
   MANAGERIAL_DIMENSIONS,
   TOTAL_MANAGERIAL_ITEMS,
   MAX_MANAGERIAL_RAW_SCORE
 } from '../types/inspiro';
-import { getManagerialEvaluations, saveManagerialEvaluation, getManagerialEvaluationByPrincipalId, saveSettings } from '../utils/storage';
+import {
+  getManagerialEvaluations,
+  saveManagerialEvaluation,
+  getManagerialEvaluationByPrincipalId,
+  updatePrincipalPhotos,
+  saveSettings
+} from '../utils/storage';
+import { compressImageFile } from '../utils/imageCompressor';
 import { syncManagerialEvaluationToCloud } from '../services/firebase';
 import { ManagerialSupervisionModal } from './ManagerialSupervisionModal';
 import { DEFAULT_SIDRAP_LOGO, DEFAULT_TUTWURI_LOGO } from '../data/defaultLogos';
@@ -145,6 +156,77 @@ export const PrincipalList: React.FC<PrincipalListProps> = ({
   const [isRenumberModalOpen, setIsRenumberModalOpen] = useState(false);
   const [renumberStartNum, setRenumberStartNum] = useState<number>(settings.nomorSuratAwal ?? 118);
 
+  // Photo Documentation Modal State
+  const [isPhotoModalOpen, setIsPhotoModalOpen] = useState(false);
+  const [photoModalPrincipal, setPhotoModalPrincipal] = useState<Principal | null>(null);
+  const [modalPhotos, setModalPhotos] = useState<ManagerialActivityPhoto[]>([]);
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
+  const principalPhotoInputRef = React.useRef<HTMLInputElement>(null);
+
+  const handleOpenPhotosModal = (p: Principal) => {
+    setPhotoModalPrincipal(p);
+    const evalRec = evaluations.find((e) => e.principalId === p.id);
+    const existing = (evalRec?.documentationPhotos && evalRec.documentationPhotos.length > 0)
+      ? evalRec.documentationPhotos
+      : (p.documentationPhotos || []);
+    setModalPhotos([...existing]);
+    setIsPhotoModalOpen(true);
+  };
+
+  const handleModalPhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0 || !photoModalPrincipal) return;
+
+    setIsUploadingPhoto(true);
+    try {
+      const newItems: ManagerialActivityPhoto[] = [];
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        if (!file.type.startsWith('image/')) continue;
+        const compressed = await compressImageFile(file, 1024, 1024, 0.75);
+        newItems.push({
+          id: `photo-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+          url: compressed,
+          caption: `Pemeriksaan & Supervisi Manajerial di ${photoModalPrincipal.satuanPendidikan}`,
+          takenAt: photoModalPrincipal.tanggalSupervisiTerakhir || new Date().toISOString().split('T')[0]
+        });
+      }
+      setModalPhotos((prev) => [...prev, ...newItems]);
+      showToast('Foto Berhasil Ditambahkan', `${newItems.length} foto kegiatan siap disimpan.`, 'success');
+    } catch (err) {
+      console.error('Error compressing image:', err);
+      showToast('Gagal Mengunggah Foto', 'Terjadi kesalahan saat memproses gambar.', 'error');
+    } finally {
+      setIsUploadingPhoto(false);
+      if (principalPhotoInputRef.current) principalPhotoInputRef.current.value = '';
+    }
+  };
+
+  const handleSaveModalPhotos = () => {
+    if (!photoModalPrincipal) return;
+
+    updatePrincipalPhotos(photoModalPrincipal.id, modalPhotos);
+
+    onEditPrincipal(photoModalPrincipal.id, {
+      documentationPhotos: modalPhotos
+    });
+
+    setEvaluations((prev) =>
+      prev.map((ev) =>
+        ev.principalId === photoModalPrincipal.id
+          ? { ...ev, documentationPhotos: modalPhotos, updatedAt: new Date().toISOString() }
+          : ev
+      )
+    );
+
+    showToast(
+      'Dokumentasi Foto Tersimpan',
+      `${modalPhotos.length} foto kegiatan supervisi manajerial untuk ${photoModalPrincipal.nama} berhasil disimpan & disinkronkan ke laporan cetak.`,
+      'success'
+    );
+    setIsPhotoModalOpen(false);
+  };
+
   const logoUploadInputRef = React.useRef<HTMLInputElement>(null);
 
   const handleQuickLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -192,6 +274,7 @@ export const PrincipalList: React.FC<PrincipalListProps> = ({
   const [formNama, setFormNama] = useState('');
   const [formNip, setFormNip] = useState('');
   const [formPangkat, setFormPangkat] = useState('Pembina (IV/a)');
+  const [formPangkatCustom, setFormPangkatCustom] = useState('');
   const [formSekolah, setFormSekolah] = useState('');
   const [formNpsn, setFormNpsn] = useState('');
   const [formTelepon, setFormTelepon] = useState('');
@@ -263,6 +346,7 @@ export const PrincipalList: React.FC<PrincipalListProps> = ({
     setFormNama('');
     setFormNip('');
     setFormPangkat('Pembina (IV/a)');
+    setFormPangkatCustom('');
     setFormSekolah(distinctSchools[0] || 'SMP Negeri 1 Sidenreng Rappang');
     setFormNpsn('20108921');
     setFormTelepon('');
@@ -282,7 +366,26 @@ export const PrincipalList: React.FC<PrincipalListProps> = ({
     setEditingPrincipal(p);
     setFormNama(p.nama);
     setFormNip(p.nip);
-    setFormPangkat(p.pangkatGolongan || 'Pembina (IV/a)');
+    const standardOptions = [
+      'Pembina Utama Muda (IV/c)',
+      'Pembina Tk. I (IV/b)',
+      'Pembina (IV/a)',
+      'Penata Tk. I (III/d)',
+      'Penata (III/c)',
+      'Golongan IX (PPPK)',
+      'Golongan X (PPPK)'
+    ];
+    const rawPangkat = p.pangkatGolongan || 'Pembina (IV/a)';
+    if (standardOptions.includes(rawPangkat)) {
+      setFormPangkat(rawPangkat);
+      setFormPangkatCustom('');
+    } else if (rawPangkat === 'Lainnya' || rawPangkat === 'Lainnya / Guru Penggerak') {
+      setFormPangkat('Lainnya');
+      setFormPangkatCustom('');
+    } else {
+      setFormPangkat('Lainnya');
+      setFormPangkatCustom(rawPangkat);
+    }
     setFormSekolah(p.satuanPendidikan);
     setFormNpsn(p.npsn || '');
     setFormTelepon(p.telepon || '');
@@ -320,12 +423,15 @@ export const PrincipalList: React.FC<PrincipalListProps> = ({
     }
 
     const parsedSkor = formSkor.trim() !== '' ? parseFloat(formSkor) : undefined;
+    const effectivePangkat = formPangkat === 'Lainnya'
+      ? (formPangkatCustom.trim() || 'Lainnya / Guru Penggerak')
+      : formPangkat;
 
     if (editingPrincipal) {
       onEditPrincipal(editingPrincipal.id, {
         nama: formNama.trim(),
         nip: formNip.trim(),
-        pangkatGolongan: formPangkat,
+        pangkatGolongan: effectivePangkat,
         satuanPendidikan: formSekolah.trim(),
         npsn: formNpsn.trim(),
         telepon: formTelepon.trim(),
@@ -345,7 +451,7 @@ export const PrincipalList: React.FC<PrincipalListProps> = ({
       onAddPrincipal({
         nama: formNama.trim(),
         nip: formNip.trim(),
-        pangkatGolongan: formPangkat,
+        pangkatGolongan: effectivePangkat,
         satuanPendidikan: formSekolah.trim(),
         npsn: formNpsn.trim(),
         telepon: formTelepon.trim(),
@@ -469,10 +575,13 @@ export const PrincipalList: React.FC<PrincipalListProps> = ({
   const handlePrintSuratKunjunganFromModal = () => {
     const pIndex = editingPrincipal ? principals.findIndex((item) => item.id === editingPrincipal.id) : 0;
     const effectiveNo = formNomorSurat.trim() || generateNomorSurat(pIndex >= 0 ? pIndex : 0, settings);
+    const effectivePangkat = formPangkat === 'Lainnya'
+      ? (formPangkatCustom.trim() || 'Lainnya / Guru Penggerak')
+      : formPangkat;
     const target = {
       nama: formNama || 'Kepala Sekolah',
       nip: formNip || '-',
-      pangkatGolongan: formPangkat || 'Pembina (IV/a)',
+      pangkatGolongan: effectivePangkat || 'Pembina (IV/a)',
       satuanPendidikan: formSekolah || 'Satuan Pendidikan Binaan',
       npsn: formNpsn,
       noTelepon: formTelepon,
@@ -497,10 +606,13 @@ export const PrincipalList: React.FC<PrincipalListProps> = ({
   const handleExportSuratKunjunganWordFromModal = () => {
     const pIndex = editingPrincipal ? principals.findIndex((item) => item.id === editingPrincipal.id) : 0;
     const effectiveNo = formNomorSurat.trim() || generateNomorSurat(pIndex >= 0 ? pIndex : 0, settings);
+    const effectivePangkat = formPangkat === 'Lainnya'
+      ? (formPangkatCustom.trim() || 'Lainnya / Guru Penggerak')
+      : formPangkat;
     const target = {
       nama: formNama || 'Kepala Sekolah',
       nip: formNip || '-',
-      pangkatGolongan: formPangkat || 'Pembina (IV/a)',
+      pangkatGolongan: effectivePangkat || 'Pembina (IV/a)',
       satuanPendidikan: formSekolah || 'Satuan Pendidikan Binaan',
       npsn: formNpsn,
       noTelepon: formTelepon,
@@ -587,10 +699,13 @@ export const PrincipalList: React.FC<PrincipalListProps> = ({
     if (editingPrincipal) {
       const pIndex = principals.findIndex((item) => item.id === editingPrincipal.id);
       const effectiveNo = formNomorSurat || getPrincipalNomorSurat(editingPrincipal, pIndex >= 0 ? pIndex : 0, settings);
+      const effectiveFormPangkat = formPangkat === 'Lainnya'
+        ? (formPangkatCustom.trim() || 'Lainnya / Guru Penggerak')
+        : formPangkat;
       return {
         nama: formNama || editingPrincipal.nama,
         nip: formNip || editingPrincipal.nip,
-        pangkatGolongan: formPangkat || editingPrincipal.pangkatGolongan || 'Pembina (IV/a)',
+        pangkatGolongan: effectiveFormPangkat || editingPrincipal.pangkatGolongan || 'Pembina (IV/a)',
         satuanPendidikan: formSekolah || editingPrincipal.satuanPendidikan,
         npsn: formNpsn || editingPrincipal.npsn,
         noTelepon: formTelepon || editingPrincipal.telepon,
@@ -620,7 +735,7 @@ export const PrincipalList: React.FC<PrincipalListProps> = ({
       };
     }
     return null;
-  }, [suratTargetData, editingPrincipal, formNama, formNip, formPangkat, formSekolah, formNpsn, formTelepon, formEmail, formTanggal, formFokus, formCatatan, formRekomendasi, formNomorSurat, principals, settings]);
+  }, [suratTargetData, editingPrincipal, formNama, formNip, formPangkat, formPangkatCustom, formSekolah, formNpsn, formTelepon, formEmail, formTanggal, formFokus, formCatatan, formRekomendasi, formNomorSurat, principals, settings]);
 
   return (
     <div className="space-y-6">
@@ -1018,6 +1133,26 @@ export const PrincipalList: React.FC<PrincipalListProps> = ({
                       <span>Surat Word</span>
                     </button>
 
+                    {/* Foto Kegiatan Button */}
+                    <button
+                      onClick={() => handleOpenPhotosModal(p)}
+                      className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 rounded-lg text-xs font-bold transition-colors cursor-pointer border border-emerald-200"
+                      title="Kelola & Unggah Foto Kegiatan Supervisi Manajerial (Bukti Fisik)"
+                    >
+                      <Camera className="w-3.5 h-3.5 text-emerald-600" />
+                      <span>Foto Kegiatan</span>
+                      {(() => {
+                        const count = (evalRecord?.documentationPhotos && evalRecord.documentationPhotos.length > 0)
+                          ? evalRecord.documentationPhotos.length
+                          : (p.documentationPhotos ? p.documentationPhotos.length : 0);
+                        return count > 0 ? (
+                          <span className="px-1.5 py-0.2 bg-emerald-600 text-white text-[10px] rounded-full font-mono font-bold">
+                            {count}
+                          </span>
+                        ) : null;
+                      })()}
+                    </button>
+
                     {evalRecord && (
                       <button
                         onClick={() => handlePrintIndividualPdf(p)}
@@ -1168,6 +1303,24 @@ export const PrincipalList: React.FC<PrincipalListProps> = ({
                             <FileText className="w-3 h-3 text-amber-700" />
                             <span>Surat Word</span>
                           </button>
+                          <button
+                            onClick={() => handleOpenPhotosModal(p)}
+                            className="px-2 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 rounded-md text-[11px] font-bold transition-colors cursor-pointer flex items-center gap-1 border border-emerald-200"
+                            title="Kelola & Unggah Foto Kegiatan Supervisi Manajerial"
+                          >
+                            <Camera className="w-3 h-3 text-emerald-600" />
+                            <span>Foto</span>
+                            {(() => {
+                              const count = (evalRecord?.documentationPhotos && evalRecord.documentationPhotos.length > 0)
+                                ? evalRecord.documentationPhotos.length
+                                : (p.documentationPhotos ? p.documentationPhotos.length : 0);
+                              return count > 0 ? (
+                                <span className="px-1 py-0 bg-emerald-600 text-white text-[9.5px] rounded-full font-mono font-bold">
+                                  {count}
+                                </span>
+                              ) : null;
+                            })()}
+                          </button>
                           {evalRecord && (
                             <button
                               onClick={() => handlePrintIndividualPdf(p)}
@@ -1269,7 +1422,12 @@ export const PrincipalList: React.FC<PrincipalListProps> = ({
                   </label>
                   <select
                     value={formPangkat}
-                    onChange={(e) => setFormPangkat(e.target.value)}
+                    onChange={(e) => {
+                      setFormPangkat(e.target.value);
+                      if (e.target.value !== 'Lainnya') {
+                        setFormPangkatCustom('');
+                      }
+                    }}
                     className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-slate-900 focus:ring-2 focus:ring-blue-500 focus:bg-white"
                   >
                     <option value="Pembina Utama Muda (IV/c)">Pembina Utama Muda (IV/c)</option>
@@ -1278,7 +1436,18 @@ export const PrincipalList: React.FC<PrincipalListProps> = ({
                     <option value="Penata Tk. I (III/d)">Penata Tk. I (III/d)</option>
                     <option value="Penata (III/c)">Penata (III/c)</option>
                     <option value="Lainnya">Lainnya / Guru Penggerak</option>
+                    <option value="Golongan IX (PPPK)">Golongan IX (PPPK)</option>
+                    <option value="Golongan X (PPPK)">Golongan X (PPPK)</option>
                   </select>
+                  {formPangkat === 'Lainnya' && (
+                    <input
+                      type="text"
+                      placeholder="Ketik pangkat / golongan ruang khusus..."
+                      value={formPangkatCustom}
+                      onChange={(e) => setFormPangkatCustom(e.target.value)}
+                      className="mt-2 w-full px-3 py-2 text-xs bg-white border border-blue-300 rounded-xl text-slate-900 focus:ring-2 focus:ring-blue-500"
+                    />
+                  )}
                 </div>
               </div>
 
@@ -2095,6 +2264,57 @@ export const PrincipalList: React.FC<PrincipalListProps> = ({
             </div>
           </div>
 
+          {/* C. Dokumentasi Foto Kegiatan & Bukti Fisik Supervisi Manajerial */}
+          {(() => {
+            const reportPhotos = (printTargetEval.documentationPhotos && printTargetEval.documentationPhotos.length > 0)
+              ? printTargetEval.documentationPhotos
+              : (printTargetPrincipal.documentationPhotos && printTargetPrincipal.documentationPhotos.length > 0)
+                ? printTargetPrincipal.documentationPhotos
+                : [];
+
+            if (reportPhotos.length === 0) {
+              return (
+                <div className="mt-5 p-3 bg-slate-50 rounded-lg border border-dashed border-slate-300 text-xs text-slate-500 italic text-center">
+                  <strong className="block text-slate-800 not-italic mb-1 font-bold">
+                    C. DOKUMENTASI FOTO KEGIATAN &amp; BUKTI FISIK SUPERVISI MANAJERIAL:
+                  </strong>
+                  (Dokumentasi foto kegiatan supervisi manajerial belum dilampirkan atau dapat disematkan secara terpisah).
+                </div>
+              );
+            }
+
+            return (
+              <div className="mt-5">
+                <h5 className="font-bold text-slate-900 text-xs mb-2">
+                  C. DOKUMENTASI FOTO KEGIATAN &amp; BUKTI FISIK SUPERVISI MANAJERIAL:
+                </h5>
+                <div className="grid grid-cols-2 gap-3">
+                  {reportPhotos.map((photo, pIdx) => (
+                    <div
+                      key={photo.id || pIdx}
+                      className="p-2.5 bg-slate-50 rounded-lg border border-slate-300 space-y-1.5"
+                    >
+                      <div className="w-full h-44 bg-slate-200 rounded overflow-hidden flex items-center justify-center border border-slate-300">
+                        <img
+                          src={photo.url}
+                          alt={photo.caption || 'Foto Bukti Supervisi'}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                      <p className="font-bold text-slate-900 text-[11px] leading-snug">
+                        {photo.caption || 'Dokumentasi Supervisi Manajerial'}
+                      </p>
+                      <div className="flex items-center justify-between text-[10px] text-slate-600 pt-0.5 border-t border-slate-200">
+                        <span>Tanggal: {photo.takenAt || printTargetEval.date}</span>
+                        <span className="text-emerald-700 font-bold">&#10003; Bukti Otentik Lapangan</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          })()}
+
           {/* Signature Block */}
           <div className="mt-8 pt-4 grid grid-cols-2 text-xs text-center border-t border-slate-300">
             <div>
@@ -2236,6 +2456,221 @@ export const PrincipalList: React.FC<PrincipalListProps> = ({
                 <CheckCircle2 className="w-4 h-4" />
                 <span>Terapkan Nomor Berurutan ke Semua Sekolah</span>
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL INPUT & KELOLA FOTO KEGIATAN SUPERVISI MANAJERIAL */}
+      {isPhotoModalOpen && photoModalPrincipal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in">
+          <div className="bg-white rounded-2xl max-w-3xl w-full max-h-[92vh] overflow-hidden flex flex-col shadow-2xl border border-emerald-300">
+            {/* Modal Header */}
+            <div className="p-4 sm:p-5 bg-gradient-to-r from-emerald-700 via-teal-700 to-emerald-800 text-white flex items-center justify-between shrink-0">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-white/20 backdrop-blur-xs flex items-center justify-center shadow-inner">
+                  <Camera className="w-5 h-5 text-emerald-100" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-base sm:text-lg font-bold">
+                      Dokumentasi Foto Bukti Fisik Supervisi Manajerial
+                    </h3>
+                    <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-white/20 text-emerald-100 border border-white/30">
+                      138 Indikator Valid
+                    </span>
+                  </div>
+                  <p className="text-xs text-emerald-100 mt-0.5">
+                    Kepala Sekolah: <strong className="text-white">{photoModalPrincipal.nama}</strong> ({photoModalPrincipal.satuanPendidikan})
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsPhotoModalOpen(false)}
+                className="p-1.5 hover:bg-white/20 rounded-lg transition-colors cursor-pointer text-white"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-5 overflow-y-auto space-y-4 text-xs">
+              <div className="p-3 bg-emerald-50 rounded-xl border border-emerald-200 text-emerald-950 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="leading-relaxed">
+                  Foto dokumentasi ini akan otomatis disematkan pada <strong>Bagian C: Dokumentasi Foto Kegiatan &amp; Bukti Fisik</strong> di lembar laporan hasil supervisi manajerial lengkap (PDF &amp; Word .doc).
+                </div>
+                <div className="shrink-0 flex items-center gap-2">
+                  <input
+                    ref={principalPhotoInputRef}
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    onChange={handleModalPhotoUpload}
+                    className="hidden"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => principalPhotoInputRef.current?.click()}
+                    disabled={isUploadingPhoto}
+                    className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold flex items-center gap-1.5 shadow-md shadow-emerald-600/20 transition-all cursor-pointer disabled:opacity-50 text-xs"
+                  >
+                    <Upload className="w-4 h-4" />
+                    <span>{isUploadingPhoto ? 'Mengompresi...' : '+ Unggah Foto Baru'}</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Preset Chips */}
+              <div className="flex flex-wrap items-center gap-1.5 bg-slate-50 p-2.5 rounded-xl border border-slate-200">
+                <span className="text-[10px] font-bold text-slate-500 uppercase mr-1">
+                  Label Cepat Rekomendasi Pengawas:
+                </span>
+                {[
+                  'Pemeriksaan SPJ BOSP & BKU',
+                  'Telaah Dokumen KOSP & RPP',
+                  'Supervisi Sarana Laboratorium & Perpustakaan',
+                  'Wawancara Refleksi Kepala Sekolah',
+                  'Observasi Lingkungan & Sarpras Sekolah',
+                  'Verifikasi RKAS & Perencanaan Berbasis Data'
+                ].map((tag) => (
+                  <button
+                    key={tag}
+                    type="button"
+                    onClick={() => {
+                      if (modalPhotos.length > 0) {
+                        const lastId = modalPhotos[modalPhotos.length - 1].id;
+                        setModalPhotos((prev) =>
+                          prev.map((p) => (p.id === lastId ? { ...p, caption: tag } : p))
+                        );
+                        showToast('Label Diterapkan', `Foto terakhir dilabeli: "${tag}"`, 'info');
+                      } else {
+                        showToast('Unggah Foto Terlebih Dahulu', 'Klik tombol unggah foto untuk menerapkan label.', 'info');
+                      }
+                    }}
+                    className="px-2 py-0.5 rounded text-[10.5px] font-medium bg-white hover:bg-emerald-50 text-slate-700 hover:text-emerald-800 border border-slate-200 transition-colors cursor-pointer"
+                    title="Klik untuk menerapkan label ke foto terakhir"
+                  >
+                    + {tag}
+                  </button>
+                ))}
+              </div>
+
+              {/* Photo Grid */}
+              {modalPhotos.length === 0 ? (
+                <div
+                  onClick={() => principalPhotoInputRef.current?.click()}
+                  className="p-10 border-2 border-dashed border-emerald-300 hover:border-emerald-500 bg-emerald-50/40 hover:bg-emerald-50/70 rounded-2xl text-center cursor-pointer transition-colors space-y-3"
+                >
+                  <div className="w-14 h-14 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto shadow-xs">
+                    <Camera className="w-7 h-7" />
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-bold text-slate-800">
+                      Belum ada foto dokumentasi fisik untuk {photoModalPrincipal.nama}
+                    </h4>
+                    <p className="text-xs text-slate-500 max-w-md mx-auto mt-1">
+                      Klik di sini atau tombol di atas untuk memilih foto kegiatan supervisi. Berkas akan dikompresi otomatis (resolusi 1024px) agar hemat penyimpanan dan siap cetak.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    className="inline-flex items-center gap-1.5 px-4 py-2 bg-emerald-600 text-white rounded-xl font-bold text-xs shadow-xs"
+                  >
+                    <Upload className="w-3.5 h-3.5" />
+                    <span>Pilih Foto dari Galeri / Kamera</span>
+                  </button>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3.5">
+                  {modalPhotos.map((photo, idx) => (
+                    <div
+                      key={photo.id}
+                      className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-xs hover:border-emerald-300 transition-all flex flex-col justify-between"
+                    >
+                      <div className="relative group aspect-video bg-slate-100 overflow-hidden">
+                        <img
+                          src={photo.url}
+                          alt={photo.caption}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setModalPhotos((prev) => prev.filter((p) => p.id !== photo.id))}
+                          className="absolute top-2 right-2 p-1.5 rounded-lg bg-rose-600/90 hover:bg-rose-700 text-white shadow-md transition-colors cursor-pointer"
+                          title="Hapus foto ini"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                        <span className="absolute bottom-2 left-2 px-1.5 py-0.5 rounded bg-black/60 text-white text-[10px] font-mono font-bold">
+                          Foto #{idx + 1}
+                        </span>
+                      </div>
+                      <div className="p-3 space-y-2 text-xs">
+                        <div>
+                          <label className="block text-[10px] font-bold text-slate-600 mb-0.5">
+                            Keterangan / Bukti Fisik:
+                          </label>
+                          <input
+                            type="text"
+                            value={photo.caption}
+                            onChange={(e) =>
+                              setModalPhotos((prev) =>
+                                prev.map((p) => (p.id === photo.id ? { ...p, caption: e.target.value } : p))
+                              )
+                            }
+                            placeholder="Keterangan foto kegiatan..."
+                            className="w-full text-xs px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-hidden focus:border-emerald-500 text-slate-800 font-medium"
+                          />
+                        </div>
+                        <div className="flex items-center justify-between gap-2 pt-1 border-t border-slate-100">
+                          <div>
+                            <span className="text-[10px] text-slate-500 block mb-0.5">Tanggal:</span>
+                            <input
+                              type="date"
+                              value={photo.takenAt || photoModalPrincipal.tanggalSupervisiTerakhir || new Date().toISOString().split('T')[0]}
+                              onChange={(e) =>
+                                setModalPhotos((prev) =>
+                                  prev.map((p) => (p.id === photo.id ? { ...p, takenAt: e.target.value } : p))
+                                )
+                              }
+                              className="text-[10px] px-1.5 py-0.5 bg-slate-50 border border-slate-200 rounded text-slate-700 font-mono"
+                            />
+                          </div>
+                          <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200 flex items-center gap-1">
+                            <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                            <span>Valid</span>
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="p-4 bg-slate-50 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-3 shrink-0">
+              <div className="text-xs text-slate-600 font-medium">
+                Total: <strong className="text-emerald-800">{modalPhotos.length} Foto Dokumentasi</strong> siap disertakan pada laporan resmi.
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setIsPhotoModalOpen(false)}
+                  className="px-4 py-2 bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 rounded-xl font-semibold transition-colors cursor-pointer text-xs"
+                >
+                  Tutup
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSaveModalPhotos}
+                  className="px-5 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white rounded-xl font-bold shadow-md shadow-emerald-500/20 transition-all cursor-pointer text-xs flex items-center gap-1.5"
+                >
+                  <Save className="w-4 h-4" />
+                  <span>Simpan Dokumentasi Foto</span>
+                </button>
+              </div>
             </div>
           </div>
         </div>
