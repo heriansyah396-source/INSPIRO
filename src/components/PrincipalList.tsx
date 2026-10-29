@@ -1077,119 +1077,140 @@ export const PrincipalList: React.FC<PrincipalListProps> = ({
                   </div>
                 </div>
 
-                {/* Contact and Action Buttons */}
-                <div className="pt-3 border-t border-slate-100 flex flex-wrap items-center justify-between gap-2">
-                  <div className="flex items-center gap-3 text-xs text-slate-500">
+                {/* Contact and Management Actions */}
+                <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
+                  <div className="flex items-center gap-3">
                     {p.telepon && (
-                      <span className="flex items-center gap-1 font-mono">
+                      <span className="flex items-center gap-1 font-mono text-[11px]">
                         <Phone className="w-3 h-3 text-slate-400" />
                         {p.telepon}
                       </span>
                     )}
                     {p.email && (
-                      <span className="flex items-center gap-1 truncate max-w-[140px]" title={p.email}>
+                      <span className="flex items-center gap-1 truncate max-w-[130px] text-[11px]" title={p.email}>
                         <Mail className="w-3 h-3 text-slate-400" />
                         {p.email}
                       </span>
                     )}
                   </div>
 
-                  <div className="flex items-center gap-1.5">
-                    {/* Primary Action: Input Supervisi 8 Menu */}
-                    <button
-                      onClick={() => handleOpenSupervisionModal(p)}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white rounded-lg text-xs font-bold transition-all cursor-pointer shadow-xs"
-                      title="Input & Evaluasi Supervisi Manajerial 8 Menu (Skala 1 - 4)"
-                    >
-                      <Sparkles className="w-3.5 h-3.5 text-amber-300" />
-                      <span>{evalRecord ? 'Input / Edit 8 Menu' : 'Input Supervisi 8 Menu'}</span>
-                    </button>
-
-                    {/* Schedule Managerial Button */}
-                    <button
-                      onClick={() => onScheduleManagerialSupervision(p)}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-bold transition-colors cursor-pointer"
-                      title="Jadwalkan agenda supervisi manajerial untuk Kepala Sekolah ini"
-                    >
-                      <Calendar className="w-3.5 h-3.5 text-slate-500" />
-                      <span>Jadwal</span>
-                    </button>
-
-                    {/* Surat Kunjungan Actions */}
-                    <button
-                      onClick={() => handlePrintSuratKunjungan(p)}
-                      className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-800 rounded-lg text-xs font-bold transition-colors cursor-pointer border border-amber-200"
-                      title="Cetak Surat Pemberitahuan Kunjungan Supervisi (PDF)"
-                    >
-                      <Printer className="w-3.5 h-3.5 text-amber-600" />
-                      <span>Surat PDF</span>
-                    </button>
-                    <button
-                      onClick={() => handleExportSuratKunjunganWord(p)}
-                      className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-amber-50/80 hover:bg-amber-100 text-amber-900 rounded-lg text-xs font-bold transition-colors cursor-pointer border border-amber-200"
-                      title="Unduh Surat Pemberitahuan Kunjungan Supervisi (Word .doc)"
-                    >
-                      <FileText className="w-3.5 h-3.5 text-amber-700" />
-                      <span>Surat Word</span>
-                    </button>
-
-                    {/* Foto Kegiatan Button */}
-                    <button
-                      onClick={() => handleOpenPhotosModal(p)}
-                      className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 rounded-lg text-xs font-bold transition-colors cursor-pointer border border-emerald-200"
-                      title="Kelola & Unggah Foto Kegiatan Supervisi Manajerial (Bukti Fisik)"
-                    >
-                      <Camera className="w-3.5 h-3.5 text-emerald-600" />
-                      <span>Foto Kegiatan</span>
-                      {(() => {
-                        const count = (evalRecord?.documentationPhotos && evalRecord.documentationPhotos.length > 0)
-                          ? evalRecord.documentationPhotos.length
-                          : (p.documentationPhotos ? p.documentationPhotos.length : 0);
-                        return count > 0 ? (
-                          <span className="px-1.5 py-0.2 bg-emerald-600 text-white text-[10px] rounded-full font-mono font-bold">
-                            {count}
-                          </span>
-                        ) : null;
-                      })()}
-                    </button>
-
-                    {evalRecord && (
-                      <button
-                        onClick={() => handlePrintIndividualPdf(p)}
-                        className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 rounded-lg text-xs font-bold transition-colors cursor-pointer border border-rose-200"
-                        title="Unduh / Cetak Laporan Supervisi Manajerial Lengkap ke PDF"
-                      >
-                        <Printer className="w-3.5 h-3.5 text-rose-600" />
-                        <span>PDF 8 Menu</span>
-                      </button>
-                    )}
-
-                    {evalRecord && (
-                      <button
-                        onClick={() => handleExportIndividualWord(p)}
-                        className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg text-xs font-bold transition-colors cursor-pointer border border-blue-200"
-                        title="Unduh Laporan Supervisi Manajerial Lengkap ke Word (.doc)"
-                      >
-                        <FileDown className="w-3.5 h-3.5 text-blue-600" />
-                        <span>Word 8 Menu</span>
-                      </button>
-                    )}
-
+                  <div className="flex items-center gap-1">
                     <button
                       onClick={() => handleOpenEditModal(p)}
-                      className="p-1.5 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+                      className="p-1.5 text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
                       title="Edit Data Kepala Sekolah"
                     >
                       <Edit2 className="w-3.5 h-3.5" />
                     </button>
-
                     <button
                       onClick={() => handleDelete(p)}
-                      className="p-1.5 text-slate-600 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
+                      className="p-1.5 text-slate-500 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
                       title="Hapus Data Kepala Sekolah"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
+                  </div>
+                </div>
+
+                {/* Primary Action Row: Evaluasi 8 Menu, Foto Kegiatan, Jadwal */}
+                <div className="grid grid-cols-12 gap-2">
+                  {/* Primary: Supervisi 8 Menu (col 6) */}
+                  <button
+                    onClick={() => handleOpenSupervisionModal(p)}
+                    className="col-span-12 sm:col-span-6 inline-flex items-center justify-center gap-1.5 px-3 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white rounded-xl text-xs font-bold transition-all cursor-pointer shadow-xs"
+                    title="Input & Evaluasi Supervisi Manajerial 8 Menu (Skala 1 - 4)"
+                  >
+                    <Sparkles className="w-3.5 h-3.5 text-amber-300 shrink-0" />
+                    <span className="truncate">{evalRecord ? 'Evaluasi 8 Dimensi' : 'Input Supervisi 8 Menu'}</span>
+                  </button>
+
+                  {/* Foto Kegiatan (col 4) */}
+                  <button
+                    onClick={() => handleOpenPhotosModal(p)}
+                    className="col-span-7 sm:col-span-4 inline-flex items-center justify-center gap-1.5 px-2.5 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 rounded-xl text-xs font-bold transition-colors cursor-pointer border border-emerald-200"
+                    title="Kelola & Unggah Foto Kegiatan Supervisi Manajerial (Bukti Fisik Otentik)"
+                  >
+                    <Camera className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                    <span className="truncate">Foto Kegiatan</span>
+                    {(() => {
+                      const count = (evalRecord?.documentationPhotos && evalRecord.documentationPhotos.length > 0)
+                        ? evalRecord.documentationPhotos.length
+                        : (p.documentationPhotos ? p.documentationPhotos.length : 0);
+                      return count > 0 ? (
+                        <span className="px-1.5 py-0.2 bg-emerald-600 text-white text-[10px] rounded-full font-mono font-bold">
+                          {count}
+                        </span>
+                      ) : null;
+                    })()}
+                  </button>
+
+                  {/* Jadwal (col 2) */}
+                  <button
+                    onClick={() => onScheduleManagerialSupervision(p)}
+                    className="col-span-5 sm:col-span-2 inline-flex items-center justify-center gap-1 px-2.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-colors cursor-pointer border border-slate-200"
+                    title="Jadwalkan agenda supervisi manajerial untuk Kepala Sekolah ini"
+                  >
+                    <Calendar className="w-3.5 h-3.5 text-slate-500 shrink-0" />
+                    <span>Jadwal</span>
+                  </button>
+                </div>
+
+                {/* Secondary Row: Official Document Exports (Surat & Laporan 8 Menu) */}
+                <div className="p-2.5 rounded-xl bg-slate-50/90 border border-slate-200 flex flex-wrap items-center justify-between gap-2">
+                  {/* Surat Pemberitahuan Kunjungan */}
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[11px] font-bold text-slate-700 flex items-center gap-1">
+                      <FileText className="w-3.5 h-3.5 text-amber-600" />
+                      <span>Surat:</span>
+                    </span>
+                    <div className="inline-flex rounded-lg shadow-2xs border border-amber-300 overflow-hidden bg-white">
+                      <button
+                        onClick={() => handlePrintSuratKunjungan(p)}
+                        className="px-2.5 py-1 hover:bg-amber-50 text-amber-900 text-[11px] font-bold transition-colors cursor-pointer border-r border-amber-200 flex items-center gap-1"
+                        title="Cetak Surat Pemberitahuan Kunjungan Supervisi (PDF)"
+                      >
+                        <Printer className="w-3 h-3 text-amber-600" />
+                        <span>PDF</span>
+                      </button>
+                      <button
+                        onClick={() => handleExportSuratKunjunganWord(p)}
+                        className="px-2.5 py-1 hover:bg-amber-50 text-amber-900 text-[11px] font-bold transition-colors cursor-pointer flex items-center gap-1"
+                        title="Unduh Surat Pemberitahuan Kunjungan Supervisi (Word .doc)"
+                      >
+                        <FileDown className="w-3 h-3 text-amber-700" />
+                        <span>Word</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Laporan Lengkap 8 Menu */}
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[11px] font-bold text-slate-700 flex items-center gap-1">
+                      <Award className="w-3.5 h-3.5 text-purple-600" />
+                      <span>Laporan 8 Menu:</span>
+                    </span>
+                    {evalRecord ? (
+                      <div className="inline-flex rounded-lg shadow-2xs border border-purple-200 overflow-hidden bg-white">
+                        <button
+                          onClick={() => handlePrintIndividualPdf(p)}
+                          className="px-2.5 py-1 hover:bg-rose-50 text-rose-700 text-[11px] font-bold transition-colors cursor-pointer border-r border-purple-200 flex items-center gap-1"
+                          title="Unduh / Cetak Laporan Supervisi Manajerial Lengkap ke PDF"
+                        >
+                          <Printer className="w-3 h-3 text-rose-600" />
+                          <span>PDF</span>
+                        </button>
+                        <button
+                          onClick={() => handleExportIndividualWord(p)}
+                          className="px-2.5 py-1 hover:bg-blue-50 text-blue-700 text-[11px] font-bold transition-colors cursor-pointer flex items-center gap-1"
+                          title="Unduh Laporan Supervisi Manajerial Lengkap ke Word (.doc)"
+                        >
+                          <FileDown className="w-3 h-3 text-blue-600" />
+                          <span>Word</span>
+                        </button>
+                      </div>
+                    ) : (
+                      <span className="text-[10.5px] text-slate-400 italic">Belum Ada Evaluasi</span>
+                    )}
                   </div>
                 </div>
               </div>
@@ -1270,42 +1291,21 @@ export const PrincipalList: React.FC<PrincipalListProps> = ({
                       </td>
 
                       <td className="px-4 py-3 text-right">
-                        <div className="flex items-center justify-end gap-1.5">
+                        <div className="flex items-center justify-end gap-1.5 flex-wrap">
+                          {/* 8 Menu Button */}
                           <button
                             onClick={() => handleOpenSupervisionModal(p)}
-                            className="px-2.5 py-1 bg-purple-50 hover:bg-purple-100 text-purple-700 rounded-md text-[11px] font-bold transition-colors cursor-pointer flex items-center gap-1 border border-purple-200"
-                            title="Input Supervisi Manajerial 8 Menu"
+                            className="px-2.5 py-1.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white rounded-lg text-[11px] font-bold transition-colors cursor-pointer flex items-center gap-1 shadow-2xs"
+                            title="Input & Evaluasi Supervisi Manajerial 8 Menu"
                           >
-                            <Sparkles className="w-3 h-3 text-purple-600" />
-                            <span>Input 8 Menu</span>
+                            <Sparkles className="w-3 h-3 text-amber-300" />
+                            <span>{evalRecord ? '8 Menu' : 'Input 8 Menu'}</span>
                           </button>
-                          <button
-                            onClick={() => onScheduleManagerialSupervision(p)}
-                            className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-md text-[11px] font-bold transition-colors cursor-pointer"
-                            title="Jadwalkan agenda supervisi manajerial"
-                          >
-                            + Jadwal
-                          </button>
-                          {/* Surat Kunjungan Actions */}
-                          <button
-                            onClick={() => handlePrintSuratKunjungan(p)}
-                            className="px-2 py-1 bg-amber-50 hover:bg-amber-100 text-amber-800 rounded-md text-[11px] font-bold transition-colors cursor-pointer flex items-center gap-1 border border-amber-200"
-                            title="Cetak Surat Pemberitahuan Kunjungan Supervisi (PDF)"
-                          >
-                            <Printer className="w-3 h-3 text-amber-600" />
-                            <span>Surat PDF</span>
-                          </button>
-                          <button
-                            onClick={() => handleExportSuratKunjunganWord(p)}
-                            className="px-2 py-1 bg-amber-50/80 hover:bg-amber-100 text-amber-900 rounded-md text-[11px] font-bold transition-colors cursor-pointer flex items-center gap-1 border border-amber-200"
-                            title="Unduh Surat Pemberitahuan Kunjungan Supervisi (Word .doc)"
-                          >
-                            <FileText className="w-3 h-3 text-amber-700" />
-                            <span>Surat Word</span>
-                          </button>
+
+                          {/* Foto Kegiatan Button */}
                           <button
                             onClick={() => handleOpenPhotosModal(p)}
-                            className="px-2 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 rounded-md text-[11px] font-bold transition-colors cursor-pointer flex items-center gap-1 border border-emerald-200"
+                            className="px-2 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 rounded-lg text-[11px] font-bold transition-colors cursor-pointer flex items-center gap-1 border border-emerald-200"
                             title="Kelola & Unggah Foto Kegiatan Supervisi Manajerial"
                           >
                             <Camera className="w-3 h-3 text-emerald-600" />
@@ -1315,42 +1315,77 @@ export const PrincipalList: React.FC<PrincipalListProps> = ({
                                 ? evalRecord.documentationPhotos.length
                                 : (p.documentationPhotos ? p.documentationPhotos.length : 0);
                               return count > 0 ? (
-                                <span className="px-1 py-0 bg-emerald-600 text-white text-[9.5px] rounded-full font-mono font-bold">
+                                <span className="px-1.5 py-0.2 bg-emerald-600 text-white text-[9.5px] rounded-full font-mono font-bold">
                                   {count}
                                 </span>
                               ) : null;
                             })()}
                           </button>
-                          {evalRecord && (
+
+                          {/* Surat Segmented Button (PDF | Word) */}
+                          <div className="inline-flex rounded-lg shadow-2xs border border-amber-300 overflow-hidden bg-white text-[11px]">
                             <button
-                              onClick={() => handlePrintIndividualPdf(p)}
-                              className="px-2 py-1 bg-rose-50 hover:bg-rose-100 text-rose-700 rounded-md text-[11px] font-bold transition-colors cursor-pointer flex items-center gap-1 border border-rose-200"
-                              title="Unduh / Cetak Laporan Supervisi Manajerial Lengkap ke PDF"
+                              onClick={() => handlePrintSuratKunjungan(p)}
+                              className="px-2 py-1 hover:bg-amber-50 text-amber-900 font-bold transition-colors cursor-pointer border-r border-amber-200 flex items-center gap-1"
+                              title="Cetak Surat Pemberitahuan Kunjungan Supervisi (PDF)"
                             >
-                              <Printer className="w-3 h-3 text-rose-600" />
-                              <span>PDF</span>
+                              <Printer className="w-3 h-3 text-amber-600" />
+                              <span>Surat</span>
                             </button>
-                          )}
-                          {evalRecord && (
                             <button
-                              onClick={() => handleExportIndividualWord(p)}
-                              className="px-2 py-1 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-md text-[11px] font-bold transition-colors cursor-pointer flex items-center gap-1 border border-blue-200"
-                              title="Unduh Laporan Supervisi Manajerial Lengkap ke Word (.doc)"
+                              onClick={() => handleExportSuratKunjunganWord(p)}
+                              className="px-2 py-1 hover:bg-amber-50 text-amber-900 font-bold transition-colors cursor-pointer flex items-center gap-1"
+                              title="Unduh Surat Pemberitahuan Kunjungan Supervisi (Word .doc)"
                             >
-                              <FileDown className="w-3 h-3 text-blue-600" />
+                              <FileDown className="w-3 h-3 text-amber-700" />
                               <span>Word</span>
                             </button>
+                          </div>
+
+                          {/* Laporan 8 Menu Segmented Button (PDF | Word) */}
+                          {evalRecord && (
+                            <div className="inline-flex rounded-lg shadow-2xs border border-purple-200 overflow-hidden bg-white text-[11px]">
+                              <button
+                                onClick={() => handlePrintIndividualPdf(p)}
+                                className="px-2 py-1 hover:bg-rose-50 text-rose-700 font-bold transition-colors cursor-pointer border-r border-purple-200 flex items-center gap-1"
+                                title="Unduh / Cetak Laporan Supervisi Manajerial Lengkap ke PDF"
+                              >
+                                <Printer className="w-3 h-3 text-rose-600" />
+                                <span>PDF 8M</span>
+                              </button>
+                              <button
+                                onClick={() => handleExportIndividualWord(p)}
+                                className="px-2 py-1 hover:bg-blue-50 text-blue-700 font-bold transition-colors cursor-pointer flex items-center gap-1"
+                                title="Unduh Laporan Supervisi Manajerial Lengkap ke Word (.doc)"
+                              >
+                                <FileDown className="w-3 h-3 text-blue-600" />
+                                <span>Word</span>
+                              </button>
+                            </div>
                           )}
+
+                          {/* Jadwal Button */}
+                          <button
+                            onClick={() => onScheduleManagerialSupervision(p)}
+                            className="p-1.5 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+                            title="Jadwalkan agenda supervisi manajerial"
+                          >
+                            <Calendar className="w-3.5 h-3.5 text-slate-500" />
+                          </button>
+
+                          {/* Edit Button */}
                           <button
                             onClick={() => handleOpenEditModal(p)}
-                            className="p-1.5 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-md transition-colors cursor-pointer"
+                            className="p-1.5 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
                             title="Edit data"
                           >
                             <Edit2 className="w-3.5 h-3.5" />
                           </button>
+
+                          {/* Delete Button */}
                           <button
                             onClick={() => handleDelete(p)}
-                            className="p-1.5 text-slate-600 hover:text-rose-600 hover:bg-rose-50 rounded-md transition-colors cursor-pointer"
+                            className="p-1.5 text-slate-600 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
                             title="Hapus data"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
