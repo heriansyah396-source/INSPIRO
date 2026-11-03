@@ -31,6 +31,7 @@ import { TirtaCoachingView } from './components/TirtaCoachingView';
 import { TeacherQuadrantView } from './components/TeacherQuadrantView';
 import { ContextualProblemView } from './components/ContextualProblemView';
 import { SOARAnalysisView } from './components/SOARAnalysisView';
+import { SWOTAnalysisView } from './components/SWOTAnalysisView';
 import { PrincipalList } from './components/PrincipalList';
 import {
   AppSettings,
@@ -44,7 +45,8 @@ import {
   PMDigitalRecord,
   ContextualProblemRecord,
   PMLearningPartnershipRecord,
-  SOARAnalysisRecord
+  SOARAnalysisRecord,
+  SWOTAnalysisRecord
 } from './types/inspiro';
 import {
   addTeacher,
@@ -88,7 +90,10 @@ import {
   deletePartnershipPMRecord,
   getSOARRecords,
   saveSOARRecord,
-  deleteSOARRecord
+  deleteSOARRecord,
+  getSWOTRecords,
+  saveSWOTRecord,
+  deleteSWOTRecord
 } from './utils/storage';
 import {
   auth,
@@ -134,6 +139,8 @@ export default function App() {
   const [partnershipPMRecords, setPartnershipPMRecords] = useState<PMLearningPartnershipRecord[]>(getPartnershipPMRecords());
   const [contextualProblems, setContextualProblems] = useState<ContextualProblemRecord[]>(getContextualProblems());
   const [soarRecords, setSoarRecords] = useState<SOARAnalysisRecord[]>(getSOARRecords());
+  const [swotRecords, setSwotRecords] = useState<SWOTAnalysisRecord[]>(() => getSWOTRecords());
+  const [selectedSwotPrincipalId, setSelectedSwotPrincipalId] = useState<string | undefined>(undefined);
   const [settings, setSettings] = useState<AppSettings>(getSettings());
 
   // Active item contexts
@@ -182,6 +189,7 @@ export default function App() {
     setPartnershipPMRecords(getPartnershipPMRecords());
     setContextualProblems(getContextualProblems());
     setSoarRecords(getSOARRecords());
+    setSwotRecords(getSWOTRecords());
     setSettings(getSettings());
   }, []);
 
@@ -597,6 +605,24 @@ export default function App() {
     showToast('Analisis SOAR Dihapus', 'Dokumen analisis SOAR telah dihapus dari sistem.', 'info');
   };
 
+  // Handlers: SWOT-TOWS Strategic Analysis for Principals
+  const handleSaveSWOTRecord = (record: SWOTAnalysisRecord) => {
+    saveSWOTRecord(record);
+    refreshData();
+    showToast('Analisis SWOT-TOWS Disimpan', `Analisis SWOT-TOWS untuk ${record.schoolName} (${record.headmasterName}) berhasil disimpan.`, 'success');
+  };
+
+  const handleDeleteSWOTRecord = (id: string) => {
+    deleteSWOTRecord(id);
+    refreshData();
+    showToast('Analisis SWOT-TOWS Dihapus', 'Dokumen analisis SWOT-TOWS manajerial telah dihapus dari sistem.', 'info');
+  };
+
+  const handleNavigateToSWOT = (principalId?: string) => {
+    setSelectedSwotPrincipalId(principalId);
+    setCurrentTab('swot-tows');
+  };
+
   // Active Record for detail view
   const activeRecord =
     supervisions.find((s) => s.id === selectedSupervisionId) || supervisions[0];
@@ -794,6 +820,7 @@ export default function App() {
                   onDeletePrincipal={handleDeletePrincipal}
                   onScheduleManagerialSupervision={handleScheduleManagerialSupervision}
                   onNavigateToCalendar={() => setCurrentTab('calendar')}
+                  onNavigateToSWOT={handleNavigateToSWOT}
                   onUpdateSettings={handleSaveSettings}
                   showToast={showToast}
                 />
@@ -976,6 +1003,19 @@ export default function App() {
                   settings={settings}
                   onSaveRecord={handleSaveSOARRecord}
                   onDeleteRecord={handleDeleteSOARRecord}
+                  showToast={showToast}
+                />
+              )}
+
+              {/* Tab: Analisis Strategis SWOT-TOWS Manajerial Kepala Sekolah */}
+              {currentTab === 'swot-tows' && (
+                <SWOTAnalysisView
+                  records={swotRecords}
+                  principals={principals}
+                  settings={settings}
+                  initialPrincipalId={selectedSwotPrincipalId}
+                  onSaveRecord={handleSaveSWOTRecord}
+                  onDeleteRecord={handleDeleteSWOTRecord}
                   showToast={showToast}
                 />
               )}

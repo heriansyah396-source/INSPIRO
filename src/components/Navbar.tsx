@@ -84,6 +84,10 @@ const TAB_TITLES: Record<NavTab, { title: string; subtitle: string }> = {
     title: 'Analisis Strategis SOAR & 4 Kerangka PM',
     subtitle: 'Inkuiri Apresiatif: Kekuatan (Strengths), Peluang (Opportunities), Aspirasi (Aspirations), dan Bukti Hasil (Results)'
   },
+  'swot-tows': {
+    title: 'Analisis Strategis SWOT-TOWS Manajerial Kepala Sekolah',
+    subtitle: 'Pemetaan Strengths, Weaknesses, Opportunities, Threats, dan Matriks Strategi TOWS (SO, WO, ST, WT)'
+  },
   'quality-map': {
     title: 'Peta Mutu & Komparasi Antar-Sekolah Binaan',
     subtitle: 'Benchmarking kurva mutu, gap analysis 12 indikator, dan rekomendasi intervensi pengawas'

@@ -2278,8 +2278,64 @@ export function calculateManagerialScore(scores: Record<string, number>): {
   };
 }
 
+// ========================================================================
+// 15. SWOT & TOWS MATRIX STRATEGIC ANALYSIS FOR SCHOOL PRINCIPALS
+// Supervisi Manajerial: Analisis Kekuatan, Kelemahan, Peluang, Ancaman & Formulasi Strategi Terpadu
+// ========================================================================
 
+export type SWOTQuadrantType = 'strength' | 'weakness' | 'opportunity' | 'threat';
+export type TOWSStrategyType = 'S-O' | 'W-O' | 'S-T' | 'W-T';
 
+export interface SWOTItem {
+  id: string;
+  quadrant: SWOTQuadrantType;
+  dimension: string; // e.g. 'Standar Pengelolaan', 'Standar Pendidik', 'Sarana Prasarana', 'Pembiayaan/RKAS', 'Kurikulum & Pembelajaran', 'Kemitraan & Budaya'
+  title: string;
+  description: string;
+  impactOrEvidence: string;
+  urgency: 'Sangat Tinggi' | 'Tinggi' | 'Sedang' | 'Rendah';
+  score?: number; // 1 - 100
+}
 
+export interface TOWSStrategyItem {
+  id: string;
+  type: TOWSStrategyType; // S-O, W-O, S-T, W-T
+  title: string;
+  description: string;
+  linkedStrengths?: string[];
+  linkedWeaknesses?: string[];
+  linkedOpportunities?: string[];
+  linkedThreats?: string[];
+  actionPlan: string[];
+  targetOutput: string;
+  timeline: string;
+  pic: string;
+  priority: 'Prioritas Utama' | 'Prioritas Menengah' | 'Jangka Panjang';
+  status: 'Rencana' | 'Dalam Proses' | 'Terealisasi';
+}
 
-
+export interface SWOTAnalysisRecord {
+  id: string;
+  principalId?: string;
+  schoolName: string;
+  schoolNpsn: string;
+  headmasterName: string;
+  headmasterNip: string;
+  headmasterRank?: string;
+  academicYear: string;
+  semester: 'Ganjil' | 'Genap';
+  date: string;
+  title: string;
+  focusArea: string;
+  supervisorName: string;
+  supervisorNip: string;
+  supervisorRole: string;
+  supervisorRank?: string;
+  supervisorNotes: string;
+  recommendation: string;
+  items: SWOTItem[];
+  strategies: TOWSStrategyItem[];
+  status: 'draft' | 'final';
+  createdAt: string;
+  updatedAt: string;
+}

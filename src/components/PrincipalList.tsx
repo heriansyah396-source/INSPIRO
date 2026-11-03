@@ -38,7 +38,8 @@ import {
   RefreshCw,
   Camera,
   Upload,
-  Image as ImageIcon
+  Image as ImageIcon,
+  Target
 } from 'lucide-react';
 import {
   Principal,
@@ -77,6 +78,7 @@ interface PrincipalListProps {
   onDeletePrincipal: (id: string) => void;
   onScheduleManagerialSupervision: (principal: Principal) => void;
   onNavigateToCalendar?: () => void;
+  onNavigateToSWOT?: (principalId: string) => void;
   onUpdateSettings?: (newSettings: AppSettings) => void;
   showToast: (title: string, message: string, type: 'success' | 'error' | 'info' | 'warning') => void;
 }
@@ -89,6 +91,7 @@ export const PrincipalList: React.FC<PrincipalListProps> = ({
   onDeletePrincipal,
   onScheduleManagerialSupervision,
   onNavigateToCalendar,
+  onNavigateToSWOT,
   onUpdateSettings,
   showToast
 }) => {
@@ -1212,6 +1215,18 @@ export const PrincipalList: React.FC<PrincipalListProps> = ({
                       <span className="text-[10.5px] text-slate-400 italic">Belum Ada Evaluasi</span>
                     )}
                   </div>
+
+                  {/* Analisis SWOT-TOWS Shortcut */}
+                  {onNavigateToSWOT && (
+                    <button
+                      onClick={() => onNavigateToSWOT(p.id)}
+                      className="px-2.5 py-1 hover:bg-indigo-50 text-indigo-700 bg-white border border-indigo-200 rounded-lg text-[11px] font-bold transition-colors cursor-pointer flex items-center gap-1 shadow-2xs"
+                      title="Buka Analisis SWOT-TOWS Manajerial untuk Kepala Sekolah ini"
+                    >
+                      <Target className="w-3.5 h-3.5 text-indigo-600" />
+                      <span>SWOT-TOWS</span>
+                    </button>
+                  )}
                 </div>
               </div>
             );
@@ -1362,6 +1377,18 @@ export const PrincipalList: React.FC<PrincipalListProps> = ({
                                 <span>Word</span>
                               </button>
                             </div>
+                          )}
+
+                          {/* SWOT-TOWS Button */}
+                          {onNavigateToSWOT && (
+                            <button
+                              onClick={() => onNavigateToSWOT(p.id)}
+                              className="px-2 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-800 rounded-lg text-[11px] font-bold transition-colors cursor-pointer flex items-center gap-1 border border-indigo-200"
+                              title="Buka Analisis SWOT-TOWS Manajerial untuk Kepala Sekolah ini"
+                            >
+                              <Target className="w-3 h-3 text-indigo-600" />
+                              <span>SWOT</span>
+                            </button>
                           )}
 
                           {/* Jadwal Button */}

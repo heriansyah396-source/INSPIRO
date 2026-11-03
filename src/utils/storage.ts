@@ -11,6 +11,7 @@ import { SEED_DIGITAL_PM_RECORDS } from '../data/seedDigitalPM';
 import { SEED_CONTEXTUAL_PROBLEMS } from '../data/seedContextualProblems';
 import { SEED_PARTNERSHIP_PM_RECORDS } from '../data/seedLearningPartnership';
 import { SEED_SOAR_RECORDS } from '../data/seedSOAR';
+import { SEED_SWOT_RECORDS } from '../data/seedSWOT';
 import { SEED_PRINCIPALS } from '../data/seedPrincipals';
 import { SEED_MANAGERIAL_EVALUATIONS } from '../data/seedManagerialEvaluations';
 import { DEFAULT_SIDRAP_LOGO, DEFAULT_TUTWURI_LOGO } from '../data/defaultLogos';
@@ -32,7 +33,8 @@ import {
   PMDigitalRecord,
   ContextualProblemRecord,
   PMLearningPartnershipRecord,
-  SOARAnalysisRecord
+  SOARAnalysisRecord,
+  SWOTAnalysisRecord
 } from '../types/inspiro';
 
 const TEACHERS_KEY = 'inspiro_teachers';
@@ -47,6 +49,7 @@ const PARTNERSHIP_PM_RECORDS_KEY = 'inspiro_pm_partnership_records';
 const CONTEXTUAL_PROBLEMS_KEY = 'inspiro_contextual_problems';
 const COACHING_RECORDS_KEY = 'inspiro_coaching_records';
 const SOAR_RECORDS_KEY = 'inspiro_soar_records';
+const SWOT_RECORDS_KEY = 'inspiro_swot_records';
 
 // Helper to safely parse JSON from localStorage
 function safeParse<T>(key: string, fallback: T): T {
@@ -1541,6 +1544,370 @@ export function exportSOARToWord(record: SOARAnalysisRecord, settings: AppSettin
   a.href = url;
   const safeTitle = record.schoolName.replace(/[^a-zA-Z0-9]/g, '_');
   a.download = `Analisis_SOAR_${safeTitle}_${record.date}.doc`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+// ========================================================================
+// 15. SWOT & TOWS MATRIX STRATEGIC ANALYSIS STORAGE
+// Supervisi Manajerial Kepala Sekolah: Strengths, Weaknesses, Opportunities, Threats & Strategi TOWS
+// ========================================================================
+
+export function getSWOTRecords(): SWOTAnalysisRecord[] {
+  const records = safeParse<SWOTAnalysisRecord[]>(SWOT_RECORDS_KEY, []);
+  if (records.length === 0) {
+    saveSWOTRecords(SEED_SWOT_RECORDS);
+    return SEED_SWOT_RECORDS;
+  }
+  return records;
+}
+
+export function saveSWOTRecords(records: SWOTAnalysisRecord[]): void {
+  try {
+    localStorage.setItem(SWOT_RECORDS_KEY, JSON.stringify(records));
+  } catch (e) {
+    console.error('Error saving SWOT records:', e);
+  }
+}
+
+export function saveSWOTRecord(record: SWOTAnalysisRecord): void {
+  const current = getSWOTRecords();
+  const index = current.findIndex((r) => r.id === record.id);
+  let updated: SWOTAnalysisRecord[];
+  if (index >= 0) {
+    updated = [...current];
+    updated[index] = { ...record, updatedAt: new Date().toISOString() };
+  } else {
+    updated = [{ ...record, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }, ...current];
+  }
+  saveSWOTRecords(updated);
+}
+
+export function deleteSWOTRecord(id: string): boolean {
+  const current = getSWOTRecords();
+  const filtered = current.filter((r) => r.id !== id);
+  if (filtered.length === current.length) return false;
+  saveSWOTRecords(filtered);
+  return true;
+}
+
+export function getSWOTRecordById(id: string): SWOTAnalysisRecord | null {
+  const current = getSWOTRecords();
+  return current.find((r) => r.id === id) || null;
+}
+
+export function getSWOTRecordByPrincipalId(principalId: string): SWOTAnalysisRecord | null {
+  const current = getSWOTRecords();
+  return current.find((r) => r.principalId === principalId) || null;
+}
+
+/**
+ * Export Matriks Analisis SWOT & TOWS Supervisi Manajerial ke format Microsoft Word (.doc)
+ * dengan kop dan tata letak resmi Kedinasan Kabupaten Sidenreng Rappang
+ */
+export function exportSWOTToWord(record: SWOTAnalysisRecord, settings: AppSettings): void {
+  const agency = settings.governmentAgency || 'PEMERINTAH KABUPATEN SIDENRENG RAPPANG';
+  const schoolCity = settings.schoolCity || 'Kabupaten Sidenreng Rappang';
+  const supervisorName = record.supervisorName || settings.supervisorName || 'HERIANSYAH, S.Si., S.Pd., M.Pd';
+  const supervisorNip = record.supervisorNip || settings.supervisorNip || '19830819 201001 1 002';
+  const supervisorRole = record.supervisorRole || settings.supervisorRole || 'Pengawas Sekolah Pembina';
+  const supervisorRank = record.supervisorRank || settings.supervisorRank || 'Penata Tk. I / III.d';
+  const headmasterName = record.headmasterName || 'Dra. Hj. Nurhasanah, M.Pd.';
+  const headmasterNip = record.headmasterNip || '-';
+  const headmasterRank = record.headmasterRank || '-';
+  const logoLeft = settings.logoUrl || DEFAULT_SIDRAP_LOGO;
+  const logoRight = settings.logoRightUrl || DEFAULT_TUTWURI_LOGO;
+
+  // Group items by quadrant
+  const strengths = record.items.filter((i) => i.quadrant === 'strength');
+  const weaknesses = record.items.filter((i) => i.quadrant === 'weakness');
+  const opportunities = record.items.filter((i) => i.quadrant === 'opportunity');
+  const threats = record.items.filter((i) => i.quadrant === 'threat');
+
+  const renderItemsList = (items: typeof record.items, badgeBg: string, badgeColor: string) => {
+    if (items.length === 0) return '<em>Belum ada butir analisis terdaftar</em>';
+    return `<ol style="margin-left: 18px; padding-left: 0; line-height: 1.4;">
+      ${items
+        .map(
+          (it, idx) => `
+        <li style="margin-bottom: 8px;">
+          <strong>${it.title}</strong>
+          <span style="display:inline-block; font-size:8pt; padding:1px 6px; border-radius:3px; background-color:${badgeBg}; color:${badgeColor}; font-weight:bold;">
+            ${it.dimension || 'Umum'}
+          </span><br/>
+          <span style="font-size:9.5pt; color:#334155;">${it.description}</span><br/>
+          <span style="font-size:9pt; color:#047857;"><strong>Bukti/Dampak:</strong> ${it.impactOrEvidence || '-'}</span>
+        </li>
+      `
+        )
+        .join('')}
+    </ol>`;
+  };
+
+  const renderStrategiesTable = () => {
+    if (record.strategies.length === 0) {
+      return '<p><em>Belum ada formulasi strategi TOWS yang disusun.</em></p>';
+    }
+
+    const soStrategies = record.strategies.filter((s) => s.type === 'S-O');
+    const woStrategies = record.strategies.filter((s) => s.type === 'W-O');
+    const stStrategies = record.strategies.filter((s) => s.type === 'S-T');
+    const wtStrategies = record.strategies.filter((s) => s.type === 'W-T');
+
+    const renderStrategyGroup = (
+      typeLabel: string,
+      typeSub: string,
+      strats: typeof record.strategies,
+      headerBg: string,
+      headerColor: string
+    ) => {
+      return `
+        <div style="margin-bottom: 14px;">
+          <div style="background-color:${headerBg}; color:${headerColor}; padding:6px 10px; font-weight:bold; font-size:11pt; border-radius:4px; margin-bottom:6px;">
+            ${typeLabel} — <span style="font-size:9.5pt; font-weight:normal;">${typeSub}</span>
+          </div>
+          ${
+            strats.length === 0
+              ? '<p style="font-size:9.5pt; color:#64748b; margin-left:10px;"><em>Tidak ada inisiatif strategi khusus untuk kuadran ini.</em></p>'
+              : `<table style="width:100%; border-collapse:collapse; margin-bottom:8px; font-size:9.5pt;">
+                <thead>
+                  <tr style="background-color:#f1f5f9; text-align:left;">
+                    <th style="border:1px solid #cbd5e1; padding:6px; width:4%;">No</th>
+                    <th style="border:1px solid #cbd5e1; padding:6px; width:30%;">Nama Inisiatif Strategis</th>
+                    <th style="border:1px solid #cbd5e1; padding:6px; width:36%;">Rencana Aksi &amp; Uraian</th>
+                    <th style="border:1px solid #cbd5e1; padding:6px; width:18%;">Target Output</th>
+                    <th style="border:1px solid #cbd5e1; padding:6px; width:12%;">PIC &amp; Waktu</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${strats
+                    .map(
+                      (st, idx) => `
+                    <tr>
+                      <td style="border:1px solid #cbd5e1; padding:6px; text-align:center; vertical-align:top;">${idx + 1}</td>
+                      <td style="border:1px solid #cbd5e1; padding:6px; vertical-align:top;">
+                        <strong>${st.title}</strong><br/>
+                        <span style="font-size:8.5pt; color:#0369a1;">Prioritas: ${st.priority}</span>
+                      </td>
+                      <td style="border:1px solid #cbd5e1; padding:6px; vertical-align:top;">
+                        <p style="margin:0 0 4px 0;">${st.description}</p>
+                        ${
+                          st.actionPlan && st.actionPlan.length > 0
+                            ? `<ul style="margin:2px 0 0 16px; padding:0; font-size:9pt; color:#475569;">
+                                ${st.actionPlan.map((ap) => `<li>${ap}</li>`).join('')}
+                              </ul>`
+                            : ''
+                        }
+                      </td>
+                      <td style="border:1px solid #cbd5e1; padding:6px; vertical-align:top;">${st.targetOutput || '-'}</td>
+                      <td style="border:1px solid #cbd5e1; padding:6px; vertical-align:top; font-size:8.5pt;">
+                        <strong>${st.pic || '-'}</strong><br/>
+                        <span style="color:#64748b;">${st.timeline || '-'}</span><br/>
+                        <span style="color:#16a34a; font-weight:bold;">[${st.status}]</span>
+                      </td>
+                    </tr>
+                  `
+                    )
+                    .join('')}
+                </tbody>
+              </table>`
+          }
+        </div>
+      `;
+    };
+
+    return `
+      ${renderStrategyGroup('1. STRATEGI S-O (MAXI - MAXI)', 'Memanfaatkan Kekuatan (S) untuk Merebut Peluang (O)', soStrategies, '#dcfce7', '#14532d')}
+      ${renderStrategyGroup('2. STRATEGI W-O (MINI - MAXI)', 'Meminimalkan Kelemahan (W) dengan Memanfaatkan Peluang (O)', woStrategies, '#fef9c3', '#713f12')}
+      ${renderStrategyGroup('3. STRATEGI S-T (MAXI - MINI)', 'Menggunakan Kekuatan (S) untuk Mengatasi Ancaman (T)', stStrategies, '#e0e7ff', '#312e81')}
+      ${renderStrategyGroup('4. STRATEGI W-T (MINI - MINI)', 'Meminimalkan Kelemahan (W) dan Menghindari Ancaman (T)', wtStrategies, '#ffe4e6', '#881337')}
+    `;
+  };
+
+  const html = `
+    <!DOCTYPE html>
+    <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+    <head>
+      <meta charset="utf-8">
+      <title>Laporan Matriks Analisis SWOT & TOWS Supervisi Manajerial</title>
+      <style>
+        body {
+          font-family: 'Calibri', 'Times New Roman', sans-serif;
+          font-size: 11pt;
+          line-height: 1.35;
+          color: #0f172a;
+          margin: 20px;
+        }
+        .header-kop {
+          text-align: center;
+          border-bottom: 3px double #000;
+          padding-bottom: 12px;
+          margin-bottom: 18px;
+        }
+        .header-kop h3 { margin: 0; font-size: 12.5pt; text-transform: uppercase; font-weight: bold; }
+        .header-kop h2 { margin: 2px 0; font-size: 14pt; text-transform: uppercase; font-weight: bold; }
+        .header-kop h1 { margin: 2px 0; font-size: 15pt; text-transform: uppercase; font-weight: bold; }
+        .header-kop p { margin: 2px 0; font-size: 9.5pt; font-style: italic; color: #334155; }
+        .title-doc {
+          text-align: center;
+          margin-top: 10px;
+          margin-bottom: 14px;
+        }
+        .title-doc h2 { margin: 0; font-size: 13.5pt; text-transform: uppercase; text-decoration: underline; font-weight: bold; }
+        .title-doc p { margin: 4px 0 0 0; font-size: 10.5pt; font-weight: bold; color: #1e293b; }
+        .table-info { width: 100%; border-collapse: collapse; margin-bottom: 14px; font-size: 10pt; }
+        .table-info td { padding: 3px 6px; vertical-align: top; }
+        .matrix-table { width: 100%; border-collapse: collapse; margin-bottom: 18px; }
+        .matrix-table td { width: 50%; vertical-align: top; padding: 10px; border: 1.5pt solid #cbd5e1; }
+        .q-title { font-size: 11pt; font-weight: bold; padding: 5px 8px; border-radius: 4px; margin-bottom: 8px; text-transform: uppercase; }
+        .q-s { background-color: #dcfce7; color: #166534; border-left: 5px solid #16a34a; }
+        .q-w { background-color: #fee2e2; color: #991b1b; border-left: 5px solid #dc2626; }
+        .q-o { background-color: #e0f2fe; color: #075985; border-left: 5px solid #0284c7; }
+        .q-t { background-color: #ffedd5; color: #9a3412; border-left: 5px solid #ea580c; }
+        .signature-table { width: 100%; margin-top: 30px; border-collapse: collapse; }
+        .signature-table td { width: 50%; text-align: center; vertical-align: top; font-size: 10.5pt; }
+      </style>
+    </head>
+    <body>
+      <!-- KOP RESMI DINAS PENDIDIKAN DAN KEBUDAYAAN DENGAN LOGO RESMI GANDA -->
+      <table style="width:100%; border:none; border-bottom:3px double #000000; padding-bottom:8px; margin-bottom:18px;">
+        <tr>
+          <td style="width:75px; text-align:center; vertical-align:middle; border:none; padding-right:8px;">
+            <img src="${logoLeft}" width="70" height="75" style="object-fit:contain;" alt="Logo Kabupaten Sidenreng Rappang" />
+          </td>
+          <td style="text-align:center; vertical-align:middle; border:none; padding:0 8px;">
+            <div style="font-size:12pt; font-weight:bold; text-transform:uppercase; margin:0; line-height:1.2;">
+              ${agency.toUpperCase()}
+            </div>
+            <div style="font-size:13.5pt; font-weight:bold; text-transform:uppercase; margin:2px 0; line-height:1.2;">
+              DINAS PENDIDIKAN DAN KEBUDAYAAN
+            </div>
+            <div style="font-size:10.5pt; font-weight:bold; text-transform:uppercase; margin:0; color:#1e293b; line-height:1.2;">
+              KOORDINATOR PENGAWAS SEKOLAH MENENGAH PERTAMA
+            </div>
+            <div style="font-size:8.5pt; font-style:italic; margin-top:3px; color:#333333; line-height:1.2;">
+              Alamat: Kompleks SKPD Jl. Harapan Baru No. 1, Pangkajene, Kab. Sidenreng Rappang, Sulawesi Selatan (91611)
+            </div>
+          </td>
+          <td style="width:75px; text-align:center; vertical-align:middle; border:none; padding-left:8px;">
+            <img src="${logoRight}" width="70" height="75" style="object-fit:contain;" alt="Logo Tut Wuri Handayani" />
+          </td>
+        </tr>
+      </table>
+
+      <div class="title-doc">
+        <h2>INSTRUMEN ANALISIS STRATEGIS SWOT &amp; MATRIKS TOWS</h2>
+        <p>SUPERVISI MANAJERIAL TATA KELOLA KEPALA SEKOLAH</p>
+      </div>
+
+      <table class="table-info">
+        <tr>
+          <td style="width: 22%;"><strong>Satuan Pendidikan</strong></td>
+          <td style="width: 3%;">:</td>
+          <td style="width: 45%;">${record.schoolName} (NPSN: ${record.schoolNpsn})</td>
+          <td style="width: 15%;"><strong>Tahun Pelajaran</strong></td>
+          <td style="width: 3%;">:</td>
+          <td>${record.academicYear}</td>
+        </tr>
+        <tr>
+          <td><strong>Kepala Sekolah</strong></td>
+          <td>:</td>
+          <td>${headmasterName}</td>
+          <td><strong>Semester</strong></td>
+          <td>:</td>
+          <td>${record.semester}</td>
+        </tr>
+        <tr>
+          <td><strong>NIP / Pangkat</strong></td>
+          <td>:</td>
+          <td>${headmasterNip} (${headmasterRank})</td>
+          <td><strong>Tanggal Supervisi</strong></td>
+          <td>:</td>
+          <td>${record.date}</td>
+        </tr>
+        <tr>
+          <td><strong>Fokus Pengawasan</strong></td>
+          <td>:</td>
+          <td>${record.focusArea}</td>
+          <td><strong>Pengawas Pembina</strong></td>
+          <td>:</td>
+          <td>${supervisorName}</td>
+        </tr>
+      </table>
+
+      <div style="background-color: #f8fafc; border-left: 4px solid #2563eb; padding: 8px 12px; margin-bottom: 14px; font-size: 10pt;">
+        <strong>Catatan Sintesis Pengawas Pembina:</strong><br/>
+        <em>"${record.supervisorNotes || '-'}"</em>
+      </div>
+
+      <h3 style="font-size: 11.5pt; text-transform: uppercase; margin-bottom: 6px;">I. MATRIKS 4 KUADRAN SWOT (STRENGTHS, WEAKNESSES, OPPORTUNITIES, THREATS)</h3>
+
+      <table class="matrix-table">
+        <tr>
+          <td>
+            <div class="q-title q-s">S - STRENGTHS (Kekuatan Internal)</div>
+            <p style="font-size: 9pt; color: #475569; margin-top: 0;"><em>Keunggulan nyata manajerial, kompetensi pendidik, sarpras, &amp; budaya sekolah.</em></p>
+            ${renderItemsList(strengths, '#dcfce7', '#15803d')}
+          </td>
+          <td>
+            <div class="q-title q-w">W - WEAKNESSES (Kelemahan Internal)</div>
+            <p style="font-size: 9pt; color: #475569; margin-top: 0;"><em>Area keterbatasan internal, kesenjangan kompetensi, atau kendala sarana.</em></p>
+            ${renderItemsList(weaknesses, '#fee2e2', '#b91c1c')}
+          </td>
+        </tr>
+        <tr>
+          <td>
+            <div class="q-title q-o">O - OPPORTUNITIES (Peluang Eksternal)</div>
+            <p style="font-size: 9pt; color: #475569; margin-top: 0;"><em>Peluang kebijakan Kemendikbud, komite, alumni, DUDI &amp; kemitraan Sidrap.</em></p>
+            ${renderItemsList(opportunities, '#e0f2fe', '#0369a1')}
+          </td>
+          <td>
+            <div class="q-title q-t">T - THREATS (Ancaman / Tantangan)</div>
+            <p style="font-size: 9pt; color: #475569; margin-top: 0;"><em>Faktor eksternal seperti distraksi gadget, dinamika sosial, atau bencana musiman.</em></p>
+            ${renderItemsList(threats, '#ffedd5', '#c2410c')}
+          </td>
+        </tr>
+      </table>
+
+      <h3 style="font-size: 11.5pt; text-transform: uppercase; margin-top: 20px; margin-bottom: 8px;">II. MATRIKS FORMULASI STRATEGI TOWS (SO, WO, ST, WT)</h3>
+      ${renderStrategiesTable()}
+
+      <div style="background-color: #f1f5f9; border-left: 4px solid #059669; padding: 8px 12px; margin-top: 14px; margin-bottom: 14px; font-size: 10pt;">
+        <strong>Rekomendasi Tindak Lanjut Manajerial Pengawas:</strong><br/>
+        <em>"${record.recommendation || '-'}"</em>
+      </div>
+
+      <table class="signature-table">
+        <tr>
+          <td>
+            Mengetahui / Memeriksa,<br/>
+            Kepala Sekolah ${record.schoolName}
+            <br/><br/><br/><br/><br/>
+            <strong><u>${headmasterName}</u></strong><br/>
+            NIP. ${headmasterNip}
+          </td>
+          <td>
+            ${schoolCity}, ${record.date}<br/>
+            ${supervisorRole}
+            <br/><br/><br/><br/><br/>
+            <strong><u>${supervisorName}</u></strong><br/>
+            NIP. ${supervisorNip}<br/>
+            <span>Pangkat/Gol: ${supervisorRank}</span>
+          </td>
+        </tr>
+      </table>
+    </body>
+    </html>
+  `;
+
+  const blob = new Blob(['\ufeff', html], { type: 'application/msword;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  const safeTitle = record.schoolName.replace(/[^a-zA-Z0-9]/g, '_');
+  a.download = `Analisis_SWOT_TOWS_${safeTitle}_${record.date}.doc`;
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);

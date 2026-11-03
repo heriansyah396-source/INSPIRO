@@ -26,7 +26,8 @@ import {
   ShieldCheck,
   Laptop,
   FileSearch,
-  Handshake
+  Handshake,
+  Target
 } from 'lucide-react';
 import { SupervisionRecord, PMReport } from '../types/inspiro';
 import { RadarChartWidget } from './RadarChartWidget';
@@ -47,6 +48,7 @@ export type NavTab =
   | 'pm-digital'
   | 'pm-partnership'
   | 'soar-analysis'
+  | 'swot-tows'
   | 'quality-map'
   | 'growth-tracker'
   | 'settings';
@@ -177,6 +179,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
       label: 'Analisis SOAR (4 Pilar)',
       icon: Sparkles,
       badge: 'Kepemimpinan'
+    },
+    {
+      id: 'swot-tows' as NavTab,
+      label: 'Analisis SWOT-TOWS',
+      icon: Target,
+      badge: 'Manajerial'
     },
     {
       id: 'quality-map' as NavTab,
