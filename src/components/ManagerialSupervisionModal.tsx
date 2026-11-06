@@ -35,7 +35,9 @@ import {
   Upload,
   Trash2,
   Image as ImageIcon,
-  Plus
+  Plus,
+  Maximize2,
+  Minimize2
 } from 'lucide-react';
 import {
   Principal,
@@ -96,6 +98,11 @@ export const ManagerialSupervisionModal: React.FC<ManagerialSupervisionModalProp
   const [catatanPengawas, setCatatanPengawas] = useState(() => existingEvaluation?.catatanPengawas || '');
   const [rekomendasiManajerial, setRekomendasiManajerial] = useState(() => existingEvaluation?.rekomendasiManajerial || '');
 
+  // Full Screen & Recommendation highlight state
+  const [isFullScreen, setIsFullScreen] = useState(false);
+  const [isRecommendationHighlighted, setIsRecommendationHighlighted] = useState(false);
+  const recommendationSectionRef = React.useRef<HTMLDivElement>(null);
+
   // Activity Photos state
   const [documentationPhotos, setDocumentationPhotos] = useState<ManagerialActivityPhoto[]>(() => {
     return existingEvaluation?.documentationPhotos || principal.documentationPhotos || [];
@@ -110,19 +117,40 @@ export const ManagerialSupervisionModal: React.FC<ManagerialSupervisionModalProp
   const [filterStatus, setFilterStatus] = useState<'all' | 'unscored' | 'scored'>('all');
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Sync state if existingEvaluation changes
+  // Guard to only sync state from props on modal open or target principal switch
+  // This prevents parent re-renders (such as toast updates or table refreshes) from erasing user input
+  const lastLoadedSessionRef = React.useRef<string | null>(null);
+
   useEffect(() => {
+    if (!isOpen) {
+      lastLoadedSessionRef.current = null;
+      return;
+    }
+
+    const sessionKey = `${principal.id}_${existingEvaluation?.id || 'new'}`;
+    if (lastLoadedSessionRef.current === sessionKey) {
+      return;
+    }
+
+    lastLoadedSessionRef.current = sessionKey;
+
     if (existingEvaluation) {
-      setDate(existingEvaluation.date);
-      setAcademicYear(existingEvaluation.academicYear);
-      setSemester(existingEvaluation.semester);
+      setDate(existingEvaluation.date || new Date().toISOString().split('T')[0]);
+      setAcademicYear(existingEvaluation.academicYear || '2026/2027');
+      setSemester(existingEvaluation.semester || 'Ganjil');
       setScores({ ...existingEvaluation.scores });
       setItemNotes({ ...existingEvaluation.notes });
       setCatatanPengawas(existingEvaluation.catatanPengawas || '');
       setRekomendasiManajerial(existingEvaluation.rekomendasiManajerial || '');
-      setDocumentationPhotos(existingEvaluation.documentationPhotos || principal.documentationPhotos || []);
+      setDocumentationPhotos(
+        (existingEvaluation.documentationPhotos && existingEvaluation.documentationPhotos.length > 0)
+          ? existingEvaluation.documentationPhotos
+          : (principal.documentationPhotos || [])
+      );
     } else {
       setDate(new Date().toISOString().split('T')[0]);
+      setAcademicYear('2026/2027');
+      setSemester('Ganjil');
       setScores({});
       setItemNotes({});
       setCatatanPengawas('');
@@ -131,7 +159,7 @@ export const ManagerialSupervisionModal: React.FC<ManagerialSupervisionModalProp
     }
     setFilterStatus('all');
     setSearchQuery('');
-  }, [existingEvaluation, principal.id, principal.documentationPhotos]);
+  }, [isOpen, principal.id, existingEvaluation?.id]);
 
   const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -287,66 +315,95 @@ export const ManagerialSupervisionModal: React.FC<ManagerialSupervisionModalProp
     });
   }, [currentDimension, scores, filterStatus, searchQuery]);
 
-  // Generate automated recommendation based on weakest dimension
-  const handleGenerateSmartRecommendation = () => {
+  // Generate automated recommendation based on weakest dimension or specific focus
+  const handleGenerateSmartRecommendation = (specificFocus?: 'kurikulum' | 'kesiswaan' | 'ptk' | 'sarpras' | 'keuangan' | 'humas' | 'administrasi' | 'lingkungan') => {
     const dimEntries = Object.entries(scoreStats.dimensionScores);
-    if (dimEntries.length === 0) return;
+    const answeredCount = scoreStats.answeredCount;
+    const finalScore = scoreStats.finalScore;
+    const predicate = scoreStats.predicate;
 
-    // Find dimension with lowest percentage
-    let lowestKey = dimEntries[0][0];
-    let lowestPct = dimEntries[0][1].percentage;
+    // Sort dimensions by percentage ascending (lowest first)
+    const sortedDims = [...dimEntries].sort((a, b) => a[1].percentage - b[1].percentage);
+    const lowestDimKey = (sortedDims[0]?.[0] || 'kurikulum') as 'kurikulum' | 'kesiswaan' | 'ptk' | 'sarpras' | 'keuangan' | 'humas' | 'administrasi' | 'lingkungan';
+    const targetKey = specificFocus || lowestDimKey;
+    const targetDim = MANAGERIAL_DIMENSIONS.find((d) => d.key === targetKey) || MANAGERIAL_DIMENSIONS[0];
 
-    dimEntries.forEach(([key, val]) => {
-      if (val.percentage < lowestPct) {
-        lowestPct = val.percentage;
-        lowestKey = key;
-      }
-    });
+    // Find strong dimensions (percentage >= 75%)
+    const strongDims = dimEntries
+      .filter(([_, s]) => s.percentage >= 75)
+      .map(([k]) => MANAGERIAL_DIMENSIONS.find((d) => d.key === k)?.shortTitle)
+      .filter(Boolean);
 
-    const targetDim = MANAGERIAL_DIMENSIONS.find((d) => d.key === lowestKey) || MANAGERIAL_DIMENSIONS[0];
-
-    const recommendationTemplates: Record<string, { catatan: string; rekomendasi: string }> = {
+    const recommendationTemplates: Record<string, { temuan: string; rekomendasi: string }> = {
       kurikulum: {
-        catatan: `Perlu peningkatan pada dokumen Kurikulum Satuan Pendidikan (KSP) dan pemantauan berkala terhadap telaah modul ajar guru. Jadwal supervisi akademik kepala sekolah belum terlaksana optimal.`,
-        rekomendasi: `1. Segera mutakhirkan dokumen KSP dan koordinasikan pengesahan ke Dinas Pendidikan.\n2. Jadwalkan telaah modul ajar dan supervisi akademik guru minimal 1 kali per semester dengan rubrik Kurikulum Merdeka.`
+        temuan: `Pada dimensi Tata Kelola Kurikulum & Pembelajaran di ${principal.satuanPendidikan}, dokumen Kurikulum Satuan Pendidikan (KSP) perlu dimutakhirkan secara berkala selaras dengan rapor pendidikan, serta telaah modul ajar guru perlu dijadwalkan secara sistematis oleh kepala sekolah.`,
+        rekomendasi: `1. Memutakhirkan dokumen KSP bersama TPK Sekolah dengan analisis karakteristik satuan pendidikan terbaru.\n2. Mengintensifkan supervisi klinis dan telaah modul ajar guru secara terjadwal dengan rubrik Kurikulum Merdeka.\n3. Memfasilitasi guru merancang asesmen diagnostik awal dan pembelajaran berdiferensiasi secara konsisten.`
       },
       kesiswaan: {
-        catatan: `Dokumentasi buku induk dan catatan bimbingan konseling (BK) perlu penataan yang lebih tertib. Program pembinaan prestasi ekskul belum memiliki target yang terdokumentasi.`,
-        rekomendasi: `1. Lakukan audit buku induk siswa dan sinkronisasi data mutasi secara rutin dengan Dapodik.\n2. Aktifkan layanan BK dengan pendekatan disiplin positif dan restitusi ramah anak.`
+        temuan: `Pada dimensi Kesiswaan & Disiplin Positif, rekam jejak buku induk siswa dan pembinaan layanan bimbingan konseling (BK) perlu penataan terpadu. Pelaksanaan disiplin positif berbasis restitusi perlu diperkuat di lingkungan sekolah.`,
+        rekomendasi: `1. Mengoptimalkan tertib administrasi buku induk dan mutasi kesiswaan terintegrasi dengan Dapodik.\n2. Mengimplementasikan segitiga restitusi dan pembiasaan budaya disiplin positif ramah anak di seluruh kelas.\n3. Menyusun rencana program pengembangan minat dan bakat siswa melalui ekstrakurikuler terarah.`
       },
       ptk: {
-        catatan: `Fasilitasi program pengembangan keprofesian berkelanjutan (PKB) guru masih perlu dioptimalkan. Dokumen penilaian kinerja guru (PKG) perlu integrasi lebih dalam ke platform PMM.`,
-        rekomendasi: `1. Bentuk dan jadwalkan Komunitas Belajar (Kombel) sekolah untuk berbagi praktik baik mingguan.\n2. Lengkapi berkas portofolio kepegawaian fisik dan digital seluruh guru dan tenaga kependidikan.`
+        temuan: `Pada dimensi Manajemen PTK & Pengembangan Profesional di ${principal.satuanPendidikan}, pemanfaatan Platform Merdeka Mengajar (PMM) dan keaktifan Komunitas Belajar (Kombel) intra-sekolah masih perlu diakselerasi secara terstruktur.`,
+        rekomendasi: `1. Mengaktifkan jadwal rutin Komunitas Belajar (Kombel) sekolah untuk bedah modul dan berbagi praktik baik minimal 2 minggu sekali.\n2. Mendorong guru menyelesaikan aksi nyata di PMM dan mengintegrasikan Penilaian Kinerja Guru (PKG) tepat waktu.\n3. Memetakan kebutuhan Pengembangan Keprofesian Berkelanjutan (PKB) guru sesuai rekomendasi Rapor Pendidikan.`
       },
       sarpras: {
-        catatan: `Buku inventaris barang dan Kartu Inventaris Ruangan (KIR) belum dimutakhirkan secara menyeluruh. Terdapat barang rusak berat yang belum diajukan proses penghapusan aset.`,
-        rekomendasi: `1. Buat jadwal preventive maintenance untuk perawatan gedung dan sarana laboratorium TIK.\n2. Susun berita acara pemeriksaan barang rusak berat dan ajukan usulan penghapusan aset ke dinas/BPKAD.`
+        temuan: `Pada dimensi Sarana, Prasarana & Fasilitas Belajar, pencatatan Kartu Inventaris Ruangan (KIR) dan inventarisasi aset digital belum sepenuhnya tervalidasi secara fisik dan digital.`,
+        rekomendasi: `1. Memperbarui Buku Inventaris Barang dan menempelkan Kartu Inventaris Ruangan (KIR) terbaru di setiap ruang kelas dan laboratorium.\n2. Menyusun jadwal pemeliharaan berkala (preventive maintenance) sarana gedung dan perangkat TIK/Chromebook sekolah.\n3. Melakukan identifikasi aset rusak berat dan menyusun usulan penghapusan aset resmi ke dinas/BPKAD.`
       },
       keuangan: {
-        catatan: `Dokumen RKAS perlu lebih diselaraskan dengan indikator prioritas Rapor Pendidikan (PBD). Pembukuan Buku Kas Umum (BKU) dan rekonsiliasi bank perlu ditutup disiplin tiap bulan.`,
-        rekomendasi: `1. Optimalkan input dan sinkronisasi tepat waktu melalui aplikasi ARKAS.\n2. Pasang ringkasan realisasi penggunaan dana BOS pada papan transparansi sekolah sebagai wujud akuntabilitas publik.`
+        temuan: `Pada dimensi Akuntabilitas Tata Kelola Keuangan & BOS di ${principal.satuanPendidikan}, sinkronisasi belanja ARKAS dan keterkaitan dengan Perencanaan Berbasis Data (PBD) perlu diperkuat agar realisasi BOSP selalu tepat waktu dan transparan.`,
+        rekomendasi: `1. Menyusun dokumen RKAS berbasis rekomendasi prioritas Rapor Pendidikan (PBD) secara taat asas.\n2. Menertibkan pembukuan Buku Kas Umum (BKU), Buku Pembantu Pajak, dan rekonsiliasi bank secara disiplin setiap akhir bulan.\n3. Memasang infografis ringkasan realisasi penggunaan dana BOS pada papan transparansi sekolah sebagai wujud akuntabilitas publik.`
       },
       humas: {
-        catatan: `Peran Komite Sekolah masih perlu ditingkatkan dari sekadar administratif menjadi mitra strategis. Saluran publikasi media sosial sekolah belum dimanfaatkan secara aktif.`,
-        rekomendasi: `1. Adakan rapat koordinasi berkala dengan Komite Sekolah dan tokoh masyarakat setempat.\n2. Perluas naskah kerja sama (MoU) dengan instansi kesehatan (Puskesmas), kepolisian, dan dunia usaha/alumni.`
+        temuan: `Pada dimensi Hubungan Masyarakat & Kemitraan Strategis, keterlibatan aktif Komite Sekolah dalam perumusan program tahunan dan kerja sama lintas instansi masih berpeluang diperluas.`,
+        rekomendasi: `1. Menyelenggarakan forum koordinasi rutin bersama Komite Sekolah dan paguyuban orang tua secara berkala.\n2. Menjalin dan memperbarui naskah nota kesepahaman (MoU) kemitraan dengan Puskesmas, Polsek/Babinsa, dan dunia usaha di Kabupaten Sidenreng Rappang.\n3. Mengaktifkan kanal publikasi media sosial sekolah untuk mempublikasikan prestasi dan transparansi kegiatan belajar.`
       },
       administrasi: {
-        catatan: `Dokumen RKJM 4 tahunan dan RKT perlu evaluasi berkala per semester. Alur sistem persuratan dan penomoran arsip perlu penataan terpusat.`,
-        rekomendasi: `1. Lakukan review ketercapaian target KPI dalam Rencana Kerja Tahunan (RKT).\n2. Terapkan kodefikasi persuratan resmi dan penyimpanan arsip digital untuk dokumen-dokumen penting sekolah.`
+        temuan: `Pada dimensi Tata Kelola Administrasi & Rencana Strategis, dokumen perencanaan jangka menengah (RKJM 4 tahunan) dan Rencana Kerja Tahunan (RKT) perlu evaluasi berkala terhadap ketercapaian target KPI.`,
+        rekomendasi: `1. Melakukan review berkala terhadap ketercapaian indikator kinerja utama dalam RKT setiap akhir semester.\n2. Menerapkan tata naskah dinas resmi dan pengarsipan surat dinas fisik maupun digital yang tersistematis.\n3. Menyusun dokumen Standar Operasional Prosedur (SOP) untuk seluruh alur layanan pokok administrasi sekolah.`
       },
       lingkungan: {
-        catatan: `Budaya kebersihan toilet dan penataan sanitasi ramah anak perlu pemantauan ekstra. Rambu mitigasi bencana dan sosialisasi tim TPPK perlu diperkuat.`,
-        rekomendasi: `1. Giatkan gerakan sekolah sehat dan pembiasaan budaya positif Profil Pelajar Pancasila setiap pagi.\n2. Pastikan Tim Pencegahan dan Penanganan Kekerasan (TPPK) aktif dan kotak pengaduan berfungsi optimal.`
+        temuan: `Pada dimensi Iklim Lingkungan, Budaya Sekolah & Keamanan, penguatan Tim Pencegahan dan Penanganan Kekerasan (TPPK) dan pembudayaan Gerakan Sekolah Sehat (GSS) perlu terus dimaksimalkan.`,
+        rekomendasi: `1. Memastikan SK TPPK aktif, memasang papan nama posko pengaduan, dan menyosialisasikan alur penanganan ramah anak.\n2. Menggalakkan pembiasaan Gerakan Sekolah Sehat (sehat bergizi, sehat fisik, dan sehat imunisasi) serta kebersihan sanitasi.\n3. Memasang rambu jalur evakuasi mitigasi darurat dan membudayakan 5S (Senyum, Salam, Sapa, Sopan, Santun).`
       }
     };
 
-    const template = recommendationTemplates[lowestKey] || recommendationTemplates.kurikulum;
-    setCatatanPengawas((prev) => (prev ? `${prev}\n\n[Temuan Prioritas]: ${template.catatan}` : template.catatan));
-    setRekomendasiManajerial((prev) => (prev ? `${prev}\n\n[Rekomendasi Prioritas]:\n${template.rekomendasi}` : template.rekomendasi));
+    const selectedTemplate = recommendationTemplates[targetKey] || recommendationTemplates.kurikulum;
+
+    let synthesizedTemuan = '';
+    let synthesizedRekomendasi = '';
+
+    if (answeredCount === 0) {
+      synthesizedTemuan = `Berdasarkan peninjauan supervisi manajerial terhadap ${principal.nama} di ${principal.satuanPendidikan}:\n- Tata kelola kepemimpinan sekolah berjalan aktif dengan komitmen peningkatan mutu berkelanjutan.\n- ${selectedTemplate.temuan}`;
+
+      synthesizedRekomendasi = `Rencana Aksi Tindak Lanjut Supervisi Manajerial (${principal.nama} - ${principal.satuanPendidikan}):\n\n[Langkah Prioritas Jangka Pendek (1 - 2 Minggu)]:\n${selectedTemplate.rekomendasi}\n\n[Langkah Jangka Menengah (1 - 3 Bulan)]:\n1. Melakukan evaluasi berkala bersama dewan guru atas implementasi rekomendasi manajerial.\n2. Melengkapi bukti fisik seluruh 8 dimensi standar pengelolaan sekolah.\n3. Melaporkan kemajuan pelaksanaan supervisi kepada Pengawas Pembina (${settings.supervisorName || 'Pengawas Sekolah'}).`;
+    } else {
+      const strongText = strongDims.length > 0
+        ? `Dimensi dengan capaian baik: ${strongDims.join(', ')}.`
+        : 'Progres pemenuhan indikator manajerial mulai terpetakan dengan baik.';
+
+      synthesizedTemuan = `Hasil Supervisi Manajerial Kepala Sekolah ${principal.nama} (${principal.satuanPendidikan})\nSkor Akhir: ${finalScore}/100 | Predikat: ${predicate} | Indikator Dinilai: ${answeredCount}/${TOTAL_MANAGERIAL_ITEMS}\n\n[Kekuatan & Praktik Baik]:\n${strongText} Kepala sekolah menunjukkan kepemimpinan instruksional yang berorientasi pada peningkatan mutu layanan belajar.\n\n[Area Prioritas Pembenahan]:\n${selectedTemplate.temuan}`;
+
+      synthesizedRekomendasi = `Rencana Tindak Lanjut Supervisi Manajerial (${principal.nama}):\n\n[Prioritas Utama (1 - 2 Minggu)]:\n${selectedTemplate.rekomendasi}\n\n[Prioritas Jangka Menengah (1 - 3 Bulan)]:\n1. Melakukan pemantauan konsisten terhadap tindak lanjut hasil supervisi manajerial di tingkat satuan pendidikan.\n2. Menyempurnakan bukti fisik seluruh 138 indikator manajerial ke dalam portofolio digital terpadu sekolah.\n3. Menjaga koordinasi berkala dengan Pengawas Pembina (${settings.supervisorName || 'Pengawas Sekolah'}) dalam agenda evaluasi mutu pendidikan di Kabupaten Sidenreng Rappang.`;
+    }
+
+    setCatatanPengawas(synthesizedTemuan);
+    setRekomendasiManajerial(synthesizedRekomendasi);
+
+    // Visual feedback: pulse animation & smooth scroll
+    setIsRecommendationHighlighted(true);
+    setTimeout(() => {
+      setIsRecommendationHighlighted(false);
+    }, 2800);
+
+    setTimeout(() => {
+      recommendationSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }, 100);
 
     showToast(
-      'Rekomendasi Berbasis Data Dihasilkan',
-      `Fokus intervensi otomatis disesuaikan pada dimensi: ${targetDim.title}`,
+      'Rekomendasi Berbasis Data Berhasil Dihasilkan',
+      `Catatan temuan & tindak lanjut untuk ${principal.nama} telah disintesis pada dimensi: ${targetDim.title}`,
       'success'
     );
   };
@@ -436,8 +493,18 @@ export const ManagerialSupervisionModal: React.FC<ManagerialSupervisionModalProp
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/75 backdrop-blur-xs flex items-center justify-center p-2 sm:p-4">
-      <div className="bg-white w-full max-w-6xl rounded-2xl shadow-2xl border border-slate-200 flex flex-col max-h-[92vh] overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+    <div
+      className={`fixed inset-0 z-50 bg-slate-900/80 backdrop-blur-xs flex items-center justify-center transition-all duration-200 ${
+        isFullScreen ? 'p-0 w-screen h-screen overflow-hidden' : 'p-1 sm:p-2.5 overflow-y-auto'
+      }`}
+    >
+      <div
+        className={`bg-white flex flex-col overflow-hidden transition-all duration-200 ${
+          isFullScreen
+            ? 'w-screen h-screen max-w-none max-h-none rounded-none border-none shadow-none'
+            : 'w-[99vw] max-w-[1850px] h-[97vh] max-h-[97vh] rounded-2xl shadow-2xl border border-slate-200'
+        }`}
+      >
         
         {/* Printable Official Document Mode */}
         {isPrintMode ? (
@@ -699,8 +766,31 @@ export const ManagerialSupervisionModal: React.FC<ManagerialSupervisionModalProp
                   <span className="hidden sm:inline">Format Cetak / PDF</span>
                 </button>
                 <button
+                  type="button"
+                  onClick={() => setIsFullScreen(!isFullScreen)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer border ${
+                    isFullScreen
+                      ? 'bg-purple-100 text-purple-900 border-purple-300 hover:bg-purple-200 shadow-xs'
+                      : 'bg-white hover:bg-slate-100 text-slate-700 border-slate-200 shadow-2xs'
+                  }`}
+                  title={isFullScreen ? 'Kembali ke Ukuran Normal' : 'Perbesar Penuh Layar (Full Screen) agar leluasa mengisi instrumen'}
+                >
+                  {isFullScreen ? (
+                    <>
+                      <Minimize2 className="w-3.5 h-3.5 text-purple-700" />
+                      <span className="hidden sm:inline">Layar Normal</span>
+                    </>
+                  ) : (
+                    <>
+                      <Maximize2 className="w-3.5 h-3.5 text-slate-700" />
+                      <span className="hidden sm:inline">Perbesar Penuh</span>
+                    </>
+                  )}
+                </button>
+                <button
                   onClick={onClose}
                   className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
+                  title="Tutup dialog"
                 >
                   <X className="w-5 h-5" />
                 </button>
@@ -1148,52 +1238,138 @@ export const ManagerialSupervisionModal: React.FC<ManagerialSupervisionModalProp
               </div>
 
               {/* Overall Findings & Recommendations Section */}
-              <div className="p-4 sm:p-5 rounded-2xl bg-slate-50 border border-slate-200 space-y-4">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-200 pb-3">
+              <div
+                ref={recommendationSectionRef}
+                className={`p-4 sm:p-6 rounded-2xl transition-all duration-300 space-y-4 ${
+                  isRecommendationHighlighted
+                    ? 'bg-purple-50/90 border-2 border-purple-500 ring-4 ring-purple-300/50 shadow-lg'
+                    : 'bg-slate-50 border border-slate-200 shadow-2xs'
+                }`}
+              >
+                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 border-b border-slate-200 pb-3">
                   <div>
-                    <h4 className="text-xs font-bold uppercase tracking-wider text-slate-800">
-                      Analisis Temuan &amp; Rekomendasi Supervisi Manajerial
-                    </h4>
-                    <p className="text-xs text-slate-500">
-                      Catatan kualitatif pengawas dan arahan tindak lanjut pembinaan kepala sekolah
+                    <div className="flex items-center gap-2">
+                      <h4 className="text-xs sm:text-sm font-bold uppercase tracking-wider text-slate-900">
+                        Analisis Temuan &amp; Rekomendasi Supervisi Manajerial
+                      </h4>
+                      {isRecommendationHighlighted && (
+                        <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-purple-600 text-white animate-pulse">
+                          Baru Disintesis ✨
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-xs text-slate-500 mt-0.5">
+                      Catatan kualitatif pengawas dan arahan tindak lanjut pembinaan kepala sekolah ({principal.nama} - {principal.satuanPendidikan})
                     </p>
                   </div>
+
+                  <div className="flex flex-wrap items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => handleGenerateSmartRecommendation()}
+                      className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white text-xs font-bold flex items-center gap-2 transition-all cursor-pointer shadow-md shadow-purple-600/20 active:scale-95"
+                      title="Klik untuk menyusun temuan dan rekomendasi otomatis berdasarkan skor indikator yang terisi"
+                    >
+                      <Sparkles className="w-4 h-4 text-amber-300 animate-spin-slow" />
+                      <span>Rekomendasi Otomatis Berbasis Data</span>
+                    </button>
+
+                    {(catatanPengawas || rekomendasiManajerial) && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (window.confirm('Kosongkan teks catatan temuan dan rekomendasi?')) {
+                            setCatatanPengawas('');
+                            setRekomendasiManajerial('');
+                          }
+                        }}
+                        className="p-2 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
+                        title="Kosongkan Catatan & Rekomendasi"
+                      >
+                        <RotateCcw className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {/* Quick Topic Chips */}
+                <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                  <span className="text-[11px] font-bold text-slate-500 mr-1">
+                    Preset Topik Cepat:
+                  </span>
                   <button
                     type="button"
-                    onClick={handleGenerateSmartRecommendation}
-                    className="px-3 py-1.5 rounded-lg bg-purple-100 hover:bg-purple-200 text-purple-800 text-xs font-bold flex items-center gap-1.5 self-start sm:self-center transition-colors cursor-pointer border border-purple-200"
+                    onClick={() => handleGenerateSmartRecommendation('kurikulum')}
+                    className="px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-white hover:bg-purple-50 text-purple-700 border border-purple-200 transition-colors cursor-pointer shadow-2xs"
                   >
-                    <Sparkles className="w-3.5 h-3.5 text-purple-600" />
-                    <span>Rekomendasi Otomatis Berbasis Data</span>
+                    📘 KSP &amp; Kurikulum
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleGenerateSmartRecommendation('keuangan')}
+                    className="px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-white hover:bg-emerald-50 text-emerald-700 border border-emerald-200 transition-colors cursor-pointer shadow-2xs"
+                  >
+                    💰 ARKAS &amp; PBD
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleGenerateSmartRecommendation('ptk')}
+                    className="px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-white hover:bg-blue-50 text-blue-700 border border-blue-200 transition-colors cursor-pointer shadow-2xs"
+                  >
+                    👥 Kombel &amp; Kinerja PMM
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleGenerateSmartRecommendation('sarpras')}
+                    className="px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-white hover:bg-amber-50 text-amber-700 border border-amber-200 transition-colors cursor-pointer shadow-2xs"
+                  >
+                    🏫 Sarpras &amp; TIK
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleGenerateSmartRecommendation('lingkungan')}
+                    className="px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-white hover:bg-rose-50 text-rose-700 border border-rose-200 transition-colors cursor-pointer shadow-2xs"
+                  >
+                    🛡️ TPPK &amp; Budaya Positif
                   </button>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-1">
                   {/* Catatan Pengawas */}
                   <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1.5">
-                      Catatan Temuan Lapangan Pengawas
-                    </label>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <label className="block text-xs font-bold text-slate-800">
+                        Catatan Temuan Lapangan Pengawas
+                      </label>
+                      <span className="text-[10px] text-slate-400 font-medium">
+                        {catatanPengawas.length} karakter
+                      </span>
+                    </div>
                     <textarea
-                      rows={4}
+                      rows={6}
                       value={catatanPengawas}
                       onChange={(e) => setCatatanPengawas(e.target.value)}
                       placeholder="Uraikan temuan objektif mengenai kekuatan dan area perbaikan manajerial sekolah..."
-                      className="w-full text-xs p-3 rounded-xl border border-slate-200 bg-white focus:outline-hidden focus:border-purple-400 text-slate-800 leading-relaxed"
+                      className="w-full text-xs sm:text-sm p-3.5 rounded-xl border border-slate-300 bg-white focus:outline-hidden focus:border-purple-500 focus:ring-2 focus:ring-purple-200 text-slate-800 leading-relaxed font-sans shadow-2xs transition-all"
                     />
                   </div>
 
                   {/* Rekomendasi Manajerial */}
                   <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1.5">
-                      Rekomendasi Tindak Lanjut Manajerial
-                    </label>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <label className="block text-xs font-bold text-slate-800">
+                        Rekomendasi Tindak Lanjut Manajerial
+                      </label>
+                      <span className="text-[10px] text-slate-400 font-medium">
+                        {rekomendasiManajerial.length} karakter
+                      </span>
+                    </div>
                     <textarea
-                      rows={4}
+                      rows={6}
                       value={rekomendasiManajerial}
                       onChange={(e) => setRekomendasiManajerial(e.target.value)}
                       placeholder="Uraikan langkah konkret tindak lanjut yang harus dilaksanakan kepala sekolah..."
-                      className="w-full text-xs p-3 rounded-xl border border-slate-200 bg-white focus:outline-hidden focus:border-purple-400 text-slate-800 leading-relaxed"
+                      className="w-full text-xs sm:text-sm p-3.5 rounded-xl border border-slate-300 bg-white focus:outline-hidden focus:border-purple-500 focus:ring-2 focus:ring-purple-200 text-slate-800 leading-relaxed font-sans shadow-2xs transition-all"
                     />
                   </div>
                 </div>

@@ -1997,7 +1997,7 @@ export const PrincipalList: React.FC<PrincipalListProps> = ({
             setEvaluatingPrincipal(null);
           }}
           principal={evaluatingPrincipal}
-          existingEvaluation={getManagerialEvaluationByPrincipalId(evaluatingPrincipal.id)}
+          existingEvaluation={evaluations.find(e => e.principalId === evaluatingPrincipal.id) || getManagerialEvaluationByPrincipalId(evaluatingPrincipal.id)}
           settings={settings}
           onSaveEvaluation={handleSaveEvaluation}
           showToast={showToast}
