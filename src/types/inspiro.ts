@@ -1355,7 +1355,13 @@ export interface DigitalChecklist {
 
 export interface DigitalToolUsage {
   toolsUsed: string[]; // Canva, PhET, Quizizz, Google Workspace, PMM, GeoGebra, Scratch, Wordwall, dll.
-  deviceType: 'Chromebook / Laptop' | 'Smartphone / Tablet' | 'Laboratorium Komputer' | 'Hybrid / Multi-device';
+  deviceType:
+    | 'Chromebook / Laptop'
+    | 'Smartphone / Tablet'
+    | 'Papan Interaktif Digital (PID)'
+    | 'Penggunaan Papan Interaktif Digital (PID)'
+    | 'Laboratorium Komputer'
+    | 'Hybrid / Multi-device';
   studentHandsOnDuration: number; // Menit murid aktif mengoperasikan perangkat secara mandiri
   totalLessonDuration: number; // Total alokasi jam tatap muka (misal: 80 menit)
   studentHandsOnRatioPct: number; // (studentHandsOnDuration / totalLessonDuration) * 100

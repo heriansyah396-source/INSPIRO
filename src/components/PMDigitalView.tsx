@@ -28,12 +28,17 @@ import {
   Share2,
   BrainCircuit,
   Timer,
-  Handshake
+  Handshake,
+  HelpCircle,
+  Info,
+  Zap,
+  BookOpen
 } from 'lucide-react';
 import {
   PMDigitalRecord,
   PM_DIGITAL_RUBRICS,
   SAMRLevel,
+  PMDigitalMaturity,
   Teacher,
   AppSettings
 } from '../types/inspiro';
@@ -70,6 +75,7 @@ export const PMDigitalView: React.FC<PMDigitalViewProps> = ({
   const [schoolFilter, setSchoolFilter] = useState('all');
   const [samrFilter, setSamrFilter] = useState<string>('all');
   const [maturityFilter, setMaturityFilter] = useState<string>('all');
+  const [deviceFilter, setDeviceFilter] = useState<string>('all');
 
   // Modal & Detail states
   const [selectedRecordForDetail, setSelectedRecordForDetail] = useState<PMDigitalRecord | null>(null);
@@ -77,6 +83,7 @@ export const PMDigitalView: React.FC<PMDigitalViewProps> = ({
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
   const [activeFormTab, setActiveFormTab] = useState<'identity' | 'samr' | 'dimensions' | 'checklist' | 'recommendations'>('identity');
   const [formRecord, setFormRecord] = useState<PMDigitalRecord | null>(null);
+  const [showSamrGuide, setShowSamrGuide] = useState(true);
 
   // Available unique schools
   const availableSchools = useMemo(() => {
@@ -104,10 +111,14 @@ export const PMDigitalView: React.FC<PMDigitalViewProps> = ({
       const matchSchool = schoolFilter === 'all' || r.schoolName === schoolFilter;
       const matchSamr = samrFilter === 'all' || r.toolUsage.samrLevel === samrFilter;
       const matchMaturity = maturityFilter === 'all' || r.maturityLevel.includes(maturityFilter);
+      const matchDevice =
+        deviceFilter === 'all' ||
+        r.toolUsage.deviceType === deviceFilter ||
+        (deviceFilter.includes('PID') && r.toolUsage.deviceType.includes('PID'));
 
-      return matchSearch && matchSchool && matchSamr && matchMaturity;
+      return matchSearch && matchSchool && matchSamr && matchMaturity && matchDevice;
     });
-  }, [records, searchTerm, schoolFilter, samrFilter, maturityFilter]);
+  }, [records, searchTerm, schoolFilter, samrFilter, maturityFilter, deviceFilter]);
 
   // Analytics Stats
   const stats = useMemo(() => {
@@ -264,47 +275,126 @@ export const PMDigitalView: React.FC<PMDigitalViewProps> = ({
     setIsFormModalOpen(true);
   };
 
-  // Recalculate Metrics in Form
-  const recalculateFormMetrics = (draft: PMDigitalRecord): PMDigitalRecord => {
+  // Recalculate Metrics in Form (preserves manual SAMR selection by default)
+  const recalculateFormMetrics = (draft: PMDigitalRecord, autoDetermineSamr = false): PMDigitalRecord => {
     const totalDuration = draft.toolUsage.totalLessonDuration || 80;
     const handsOnDuration = draft.toolUsage.studentHandsOnDuration || 0;
     const ratio = totalDuration > 0 ? Number(((handsOnDuration / totalDuration) * 100).toFixed(1)) : 0;
     draft.toolUsage.studentHandsOnRatioPct = ratio;
 
     // Total Score (each dimension is 25% = score * 6.25)
-    const s1 = draft.dim1CreatorRole.score * 6.25;
-    const s2 = draft.dim2Collaboration.score * 6.25;
-    const s3 = draft.dim3Assessment.score * 6.25;
-    const s4 = draft.dim4EthicsAndAi.score * 6.25;
+    const s1 = (draft.dim1CreatorRole.score || 0) * 6.25;
+    const s2 = (draft.dim2Collaboration.score || 0) * 6.25;
+    const s3 = (draft.dim3Assessment.score || 0) * 6.25;
+    const s4 = (draft.dim4EthicsAndAi.score || 0) * 6.25;
     const total = Number((s1 + s2 + s3 + s4).toFixed(1));
     draft.totalScore = total;
 
-    // SAMR Level mapping & maturity
+    // SAMR definitions & synthesis texts
+    const samrDetails: Record<SAMRLevel, { maturity: PMDigitalMaturity; summary: string }> = {
+      Redefinition: {
+        maturity: 'Level 4: Membudaya (Redefinition)',
+        summary: 'Level Redefinition (Kreasi Baru): Teknologi digital memungkinkan tugas pembelajaran baru yang sebelumnya mustahil terlaksana tanpa teknologi (misal: publikasi karya ke audiens autentik global, riset berbasis data digital real-time, kreasi AI kritis).'
+      },
+      Modification: {
+        maturity: 'Level 3: Matang (Modification)',
+        summary: 'Level Modification (Perancangan Ulang): Penugasan dirancang ulang secara signifikan menjadi kolaborasi multi-modal interaktif (misal: kolaborasi dokumen/poster Canva bersama, manipulasi variabel sains di PhET/GeoGebra, atau interaksi aktif papan interaktif digital).'
+      },
+      Augmentation: {
+        maturity: 'Level 2: Berkembang (Augmentation)',
+        summary: 'Level Augmentation (Peningkatan Fungsi): Teknologi digunakan sebagai pengganti langsung dengan peningkatan fungsional yang mempermudah murid (misal: kuis interaktif dengan skor instan di Quizizz/Forms, text-to-speech, kamus terintegrasi).'
+      },
+      Substitution: {
+        maturity: 'Level 1: Terbatas (Substitution)',
+        summary: 'Level Substitution (Penggantian Langsung): Teknologi hanya menggantikan fungsi alat konvensional (misal: membaca teks PDF di layar sebagai pengganti buku fisik atau proyektor pengganti papan tulis biasa) tanpa perubahan alur belajar.'
+      }
+    };
+
+    // Calculate score-recommended SAMR based on 4-dimension total
+    let recommendedSamr: SAMRLevel = 'Substitution';
     if (total >= 85) {
-      draft.maturityLevel = 'Level 4: Membudaya (Redefinition)';
-      draft.toolUsage.samrLevel = 'Redefinition';
-      draft.samrSummary = 'Level Redefinition (Kreasi Baru): Teknologi digital memungkinkan tugas pembelajaran baru bermakna yang mustahil dilakukan tanpa teknologi.';
+      recommendedSamr = 'Redefinition';
     } else if (total >= 70) {
-      draft.maturityLevel = 'Level 3: Matang (Modification)';
-      draft.toolUsage.samrLevel = 'Modification';
-      draft.samrSummary = 'Level Modification (Perancangan Ulang): Penugasan dirancang ulang secara signifikan menjadi kolaborasi multi-modal interaktif.';
+      recommendedSamr = 'Modification';
     } else if (total >= 50) {
-      draft.maturityLevel = 'Level 2: Berkembang (Augmentation)';
-      draft.toolUsage.samrLevel = 'Augmentation';
-      draft.samrSummary = 'Level Augmentation (Peningkatan Fungsi): Teknologi digunakan sebagai pengganti langsung dengan peningkatan fungsional yang mempermudah murid.';
+      recommendedSamr = 'Augmentation';
+    }
+
+    if (autoDetermineSamr || !draft.toolUsage.samrLevel) {
+      draft.toolUsage.samrLevel = recommendedSamr;
+      draft.maturityLevel = samrDetails[recommendedSamr].maturity;
+      draft.samrSummary = samrDetails[recommendedSamr].summary;
     } else {
-      draft.maturityLevel = 'Level 1: Terbatas (Substitution)';
-      draft.toolUsage.samrLevel = 'Substitution';
-      draft.samrSummary = 'Level Substitution (Penggantian Langsung): Teknologi hanya menggantikan fungsi alat konvensional (misal proyektor pengganti papan tulis) tanpa perubahan fungsional mendalam.';
+      // Respect the user's manual SAMR choice, but keep maturity label consistent with the selected level
+      const currentLevel = draft.toolUsage.samrLevel;
+      if (samrDetails[currentLevel]) {
+        draft.maturityLevel = samrDetails[currentLevel].maturity;
+        if (!draft.samrSummary) {
+          draft.samrSummary = samrDetails[currentLevel].summary;
+        }
+      }
     }
 
     return draft;
   };
 
+  // Manual Selection handler for SAMR Level
+  const handleSelectSamrLevel = (level: SAMRLevel) => {
+    if (!formRecord) return;
+    const summaries: Record<SAMRLevel, { maturity: PMDigitalMaturity; summary: string }> = {
+      Redefinition: {
+        maturity: 'Level 4: Membudaya (Redefinition)',
+        summary: 'Level Redefinition (Kreasi Baru): Teknologi digital memungkinkan tugas pembelajaran baru yang sebelumnya mustahil terlaksana tanpa teknologi (misal: kolaborasi publikasi global, riset berbasis data digital real-time, kreasi AI kritis).'
+      },
+      Modification: {
+        maturity: 'Level 3: Matang (Modification)',
+        summary: 'Level Modification (Perancangan Ulang): Penugasan dirancang ulang secara signifikan menjadi kolaborasi multi-modal interaktif (misal: kolaborasi dokumen/poster Canva bersama, manipulasi variabel sains di PhET/GeoGebra, atau interaksi aktif papan interaktif digital).'
+      },
+      Augmentation: {
+        maturity: 'Level 2: Berkembang (Augmentation)',
+        summary: 'Level Augmentation (Peningkatan Fungsi): Teknologi digunakan sebagai pengganti langsung dengan peningkatan fungsional yang mempermudah murid (misal: kuis interaktif dengan skor instan di Quizizz/Forms, text-to-speech, kamus terintegrasi).'
+      },
+      Substitution: {
+        maturity: 'Level 1: Terbatas (Substitution)',
+        summary: 'Level Substitution (Penggantian Langsung): Teknologi hanya menggantikan fungsi alat konvensional (misal: membaca teks PDF di layar sebagai pengganti buku fisik atau proyektor pengganti papan tulis biasa) tanpa perubahan alur belajar.'
+      }
+    };
+
+    const targetInfo = summaries[level];
+    const updated: PMDigitalRecord = {
+      ...formRecord,
+      toolUsage: {
+        ...formRecord.toolUsage,
+        samrLevel: level
+      },
+      maturityLevel: targetInfo.maturity,
+      samrSummary: targetInfo.summary
+    };
+
+    setFormRecord(recalculateFormMetrics(updated, false));
+    showToast(
+      `Level SAMR Terpilih: ${level}`,
+      `Penetapan level disesuaikan ke ${level}. Ringkasan evaluasi otomatis diperbarui.`,
+      'success'
+    );
+  };
+
+  // Sync SAMR Level automatically from 4 Dimensions Score
+  const handleAutoSyncSamr = () => {
+    if (!formRecord) return;
+    const updated = recalculateFormMetrics({ ...formRecord }, true);
+    setFormRecord(updated);
+    showToast(
+      'Level SAMR Disinkronkan Otomatis',
+      `Berdasarkan Skor 4 Dimensi (${updated.totalScore}/100), Level SAMR disetel ke: ${updated.toolUsage.samrLevel}`,
+      'info'
+    );
+  };
+
   // Save Form
   const handleSaveForm = () => {
     if (!formRecord) return;
-    const updated = recalculateFormMetrics({ ...formRecord });
+    const updated = recalculateFormMetrics({ ...formRecord }, false);
     onSaveRecord(updated);
     setIsFormModalOpen(false);
     showToast('Berhasil Menyimpan', `Asesmen Pemanfaatan Digital ${updated.teacherName} telah disimpan.`);
@@ -615,15 +705,33 @@ export const PMDigitalView: React.FC<PMDigitalViewProps> = ({
             </select>
           </div>
 
-          {(searchTerm || schoolFilter !== 'all' || samrFilter !== 'all' || maturityFilter !== 'all') && (
+          {/* Device filter */}
+          <div className="flex items-center gap-1.5 text-xs text-slate-600">
+            <Laptop className="w-3.5 h-3.5 text-slate-400" />
+            <select
+              value={deviceFilter}
+              onChange={(e) => setDeviceFilter(e.target.value)}
+              className="bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:border-cyan-500 font-semibold"
+            >
+              <option value="all">Semua Perangkat</option>
+              <option value="Papan Interaktif Digital (PID)">Papan Interaktif Digital (PID)</option>
+              <option value="Chromebook / Laptop">Chromebook / Laptop</option>
+              <option value="Smartphone / Tablet">Smartphone / Tablet</option>
+              <option value="Laboratorium Komputer">Laboratorium Komputer</option>
+              <option value="Hybrid / Multi-device">Hybrid / Multi-device</option>
+            </select>
+          </div>
+
+          {(searchTerm || schoolFilter !== 'all' || samrFilter !== 'all' || maturityFilter !== 'all' || deviceFilter !== 'all') && (
             <button
               onClick={() => {
                 setSearchTerm('');
                 setSchoolFilter('all');
                 setSamrFilter('all');
                 setMaturityFilter('all');
+                setDeviceFilter('all');
               }}
-              className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 transition"
+              className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 transition cursor-pointer"
               title="Reset Filter"
             >
               <RotateCcw className="w-4 h-4" />
@@ -673,7 +781,13 @@ export const PMDigitalView: React.FC<PMDigitalViewProps> = ({
                       <span className={`text-xs font-bold px-3 py-0.5 rounded-full border ${getSamrBadgeStyle(record.toolUsage.samrLevel)}`}>
                         SAMR: {record.toolUsage.samrLevel}
                       </span>
-                      <span className="text-xs text-slate-500">
+                      <span
+                        className={`text-xs px-2.5 py-0.5 rounded-full ${
+                          record.toolUsage.deviceType.includes('PID')
+                            ? 'bg-purple-100 text-purple-800 border border-purple-200 font-bold'
+                            : 'bg-slate-100 text-slate-600 font-medium'
+                        }`}
+                      >
                         Perangkat: {record.toolUsage.deviceType}
                       </span>
                     </div>
@@ -1149,9 +1263,10 @@ export const PMDigitalView: React.FC<PMDigitalViewProps> = ({
                             toolUsage: { ...formRecord.toolUsage, deviceType: e.target.value as any }
                           })
                         }
-                        className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm"
+                        className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-semibold text-slate-800"
                       >
                         <option value="Chromebook / Laptop">Chromebook / Laptop</option>
+                        <option value="Papan Interaktif Digital (PID)">Papan Interaktif Digital (PID)</option>
                         <option value="Smartphone / Tablet">Smartphone / Tablet</option>
                         <option value="Laboratorium Komputer">Laboratorium Komputer</option>
                         <option value="Hybrid / Multi-device">Hybrid / Multi-device</option>
@@ -1267,38 +1382,215 @@ export const PMDigitalView: React.FC<PMDigitalViewProps> = ({
                     </div>
                   </div>
 
-                  {/* SAMR Level Selector */}
-                  <div className="space-y-2">
-                    <label className="block text-xs font-bold text-slate-800">
-                      Penetapan Level Tangga Model SAMR
-                    </label>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      {(['Redefinition', 'Modification', 'Augmentation', 'Substitution'] as SAMRLevel[]).map((level) => {
-                        const isSelected = formRecord.toolUsage.samrLevel === level;
+                  {/* SAMR Level Selector & Educational Guide */}
+                  <div className="space-y-3">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <label className="block text-xs font-bold text-slate-800">
+                            Penetapan Level Tangga Model SAMR
+                          </label>
+                          <span
+                            className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${getSamrBadgeStyle(
+                              formRecord.toolUsage.samrLevel
+                            )}`}
+                          >
+                            Terpilih: {formRecord.toolUsage.samrLevel}
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-slate-500">
+                          Klik langsung salah satu kartu level di bawah ini, atau gunakan tombol otomatis berbasis skor 4 dimensi.
+                        </p>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setShowSamrGuide(!showSamrGuide)}
+                          className="px-2.5 py-1 text-xs rounded-lg border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 flex items-center gap-1.5 cursor-pointer font-medium transition"
+                          title="Buka atau tutup penjelasan detail model SAMR"
+                        >
+                          <BookOpen className="w-3.5 h-3.5 text-cyan-600" />
+                          <span>{showSamrGuide ? 'Tutup Panduan' : 'Buka Panduan SAMR'}</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={handleAutoSyncSamr}
+                          className="px-2.5 py-1 text-xs rounded-lg border border-cyan-300 bg-cyan-50 hover:bg-cyan-100 text-cyan-800 flex items-center gap-1.5 cursor-pointer font-bold transition shadow-2xs"
+                          title="Hitung dan setel level SAMR secara otomatis berdasarkan akumulasi skor 4 Dimensi saat ini"
+                        >
+                          <Zap className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
+                          <span>Sinkron Otomatis (Skor: {formRecord.totalScore}/100)</span>
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* PANDUAN PENJELASAN LEVEL TANGGA MODEL SAMR */}
+                    {showSamrGuide && (
+                      <div className="p-4 bg-gradient-to-br from-cyan-50/80 via-white to-blue-50/60 rounded-xl border border-cyan-200/90 shadow-2xs space-y-3">
+                        <div className="flex items-start gap-2.5">
+                          <div className="w-6 h-6 rounded-lg bg-cyan-600 text-white flex items-center justify-center shrink-0 mt-0.5">
+                            <Info className="w-3.5 h-3.5" />
+                          </div>
+                          <div className="flex-1">
+                            <h5 className="text-xs font-bold text-slate-900">
+                              Panduan Pemahaman Model SAMR (Dr. Ruben Puentedura)
+                            </h5>
+                            <p className="text-[11px] text-slate-600 leading-relaxed mt-0.5">
+                              Model SAMR mengukur sejauh mana teknologi digital mentransformasi metode pembelajaran di kelas dari sekadar pengganti media konvensional hingga menciptakan pengalaman belajar baru yang bermakna.
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5 pt-1 text-[11px]">
+                          {/* Zona Transformasi */}
+                          <div className="p-3 bg-white/90 rounded-lg border border-teal-200 space-y-1.5">
+                            <div className="flex items-center justify-between">
+                              <span className="font-bold text-teal-800 uppercase tracking-wider text-[10px] bg-teal-100 px-2 py-0.5 rounded">
+                                Zona Transformasi (Tingkat Tinggi)
+                              </span>
+                            </div>
+                            <div className="space-y-1">
+                              <p className="text-slate-800">
+                                <strong className="text-teal-900">4. Redefinition (Kreasi Baru):</strong> Teknologi memungkinkan tugas pembelajaran baru yang <em>mustahil</em> terlaksana tanpa teknologi digital.
+                                <span className="block text-slate-500 italic mt-0.5">
+                                  Contoh: Murid memproduksi video dokumenter riset lingkungan lalu dipublikasikan ke orang tua/komunitas global, atau berkonsultasi via video telekonferensi dengan pakar luar negeri.
+                                </span>
+                              </p>
+                              <p className="text-slate-800 pt-1 border-t border-slate-100">
+                                <strong className="text-blue-900">3. Modification (Rancang Ulang):</strong> Tugas pembelajaran dirancang ulang secara signifikan menjadi kolaboratif &amp; multi-modal.
+                                <span className="block text-slate-500 italic mt-0.5">
+                                  Contoh: Kolaborasi infografis Canva kelompok secara serentak (real-time), manipulasi sains di PhET/GeoGebra, atau presentasi interaktif di Papan Interaktif Digital (PID).
+                                </span>
+                              </p>
+                            </div>
+                          </div>
+
+                          {/* Zona Peningkatan */}
+                          <div className="p-3 bg-white/90 rounded-lg border border-amber-200 space-y-1.5">
+                            <div className="flex items-center justify-between">
+                              <span className="font-bold text-amber-800 uppercase tracking-wider text-[10px] bg-amber-100 px-2 py-0.5 rounded">
+                                Zona Peningkatan (Tingkat Dasar)
+                              </span>
+                            </div>
+                            <div className="space-y-1">
+                              <p className="text-slate-800">
+                                <strong className="text-amber-900">2. Augmentation (Peningkatan Fungsional):</strong> Teknologi digunakan sebagai pengganti langsung dengan peningkatan efisiensi dan fitur baru.
+                                <span className="block text-slate-500 italic mt-0.5">
+                                  Contoh: Mengerjakan kuis interaktif di Quizizz/Google Forms dengan skor dan umpan balik jawaban otomatis instan, atau menggunakan kamus digital terintegrasi.
+                                </span>
+                              </p>
+                              <p className="text-slate-800 pt-1 border-t border-slate-100">
+                                <strong className="text-slate-800">1. Substitution (Penggantian Langsung):</strong> Teknologi hanya menggantikan alat konvensional tanpa perubahan metode belajar.
+                                <span className="block text-slate-500 italic mt-0.5">
+                                  Contoh: Membaca teks materi berupa file PDF di layar laptop sebagai pengganti buku fisik cetak, atau proyektor pengganti papan tulis konvensional.
+                                </span>
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* 4 Interactive Selectable Cards */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                      {([
+                        {
+                          level: 'Redefinition' as SAMRLevel,
+                          title: 'Redefinition (Kreasi Baru)',
+                          stepNum: 'Level 4',
+                          zone: 'Zona Transformasi',
+                          zoneColor: 'text-emerald-700 bg-emerald-50 border-emerald-200',
+                          desc: 'Kreasi tugas baru yang mustahil dilakukan tanpa teknologi digital.',
+                          example: 'Publikasi karya ke khalayak autentik nyata, analisis data real-time, kolaborasi global.',
+                          activeBg: 'bg-gradient-to-br from-emerald-900 to-teal-950 text-white border-emerald-600 ring-2 ring-emerald-400 shadow-md',
+                          idleBorder: 'border-slate-200 hover:border-emerald-300 hover:bg-emerald-50/40'
+                        },
+                        {
+                          level: 'Modification' as SAMRLevel,
+                          title: 'Modification (Perancangan Ulang)',
+                          stepNum: 'Level 3',
+                          zone: 'Zona Transformasi',
+                          zoneColor: 'text-blue-700 bg-blue-50 border-blue-200',
+                          desc: 'Perancangan ulang tugas menjadi kolaborasi multi-modal interaktif.',
+                          example: 'Kolaborasi serentak Canva/Slides, simulasi virtual PhET/GeoGebra, eksplorasi PID.',
+                          activeBg: 'bg-gradient-to-br from-blue-900 to-indigo-950 text-white border-blue-600 ring-2 ring-blue-400 shadow-md',
+                          idleBorder: 'border-slate-200 hover:border-blue-300 hover:bg-blue-50/40'
+                        },
+                        {
+                          level: 'Augmentation' as SAMRLevel,
+                          title: 'Augmentation (Peningkatan Fungsi)',
+                          stepNum: 'Level 2',
+                          zone: 'Zona Peningkatan',
+                          zoneColor: 'text-amber-700 bg-amber-50 border-amber-200',
+                          desc: 'Pengganti langsung dengan peningkatan fungsional yang membantu murid.',
+                          example: 'Kuis interaktif Quizizz/Google Forms berskor otomatis instan, text-to-speech.',
+                          activeBg: 'bg-gradient-to-br from-amber-900 to-yellow-950 text-white border-amber-600 ring-2 ring-amber-400 shadow-md',
+                          idleBorder: 'border-slate-200 hover:border-amber-300 hover:bg-amber-50/40'
+                        },
+                        {
+                          level: 'Substitution' as SAMRLevel,
+                          title: 'Substitution (Penggantian Langsung)',
+                          stepNum: 'Level 1',
+                          zone: 'Zona Peningkatan',
+                          zoneColor: 'text-slate-700 bg-slate-100 border-slate-300',
+                          desc: 'Penggantian langsung alat tanpa perubahan fungsi pembelajaran.',
+                          example: 'Membaca materi PDF di laptop pengganti buku fisik cetak, mengetik di layar.',
+                          activeBg: 'bg-gradient-to-br from-slate-800 to-slate-950 text-white border-slate-600 ring-2 ring-slate-400 shadow-md',
+                          idleBorder: 'border-slate-200 hover:border-slate-400 hover:bg-slate-100/60'
+                        }
+                      ]).map((item) => {
+                        const isSelected = formRecord.toolUsage.samrLevel === item.level;
                         return (
                           <button
-                            key={level}
+                            key={item.level}
                             type="button"
-                            onClick={() => {
-                              const updated = {
-                                ...formRecord,
-                                toolUsage: { ...formRecord.toolUsage, samrLevel: level }
-                              };
-                              setFormRecord(recalculateFormMetrics(updated));
-                            }}
-                            className={`p-3.5 rounded-xl border text-left transition ${
-                              isSelected
-                                ? 'bg-cyan-900 text-white border-cyan-800 shadow-md font-bold'
-                                : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100'
+                            onClick={() => handleSelectSamrLevel(item.level)}
+                            className={`p-4 rounded-xl border text-left transition-all duration-200 cursor-pointer relative group ${
+                              isSelected ? item.activeBg : `bg-white ${item.idleBorder} text-slate-800 shadow-2xs`
                             }`}
                           >
-                            <div className="text-xs uppercase tracking-wider opacity-80">Level SAMR</div>
-                            <div className="text-sm font-bold">{level}</div>
-                            <div className="text-[11px] mt-1 opacity-90">
-                              {level === 'Redefinition' && 'Kreasi tugas baru yang mustahil dilakukan tanpa teknologi.'}
-                              {level === 'Modification' && 'Perancangan ulang tugas menjadi kolaborasi multi-modal interaktif.'}
-                              {level === 'Augmentation' && 'Pengganti langsung dengan peningkatan fungsional yang membantu.'}
-                              {level === 'Substitution' && 'Penggantian langsung tanpa perubahan fungsi pembelajaran.'}
+                            <div className="flex items-center justify-between gap-2 mb-1.5">
+                              <div className="flex items-center gap-1.5">
+                                <span
+                                  className={`text-[10px] font-extrabold uppercase px-2 py-0.5 rounded ${
+                                    isSelected ? 'bg-white/20 text-white' : item.zoneColor
+                                  }`}
+                                >
+                                  {item.stepNum} · {item.zone}
+                                </span>
+                              </div>
+                              {isSelected ? (
+                                <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-300 bg-emerald-950/60 px-2 py-0.5 rounded-full border border-emerald-400/50">
+                                  <CheckCircle2 className="w-3.5 h-3.5" />
+                                  <span>Terpilih</span>
+                                </span>
+                              ) : (
+                                <span className="text-[10px] text-slate-400 group-hover:text-cyan-700 font-semibold transition">
+                                  Klik untuk memilih
+                                </span>
+                              )}
+                            </div>
+
+                            <h4 className="text-sm font-black leading-tight">
+                              {item.title}
+                            </h4>
+
+                            <p
+                              className={`text-xs mt-1 leading-snug ${
+                                isSelected ? 'text-white/90 font-medium' : 'text-slate-600'
+                              }`}
+                            >
+                              {item.desc}
+                            </p>
+
+                            <div
+                              className={`mt-2 pt-2 border-t text-[11px] ${
+                                isSelected ? 'border-white/20 text-white/80' : 'border-slate-100 text-slate-500'
+                              }`}
+                            >
+                              <strong>Contoh:</strong> {item.example}
                             </div>
                           </button>
                         );
@@ -1307,14 +1599,20 @@ export const PMDigitalView: React.FC<PMDigitalViewProps> = ({
                   </div>
 
                   <div>
-                    <label className="block text-xs font-semibold text-slate-700 mb-1">
-                      Deskripsi Ringkasan Evaluasi SAMR
-                    </label>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="block text-xs font-semibold text-slate-700">
+                        Deskripsi Ringkasan Evaluasi SAMR (Kualitatif Pengawas)
+                      </label>
+                      <span className="text-[10px] text-slate-400">
+                        Dapat diedit atau disesuaikan dengan temuan riil
+                      </span>
+                    </div>
                     <textarea
                       rows={3}
                       value={formRecord.samrSummary}
                       onChange={(e) => setFormRecord({ ...formRecord, samrSummary: e.target.value })}
-                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs"
+                      placeholder="Uraikan ringkasan analisis penerapan model SAMR pada sesi pembelajaran ini..."
+                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm text-slate-800 leading-relaxed font-sans focus:outline-none focus:border-cyan-500 focus:bg-white transition"
                     />
                   </div>
                 </div>
