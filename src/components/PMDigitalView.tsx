@@ -85,6 +85,49 @@ export const PMDigitalView: React.FC<PMDigitalViewProps> = ({
   const [formRecord, setFormRecord] = useState<PMDigitalRecord | null>(null);
   const [showSamrGuide, setShowSamrGuide] = useState(true);
 
+  // Raw text states to ensure spaces, commas, and newlines can be typed without being stripped by React controlled join/split
+  const [toolsInput, setToolsInput] = useState('');
+  const [strengthsInput, setStrengthsInput] = useState('');
+  const [growthAreasInput, setGrowthAreasInput] = useState('');
+  const [recommendationsInput, setRecommendationsInput] = useState('');
+
+  // Quick suggestion chips for tools
+  const quickToolSuggestions = [
+    'Canva for Education',
+    'Papan Interaktif Digital (PID)',
+    'Quizizz',
+    'GeoGebra',
+    'PhET Simulations',
+    'Google Workspace',
+    'Wordwall',
+    'Padlet',
+    'Gemini AI',
+    'CapCut'
+  ];
+
+  const handleAddToolSuggestion = (tool: string) => {
+    const currentList = toolsInput
+      .split(',')
+      .map((t) => t.trim())
+      .filter(Boolean);
+    if (!currentList.includes(tool)) {
+      const nextList = [...currentList, tool];
+      const nextStr = nextList.join(', ');
+      setToolsInput(nextStr);
+      setFormRecord((prev) =>
+        prev
+          ? {
+              ...prev,
+              toolUsage: {
+                ...prev.toolUsage,
+                toolsUsed: nextList
+              }
+            }
+          : null
+      );
+    }
+  };
+
   // Available unique schools
   const availableSchools = useMemo(() => {
     const set = new Set<string>();
@@ -264,13 +307,22 @@ export const PMDigitalView: React.FC<PMDigitalViewProps> = ({
     };
 
     setFormRecord(newRec);
+    setToolsInput((newRec.toolUsage.toolsUsed || []).join(', '));
+    setStrengthsInput((newRec.keyStrengths || []).join('\n'));
+    setGrowthAreasInput((newRec.keyGrowthAreas || []).join('\n'));
+    setRecommendationsInput((newRec.supervisoryRecommendations || []).join('\n'));
     setActiveFormTab('identity');
     setIsFormModalOpen(true);
   };
 
   // Open Edit Modal
   const handleOpenEdit = (rec: PMDigitalRecord) => {
-    setFormRecord(JSON.parse(JSON.stringify(rec)));
+    const copy = JSON.parse(JSON.stringify(rec));
+    setFormRecord(copy);
+    setToolsInput((copy.toolUsage?.toolsUsed || []).join(', '));
+    setStrengthsInput((copy.keyStrengths || []).join('\n'));
+    setGrowthAreasInput((copy.keyGrowthAreas || []).join('\n'));
+    setRecommendationsInput((copy.supervisoryRecommendations || []).join('\n'));
     setActiveFormTab('identity');
     setIsFormModalOpen(true);
   };
@@ -394,7 +446,29 @@ export const PMDigitalView: React.FC<PMDigitalViewProps> = ({
   // Save Form
   const handleSaveForm = () => {
     if (!formRecord) return;
-    const updated = recalculateFormMetrics({ ...formRecord }, false);
+    const finalRec: PMDigitalRecord = {
+      ...formRecord,
+      toolUsage: {
+        ...formRecord.toolUsage,
+        toolsUsed: toolsInput
+          .split(',')
+          .map((t) => t.trim())
+          .filter(Boolean)
+      },
+      keyStrengths: strengthsInput
+        .split('\n')
+        .map((s) => s.trim())
+        .filter(Boolean),
+      keyGrowthAreas: growthAreasInput
+        .split('\n')
+        .map((s) => s.trim())
+        .filter(Boolean),
+      supervisoryRecommendations: recommendationsInput
+        .split('\n')
+        .map((s) => s.trim())
+        .filter(Boolean)
+    };
+    const updated = recalculateFormMetrics(finalRec, false);
     onSaveRecord(updated);
     setIsFormModalOpen(false);
     showToast('Berhasil Menyimpan', `Asesmen Pemanfaatan Digital ${updated.teacherName} telah disimpan.`);
@@ -1364,21 +1438,42 @@ export const PMDigitalView: React.FC<PMDigitalViewProps> = ({
                     </label>
                     <input
                       type="text"
-                      value={formRecord.toolUsage.toolsUsed.join(', ')}
-                      onChange={(e) =>
-                        setFormRecord({
-                          ...formRecord,
-                          toolUsage: {
-                            ...formRecord.toolUsage,
-                            toolsUsed: e.target.value.split(',').map((t) => t.trim()).filter(Boolean)
-                          }
-                        })
-                      }
-                      placeholder="Canva, GeoGebra, PhET, Quizizz, Google Workspace, Belajar.id..."
-                      className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs sm:text-sm font-semibold"
+                      value={toolsInput}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setToolsInput(val);
+                        setFormRecord((prev) =>
+                          prev
+                            ? {
+                                ...prev,
+                                toolUsage: {
+                                  ...prev.toolUsage,
+                                  toolsUsed: val
+                                    .split(',')
+                                    .map((t) => t.trim())
+                                    .filter(Boolean)
+                                }
+                              }
+                            : null
+                        );
+                      }}
+                      placeholder="Canva for Education, Papan Interaktif Digital (PID), Quizizz, GeoGebra, Google Docs..."
+                      className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-xl text-xs sm:text-sm font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 shadow-2xs"
                     />
-                    <div className="text-[11px] text-slate-500">
-                      Contoh: Canva for Education, GeoGebra, PhET Simulations, Padlet, Quizizz, Google Docs.
+                    <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                      <span className="text-[11px] font-semibold text-slate-500 mr-1">
+                        Klik Cepat Menambahkan:
+                      </span>
+                      {quickToolSuggestions.map((tool) => (
+                        <button
+                          key={tool}
+                          type="button"
+                          onClick={() => handleAddToolSuggestion(tool)}
+                          className="px-2 py-0.5 rounded-md text-[11px] font-medium bg-white hover:bg-cyan-50 text-cyan-800 border border-slate-200 hover:border-cyan-300 transition shadow-2xs cursor-pointer"
+                        >
+                          + {tool}
+                        </button>
+                      ))}
                     </div>
                   </div>
 
@@ -1937,14 +2032,23 @@ export const PMDigitalView: React.FC<PMDigitalViewProps> = ({
                     </label>
                     <textarea
                       rows={3}
-                      value={formRecord.keyStrengths.join('\n')}
-                      onChange={(e) =>
-                        setFormRecord({
-                          ...formRecord,
-                          keyStrengths: e.target.value.split('\n').filter((s) => s.trim().length > 0)
-                        })
-                      }
-                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs"
+                      value={strengthsInput}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setStrengthsInput(val);
+                        setFormRecord((prev) =>
+                          prev
+                            ? {
+                                ...prev,
+                                keyStrengths: val
+                                  .split('\n')
+                                  .map((s) => s.trim())
+                                  .filter(Boolean)
+                              }
+                            : null
+                        );
+                      }}
+                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm text-slate-800 focus:outline-none focus:border-cyan-500 focus:bg-white transition"
                     />
                   </div>
 
@@ -1954,14 +2058,23 @@ export const PMDigitalView: React.FC<PMDigitalViewProps> = ({
                     </label>
                     <textarea
                       rows={3}
-                      value={formRecord.keyGrowthAreas.join('\n')}
-                      onChange={(e) =>
-                        setFormRecord({
-                          ...formRecord,
-                          keyGrowthAreas: e.target.value.split('\n').filter((s) => s.trim().length > 0)
-                        })
-                      }
-                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs"
+                      value={growthAreasInput}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setGrowthAreasInput(val);
+                        setFormRecord((prev) =>
+                          prev
+                            ? {
+                                ...prev,
+                                keyGrowthAreas: val
+                                  .split('\n')
+                                  .map((s) => s.trim())
+                                  .filter(Boolean)
+                              }
+                            : null
+                        );
+                      }}
+                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm text-slate-800 focus:outline-none focus:border-cyan-500 focus:bg-white transition"
                     />
                   </div>
 
@@ -1971,14 +2084,23 @@ export const PMDigitalView: React.FC<PMDigitalViewProps> = ({
                     </label>
                     <textarea
                       rows={3}
-                      value={formRecord.supervisoryRecommendations.join('\n')}
-                      onChange={(e) =>
-                        setFormRecord({
-                          ...formRecord,
-                          supervisoryRecommendations: e.target.value.split('\n').filter((s) => s.trim().length > 0)
-                        })
-                      }
-                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs"
+                      value={recommendationsInput}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setRecommendationsInput(val);
+                        setFormRecord((prev) =>
+                          prev
+                            ? {
+                                ...prev,
+                                supervisoryRecommendations: val
+                                  .split('\n')
+                                  .map((s) => s.trim())
+                                  .filter(Boolean)
+                              }
+                            : null
+                        );
+                      }}
+                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm text-slate-800 focus:outline-none focus:border-cyan-500 focus:bg-white transition"
                     />
                   </div>
                 </div>
