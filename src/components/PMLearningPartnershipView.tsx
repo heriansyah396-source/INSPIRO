@@ -29,13 +29,15 @@ import {
   Building2,
   HeartHandshake,
   BookOpenCheck,
-  Laptop
+  Laptop,
+  UserCheck
 } from 'lucide-react';
 import {
   PMLearningPartnershipRecord,
   PM_PARTNERSHIP_RUBRICS,
   PrimaryPartnerType,
   Teacher,
+  Principal,
   AppSettings
 } from '../types/inspiro';
 import { UserRoleProfile } from '../services/firebase';
@@ -45,6 +47,7 @@ import { printDocumentElement } from '../utils/documentExport';
 interface PMLearningPartnershipViewProps {
   records: PMLearningPartnershipRecord[];
   teachers: Teacher[];
+  principals?: Principal[];
   settings: AppSettings;
   currentUser: UserRoleProfile | null;
   onSaveRecord: (record: PMLearningPartnershipRecord) => void;
@@ -58,6 +61,7 @@ interface PMLearningPartnershipViewProps {
 export const PMLearningPartnershipView: React.FC<PMLearningPartnershipViewProps> = ({
   records,
   teachers,
+  principals = [],
   settings,
   currentUser,
   onSaveRecord,
@@ -86,11 +90,14 @@ export const PMLearningPartnershipView: React.FC<PMLearningPartnershipViewProps>
     teachers.forEach((t) => {
       if (t.satuanPendidikan) set.add(t.satuanPendidikan);
     });
+    principals.forEach((p) => {
+      if (p.satuanPendidikan) set.add(p.satuanPendidikan);
+    });
     records.forEach((r) => {
       if (r.schoolName) set.add(r.schoolName);
     });
     return Array.from(set);
-  }, [settings.schoolName, teachers, records]);
+  }, [settings.schoolName, teachers, principals, records]);
 
   // Filtered Records
   const filteredRecords = useMemo(() => {
@@ -100,6 +107,7 @@ export const PMLearningPartnershipView: React.FC<PMLearningPartnershipViewProps>
         r.subject.toLowerCase().includes(searchTerm.toLowerCase()) ||
         r.schoolName.toLowerCase().includes(searchTerm.toLowerCase()) ||
         (r.topic && r.topic.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (r.headmasterName && r.headmasterName.toLowerCase().includes(searchTerm.toLowerCase())) ||
         r.partnerName.toLowerCase().includes(searchTerm.toLowerCase());
 
       const matchSchool = schoolFilter === 'all' || r.schoolName === schoolFilter;
@@ -146,9 +154,19 @@ export const PMLearningPartnershipView: React.FC<PMLearningPartnershipViewProps>
   // Handle open create modal
   const handleOpenCreateModal = () => {
     const defaultTeacher = teachers[0];
+    const initialSchool = defaultTeacher ? (defaultTeacher.satuanPendidikan || 'SMP Negeri 1 Merdeka Nusantara') : (settings.schoolName || 'SMP Negeri 1 Merdeka Nusantara');
+    
+    // Find matching principal by school or default to first principal
+    const matchingPrincipal = principals.find(
+      (p) => p.satuanPendidikan && initialSchool && p.satuanPendidikan.toLowerCase().trim() === initialSchool.toLowerCase().trim()
+    ) || principals[0];
+
+    const defaultHeadmasterName = matchingPrincipal?.nama || 'Dra. Hj. Nurhasanah, M.Pd.';
+    const defaultHeadmasterNip = matchingPrincipal?.nip || '19720815 199802 2 003';
+
     const newRecord: PMLearningPartnershipRecord = {
       id: `part-${Date.now()}`,
-      schoolName: defaultTeacher ? defaultTeacher.satuanPendidikan : (settings.schoolName || 'SMP Negeri 1 Merdeka Nusantara'),
+      schoolName: initialSchool,
       teacherId: defaultTeacher ? defaultTeacher.id : 'G001',
       teacherName: defaultTeacher ? defaultTeacher.nama : 'Guru Penggerak',
       teacherNip: defaultTeacher ? defaultTeacher.nip : '-',
@@ -159,8 +177,8 @@ export const PMLearningPartnershipView: React.FC<PMLearningPartnershipViewProps>
       assessorName: settings.supervisorName || 'HERIANSYAH, S.Si., S.Pd., M.Pd',
       assessorRole: settings.supervisorRole || 'Pengawas Sekolah',
       assessorNip: settings.supervisorNip || '19830819 201001 1 002',
-      headmasterName: 'Dra. Hj. Nurhasanah, M.Pd.',
-      headmasterNip: '19720815 199802 2 003',
+      headmasterName: defaultHeadmasterName,
+      headmasterNip: defaultHeadmasterNip,
 
       primaryPartnerType: 'Praktisi / Tokoh Komunitas',
       partnerName: '',
@@ -230,7 +248,25 @@ export const PMLearningPartnershipView: React.FC<PMLearningPartnershipViewProps>
 
   // Handle open edit modal
   const handleOpenEditModal = (rec: PMLearningPartnershipRecord) => {
-    setFormRecord(JSON.parse(JSON.stringify(rec)));
+    const matchingPrincipal = principals.find(
+      (p) => p.satuanPendidikan && rec.schoolName && p.satuanPendidikan.toLowerCase().trim() === rec.schoolName.toLowerCase().trim()
+    ) || principals[0];
+
+    const copy = JSON.parse(JSON.stringify(rec));
+    if (!copy.headmasterName) {
+      copy.headmasterName = matchingPrincipal?.nama || 'Dra. Hj. Nurhasanah, M.Pd.';
+    }
+    if (!copy.headmasterNip) {
+      copy.headmasterNip = matchingPrincipal?.nip || '19720815 199802 2 003';
+    }
+    if (!copy.assessorName) {
+      copy.assessorName = settings.supervisorName || 'HERIANSYAH, S.Si., S.Pd., M.Pd';
+    }
+    if (!copy.assessorNip) {
+      copy.assessorNip = settings.supervisorNip || '19830819 201001 1 002';
+    }
+
+    setFormRecord(copy);
     setActiveFormTab('identity');
     setIsFormModalOpen(true);
   };
@@ -256,6 +292,10 @@ export const PMLearningPartnershipView: React.FC<PMLearningPartnershipViewProps>
     if (!formRecord) return;
     const t = teachers.find((tc) => tc.id === teacherId);
     if (t) {
+      const targetSchool = t.satuanPendidikan || formRecord.schoolName;
+      const matchP = principals.find(
+        (p) => p.satuanPendidikan && targetSchool && p.satuanPendidikan.toLowerCase().trim() === targetSchool.toLowerCase().trim()
+      );
       setFormRecord({
         ...formRecord,
         teacherId: t.id,
@@ -263,7 +303,9 @@ export const PMLearningPartnershipView: React.FC<PMLearningPartnershipViewProps>
         teacherNip: t.nip,
         subject: t.mapel,
         gradeClass: t.kelas || formRecord.gradeClass,
-        schoolName: t.satuanPendidikan || formRecord.schoolName
+        schoolName: targetSchool,
+        headmasterName: matchP ? matchP.nama : formRecord.headmasterName,
+        headmasterNip: matchP ? (matchP.nip || '-') : formRecord.headmasterNip
       });
     }
   };
@@ -554,6 +596,10 @@ export const PMLearningPartnershipView: React.FC<PMLearningPartnershipViewProps>
                     <School className="w-3.5 h-3.5 text-slate-400 shrink-0" />
                     <span className="truncate">{rec.schoolName}</span>
                   </div>
+                  <div className="flex items-center gap-1.5 text-xs text-slate-600">
+                    <UserCheck className="w-3.5 h-3.5 text-sky-600 shrink-0" />
+                    <span className="truncate"><strong>Kepsek:</strong> {rec.headmasterName || 'Dra. Hj. Nurhasanah, M.Pd.'}</span>
+                  </div>
                   <div className="flex items-start gap-1.5 text-xs text-slate-700 font-medium">
                     <Building2 className="w-3.5 h-3.5 text-sky-600 mt-0.5 shrink-0" />
                     <span className="line-clamp-2"><strong>Mitra:</strong> {rec.partnerName}</span>
@@ -831,6 +877,117 @@ export const PMLearningPartnershipView: React.FC<PMLearningPartnershipViewProps>
                       className="w-full text-xs p-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-sky-500 text-slate-800"
                       required
                     />
+                  </div>
+
+                  {/* DATA KEPALA SATUAN PENDIDIKAN & PENGAWAS PEMBINA */}
+                  <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-4">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-slate-200">
+                      <h4 className="text-xs font-extrabold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
+                        <UserCheck className="w-4 h-4 text-sky-600" />
+                        <span>Data Kepala Satuan Pendidikan &amp; Pengawas Pembina</span>
+                      </h4>
+                      {principals && principals.length > 0 && (
+                        <span className="text-[11px] text-sky-700 bg-sky-50 px-2 py-0.5 rounded-md border border-sky-200 font-semibold">
+                          Tersedia {principals.length} Kepala Sekolah Binaan
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Quick Select / Sync from Registered Principals */}
+                    {principals && principals.length > 0 && (
+                      <div>
+                        <label className="block text-xs font-bold text-slate-700 mb-1">
+                          Pilih / Sinkronkan Data Kepala Sekolah Binaan
+                        </label>
+                        <select
+                          onChange={(e) => {
+                            const selected = principals.find((p) => p.id === e.target.value);
+                            if (selected) {
+                              setFormRecord({
+                                ...formRecord,
+                                headmasterName: selected.nama,
+                                headmasterNip: selected.nip || '-',
+                                schoolName: selected.satuanPendidikan || formRecord.schoolName
+                              });
+                            }
+                          }}
+                          defaultValue=""
+                          className="w-full text-xs p-2.5 rounded-lg border border-slate-300 bg-white focus:ring-2 focus:ring-sky-500 text-slate-800 cursor-pointer font-medium"
+                        >
+                          <option value="" disabled>
+                            -- Pilih dari Daftar Kepala Sekolah Binaan (Otomatis Isi Nama, NIP, &amp; Sekolah) --
+                          </option>
+                          {principals.map((p) => (
+                            <option key={p.id} value={p.id}>
+                              {p.satuanPendidikan} — {p.nama} ({p.pangkatGolongan || 'PNS/PPPK'})
+                            </option>
+                          ))}
+                        </select>
+                        <p className="text-[11px] text-slate-500 mt-1">
+                          Memilih nama kepala sekolah di atas akan otomatis menyelaraskan nama sekolah dan NIP.
+                        </p>
+                      </div>
+                    )}
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-xs font-bold text-slate-700 mb-1">
+                          Nama Lengkap &amp; Gelar Kepala Sekolah <span className="text-rose-500">*</span>
+                        </label>
+                        <input
+                          type="text"
+                          value={formRecord.headmasterName}
+                          onChange={(e) => setFormRecord({ ...formRecord, headmasterName: e.target.value })}
+                          placeholder="Contoh: Dra. Hj. Nurhasanah, M.Pd."
+                          className="w-full text-xs p-2.5 rounded-lg border border-slate-300 bg-white focus:ring-2 focus:ring-sky-500 text-slate-800 font-medium"
+                          required
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-bold text-slate-700 mb-1">
+                          NIP / NIK Kepala Sekolah <span className="text-rose-500">*</span>
+                        </label>
+                        <input
+                          type="text"
+                          value={formRecord.headmasterNip}
+                          onChange={(e) => setFormRecord({ ...formRecord, headmasterNip: e.target.value })}
+                          placeholder="Contoh: 19720815 199802 2 003"
+                          className="w-full text-xs p-2.5 rounded-lg border border-slate-300 bg-white focus:ring-2 focus:ring-sky-500 text-slate-800 font-mono"
+                          required
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2 border-t border-slate-200">
+                      <div>
+                        <label className="block text-xs font-bold text-slate-700 mb-1">
+                          Nama Pengawas Sekolah Pembina (Asesor) <span className="text-rose-500">*</span>
+                        </label>
+                        <input
+                          type="text"
+                          value={formRecord.assessorName}
+                          onChange={(e) => setFormRecord({ ...formRecord, assessorName: e.target.value })}
+                          placeholder="Contoh: HERIANSYAH, S.Si., S.Pd., M.Pd"
+                          className="w-full text-xs p-2.5 rounded-lg border border-slate-300 bg-white focus:ring-2 focus:ring-sky-500 text-slate-800 font-medium"
+                          required
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-bold text-slate-700 mb-1">
+                          NIP Pengawas Sekolah <span className="text-rose-500">*</span>
+                        </label>
+                        <input
+                          type="text"
+                          value={formRecord.assessorNip}
+                          onChange={(e) => setFormRecord({ ...formRecord, assessorNip: e.target.value })}
+                          placeholder="Contoh: 19830819 201001 1 002"
+                          className="w-full text-xs p-2.5 rounded-lg border border-slate-300 bg-white focus:ring-2 focus:ring-sky-500 text-slate-800 font-mono"
+                          required
+                        />
+                      </div>
+                    </div>
                   </div>
 
                   {/* PROFIL MITRA UTAMA */}
@@ -1339,7 +1496,7 @@ export const PMLearningPartnershipView: React.FC<PMLearningPartnershipViewProps>
 
             <div className="flex-1 overflow-y-auto p-6 space-y-6">
               {/* Identity Box */}
-              <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+              <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-xs">
                 <div>
                   <span className="text-slate-400 font-semibold">Guru / NIP:</span>
                   <p className="text-sm font-bold text-slate-800">{selectedRecordForDetail.teacherName}</p>
@@ -1349,6 +1506,16 @@ export const PMLearningPartnershipView: React.FC<PMLearningPartnershipViewProps>
                   <span className="text-slate-400 font-semibold">Satuan Pendidikan:</span>
                   <p className="text-sm font-bold text-slate-800">{selectedRecordForDetail.schoolName}</p>
                   <p className="text-slate-500 mt-0.5">{selectedRecordForDetail.subject} · {selectedRecordForDetail.gradeClass}</p>
+                </div>
+                <div>
+                  <span className="text-slate-400 font-semibold">Kepala Satuan Pendidikan:</span>
+                  <p className="text-sm font-bold text-slate-800">{selectedRecordForDetail.headmasterName || 'Dra. Hj. Nurhasanah, M.Pd.'}</p>
+                  <p className="text-slate-500 font-mono text-[11px] mt-0.5">NIP: {selectedRecordForDetail.headmasterNip || '-'}</p>
+                </div>
+                <div>
+                  <span className="text-slate-400 font-semibold">Pengawas Pembina:</span>
+                  <p className="text-sm font-bold text-slate-800">{selectedRecordForDetail.assessorName || 'HERIANSYAH, S.Si., S.Pd., M.Pd'}</p>
+                  <p className="text-slate-500 font-mono text-[11px] mt-0.5">NIP: {selectedRecordForDetail.assessorNip || '-'}</p>
                 </div>
                 <div>
                   <span className="text-slate-400 font-semibold">Mitra Utama:</span>
@@ -1497,6 +1664,16 @@ export const PMLearningPartnershipView: React.FC<PMLearningPartnershipViewProps>
                 <td className="py-1 font-bold text-slate-600">Mitra Utama / Peran</td>
                 <td>:</td>
                 <td><strong>{selectedRecordForDetail.partnerName}</strong> ({selectedRecordForDetail.primaryPartnerType})</td>
+              </tr>
+              <tr>
+                <td className="py-1 font-bold text-slate-600">Kepala Satuan Pendidikan</td>
+                <td>:</td>
+                <td><strong>{selectedRecordForDetail.headmasterName || 'Dra. Hj. Nurhasanah, M.Pd.'}</strong> (NIP. {selectedRecordForDetail.headmasterNip || '-'})</td>
+              </tr>
+              <tr>
+                <td className="py-1 font-bold text-slate-600">Pengawas Sekolah Pembina</td>
+                <td>:</td>
+                <td><strong>{selectedRecordForDetail.assessorName || 'HERIANSYAH, S.Si., S.Pd., M.Pd'}</strong> (NIP. {selectedRecordForDetail.assessorNip || '-'})</td>
               </tr>
               <tr>
                 <td className="py-1 font-bold text-slate-600">Total Skor / Kematangan</td>

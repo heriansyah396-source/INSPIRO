@@ -168,10 +168,15 @@ export function exportDigitalPMToWord(record: PMDigitalRecord, settings: AppSett
         <tr>
           <td><strong>Topik / Materi</strong></td>
           <td>:</td>
-          <td>${record.topic || 'Pemanfaatan Digital dalam Pembelajaran Mendalam'}</td>
+          <td colspan="4">${record.topic || 'Pemanfaatan Digital dalam Pembelajaran Mendalam'}</td>
+        </tr>
+        <tr>
+          <td><strong>Kepala Satuan Pendidikan</strong></td>
+          <td>:</td>
+          <td><strong>${record.headmasterName || '-'}</strong> (NIP. ${record.headmasterNip || '-'})</td>
           <td><strong>Pengawas Pembina</strong></td>
           <td>:</td>
-          <td>${record.assessorName}</td>
+          <td><strong>${record.assessorName}</strong> (NIP. ${record.assessorNip || '-'})</td>
         </tr>
       </table>
 

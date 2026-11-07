@@ -201,9 +201,14 @@ export function exportPartnershipPMToWord(record: PMLearningPartnershipRecord, s
           <td class="val">${new Date(record.date).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}</td>
         </tr>
         <tr>
+          <td class="label">Kepala Satuan Pendidikan</td>
+          <td class="colon">:</td>
+          <td class="val"><strong>${record.headmasterName || '-'}</strong> (NIP. ${record.headmasterNip || '-'})</td>
+        </tr>
+        <tr>
           <td class="label">Petugas Penilai / Jabatan</td>
           <td class="colon">:</td>
-          <td class="val">${record.assessorName} (${record.assessorRole})</td>
+          <td class="val">${record.assessorName} (${record.assessorRole || 'Pengawas Sekolah Pembina'} - NIP. ${record.assessorNip || '-'})</td>
         </tr>
       </table>
 

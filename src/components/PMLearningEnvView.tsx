@@ -31,12 +31,14 @@ import {
   ChevronRight,
   Maximize2,
   Laptop,
-  Handshake
+  Handshake,
+  UserCheck
 } from 'lucide-react';
 import {
   PMLearningEnvRecord,
   PM_LEARNING_ENV_RUBRICS,
   Teacher,
+  Principal,
   AppSettings,
   SupervisionRecord
 } from '../types/inspiro';
@@ -47,6 +49,7 @@ import { printDocumentElement } from '../utils/documentExport';
 interface PMLearningEnvViewProps {
   records: PMLearningEnvRecord[];
   teachers: Teacher[];
+  principals?: Principal[];
   settings: AppSettings;
   currentUser: UserRoleProfile | null;
   onSaveRecord: (record: PMLearningEnvRecord) => void;
@@ -60,6 +63,7 @@ interface PMLearningEnvViewProps {
 export const PMLearningEnvView: React.FC<PMLearningEnvViewProps> = ({
   records,
   teachers,
+  principals = [],
   settings,
   currentUser,
   onSaveRecord,
@@ -87,11 +91,14 @@ export const PMLearningEnvView: React.FC<PMLearningEnvViewProps> = ({
     teachers.forEach((t) => {
       if (t.satuanPendidikan) set.add(t.satuanPendidikan);
     });
+    principals.forEach((p) => {
+      if (p.satuanPendidikan) set.add(p.satuanPendidikan);
+    });
     records.forEach((r) => {
       if (r.schoolName) set.add(r.schoolName);
     });
     return Array.from(set);
-  }, [settings.schoolName, teachers, records]);
+  }, [settings.schoolName, teachers, principals, records]);
 
   // Filtered Records
   const filteredRecords = useMemo(() => {
@@ -100,7 +107,8 @@ export const PMLearningEnvView: React.FC<PMLearningEnvViewProps> = ({
         r.teacherName.toLowerCase().includes(searchTerm.toLowerCase()) ||
         r.subject.toLowerCase().includes(searchTerm.toLowerCase()) ||
         r.schoolName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (r.topic && r.topic.toLowerCase().includes(searchTerm.toLowerCase()));
+        (r.topic && r.topic.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (r.headmasterName && r.headmasterName.toLowerCase().includes(searchTerm.toLowerCase()));
 
       const matchSchool = schoolFilter === 'all' || r.schoolName === schoolFilter;
       const matchMaturity = maturityFilter === 'all' || r.maturityLevel.includes(maturityFilter);
@@ -167,9 +175,17 @@ export const PMLearningEnvView: React.FC<PMLearningEnvViewProps> = ({
       satuanPendidikan: settings.schoolName || 'SMP Binaan'
     };
 
+    const initialSchool = defaultTeacher.satuanPendidikan || settings.schoolName || 'SMP Binaan';
+    const matchingPrincipal = principals.find(
+      (p) => p.satuanPendidikan && initialSchool && p.satuanPendidikan.toLowerCase().trim() === initialSchool.toLowerCase().trim()
+    ) || principals[0];
+
+    const defaultHeadmasterName = matchingPrincipal?.nama || settings.pengawasPembinaName || 'Dra. Hj. Nurhasanah, M.Pd.';
+    const defaultHeadmasterNip = matchingPrincipal?.nip || settings.pengawasPembinaNip || '19720815 199802 2 003';
+
     const newRec: PMLearningEnvRecord = {
       id: `ple-${Date.now()}`,
-      schoolName: defaultTeacher.satuanPendidikan || settings.schoolName || 'SMP Binaan',
+      schoolName: initialSchool,
       teacherId: defaultTeacher.id,
       teacherName: defaultTeacher.nama,
       teacherNip: defaultTeacher.nip,
@@ -180,8 +196,8 @@ export const PMLearningEnvView: React.FC<PMLearningEnvViewProps> = ({
       assessorName: settings.supervisorName || 'HERIANSYAH, S.Si., S.Pd., M.Pd',
       assessorRole: 'Pengawas Sekolah',
       assessorNip: settings.supervisorNip || '19830819 201001 1 002',
-      headmasterName: settings.pengawasPembinaName || 'Dra. Hj. Nurhasanah, M.Pd.',
-      headmasterNip: settings.pengawasPembinaNip || '19720815 199802 2 003',
+      headmasterName: defaultHeadmasterName,
+      headmasterNip: defaultHeadmasterNip,
 
       dim1Psychological: {
         score: 3,
@@ -265,7 +281,25 @@ export const PMLearningEnvView: React.FC<PMLearningEnvViewProps> = ({
 
   // Open edit modal
   const handleOpenEdit = (rec: PMLearningEnvRecord) => {
-    setFormRecord(JSON.parse(JSON.stringify(rec)));
+    const matchingPrincipal = principals.find(
+      (p) => p.satuanPendidikan && rec.schoolName && p.satuanPendidikan.toLowerCase().trim() === rec.schoolName.toLowerCase().trim()
+    ) || principals[0];
+
+    const copy = JSON.parse(JSON.stringify(rec));
+    if (!copy.headmasterName) {
+      copy.headmasterName = matchingPrincipal?.nama || settings.pengawasPembinaName || 'Dra. Hj. Nurhasanah, M.Pd.';
+    }
+    if (!copy.headmasterNip) {
+      copy.headmasterNip = matchingPrincipal?.nip || settings.pengawasPembinaNip || '19720815 199802 2 003';
+    }
+    if (!copy.assessorName) {
+      copy.assessorName = settings.supervisorName || 'HERIANSYAH, S.Si., S.Pd., M.Pd';
+    }
+    if (!copy.assessorNip) {
+      copy.assessorNip = settings.supervisorNip || '19830819 201001 1 002';
+    }
+
+    setFormRecord(copy);
     setActiveFormTab('identity');
     setIsFormModalOpen(true);
   };
@@ -275,14 +309,20 @@ export const PMLearningEnvView: React.FC<PMLearningEnvViewProps> = ({
     if (!formRecord) return;
     const teacher = teachers.find((t) => t.id === teacherId);
     if (!teacher) return;
+    const targetSchool = teacher.satuanPendidikan || formRecord.schoolName;
+    const matchingPrincipal = principals.find(
+      (p) => p.satuanPendidikan && targetSchool && p.satuanPendidikan.toLowerCase().trim() === targetSchool.toLowerCase().trim()
+    );
     setFormRecord({
       ...formRecord,
       teacherId: teacher.id,
       teacherName: teacher.nama,
       teacherNip: teacher.nip,
-      schoolName: teacher.satuanPendidikan,
+      schoolName: targetSchool,
       subject: teacher.mapel,
-      gradeClass: teacher.kelas
+      gradeClass: teacher.kelas,
+      headmasterName: matchingPrincipal ? matchingPrincipal.nama : formRecord.headmasterName,
+      headmasterNip: matchingPrincipal ? (matchingPrincipal.nip || '-') : formRecord.headmasterNip
     });
   };
 
@@ -669,8 +709,10 @@ export const PMLearningEnvView: React.FC<PMLearningEnvViewProps> = ({
                       </span>
                     </div>
                     <h3 className="text-lg font-bold text-slate-900">{record.teacherName}</h3>
-                    <p className="text-xs text-slate-500 flex items-center gap-2">
+                    <p className="text-xs text-slate-500 flex flex-wrap items-center gap-2">
                       <span>NIP: {record.teacherNip || '-'}</span>
+                      <span>•</span>
+                      <span>Kepsek: <strong className="text-slate-700">{record.headmasterName || 'Dra. Hj. Nurhasanah, M.Pd.'}</strong></span>
                       <span>•</span>
                       <span>Materi: <strong>{record.topic || 'Pembelajaran Mendalam'}</strong></span>
                       <span>•</span>
@@ -889,22 +931,36 @@ export const PMLearningEnvView: React.FC<PMLearningEnvViewProps> = ({
             {/* Modal Body */}
             <div className="p-6 overflow-y-auto space-y-6 text-slate-800 text-sm">
               {/* Identity Banner */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 p-4 bg-slate-50 rounded-xl border border-slate-200 text-xs">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 p-4 bg-slate-50 rounded-xl border border-slate-200 text-xs">
                 <div>
-                  <span className="text-slate-400 block font-semibold uppercase">Mata Pelajaran</span>
-                  <span className="font-bold text-slate-800">{selectedRecordForDetail.subject}</span>
+                  <span className="text-slate-400 block font-semibold uppercase">Guru &amp; NIP</span>
+                  <span className="font-bold text-slate-800 text-sm">{selectedRecordForDetail.teacherName}</span>
+                  <span className="text-slate-500 font-mono block mt-0.5">NIP: {selectedRecordForDetail.teacherNip || '-'}</span>
                 </div>
                 <div>
-                  <span className="text-slate-400 block font-semibold uppercase">Kelas / Rombel</span>
-                  <span className="font-bold text-slate-800">{selectedRecordForDetail.gradeClass}</span>
+                  <span className="text-slate-400 block font-semibold uppercase">Mata Pelajaran &amp; Kelas</span>
+                  <span className="font-bold text-slate-800">{selectedRecordForDetail.subject} · {selectedRecordForDetail.gradeClass}</span>
+                  <span className="text-slate-500 block mt-0.5">{selectedRecordForDetail.schoolName}</span>
+                </div>
+                <div>
+                  <span className="text-slate-400 block font-semibold uppercase">Kepala Satuan Pendidikan</span>
+                  <span className="font-bold text-slate-800">{selectedRecordForDetail.headmasterName || 'Dra. Hj. Nurhasanah, M.Pd.'}</span>
+                  <span className="text-slate-500 font-mono block mt-0.5">NIP: {selectedRecordForDetail.headmasterNip || '-'}</span>
+                </div>
+                <div>
+                  <span className="text-slate-400 block font-semibold uppercase">Pengawas Sekolah Pembina</span>
+                  <span className="font-bold text-slate-800">{selectedRecordForDetail.assessorName || 'HERIANSYAH, S.Si., S.Pd., M.Pd'}</span>
+                  <span className="text-slate-500 font-mono block mt-0.5">NIP: {selectedRecordForDetail.assessorNip || '-'}</span>
                 </div>
                 <div>
                   <span className="text-slate-400 block font-semibold uppercase">Tanggal Observasi</span>
                   <span className="font-bold text-slate-800">{selectedRecordForDetail.date}</span>
+                  <span className="text-slate-500 block mt-0.5">Topik: {selectedRecordForDetail.topic || 'PM'}</span>
                 </div>
                 <div>
-                  <span className="text-slate-400 block font-semibold uppercase">Pengawas Pembina</span>
-                  <span className="font-bold text-slate-800">{selectedRecordForDetail.assessorName}</span>
+                  <span className="text-slate-400 block font-semibold uppercase">Skor &amp; Iklim Psikologis</span>
+                  <span className="font-bold text-teal-800 text-sm">{selectedRecordForDetail.totalScore.toFixed(1)} / 100</span>
+                  <span className="text-emerald-700 block font-semibold mt-0.5">{selectedRecordForDetail.psychologicalClimateCategory}</span>
                 </div>
               </div>
 
@@ -1242,6 +1298,117 @@ export const PMLearningEnvView: React.FC<PMLearningEnvViewProps> = ({
                         placeholder="Contoh: Penerapan Eksplorasi Kontekstual & Proyek Kolaboratif"
                         className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm"
                       />
+                    </div>
+                  </div>
+
+                  {/* DATA KEPALA SATUAN PENDIDIKAN & PENGAWAS PEMBINA */}
+                  <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-4">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-slate-200">
+                      <h4 className="text-xs font-extrabold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
+                        <UserCheck className="w-4 h-4 text-teal-600" />
+                        <span>Data Kepala Satuan Pendidikan &amp; Pengawas Pembina</span>
+                      </h4>
+                      {principals && principals.length > 0 && (
+                        <span className="text-[11px] text-teal-700 bg-teal-50 px-2 py-0.5 rounded-md border border-teal-200 font-semibold">
+                          Tersedia {principals.length} Kepala Sekolah Binaan
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Quick Select / Sync from Registered Principals */}
+                    {principals && principals.length > 0 && (
+                      <div>
+                        <label className="block text-xs font-bold text-slate-700 mb-1">
+                          Pilih / Sinkronkan Data Kepala Sekolah Binaan
+                        </label>
+                        <select
+                          onChange={(e) => {
+                            const selected = principals.find((p) => p.id === e.target.value);
+                            if (selected) {
+                              setFormRecord({
+                                ...formRecord,
+                                headmasterName: selected.nama,
+                                headmasterNip: selected.nip || '-',
+                                schoolName: selected.satuanPendidikan || formRecord.schoolName
+                              });
+                            }
+                          }}
+                          defaultValue=""
+                          className="w-full text-xs p-2.5 rounded-lg border border-slate-300 bg-white focus:ring-2 focus:ring-teal-500 text-slate-800 cursor-pointer font-medium"
+                        >
+                          <option value="" disabled>
+                            -- Pilih dari Daftar Kepala Sekolah Binaan (Otomatis Isi Nama, NIP, &amp; Sekolah) --
+                          </option>
+                          {principals.map((p) => (
+                            <option key={p.id} value={p.id}>
+                              {p.satuanPendidikan} — {p.nama} ({p.pangkatGolongan || 'PNS/PPPK'})
+                            </option>
+                          ))}
+                        </select>
+                        <p className="text-[11px] text-slate-500 mt-1">
+                          Memilih nama kepala sekolah di atas akan otomatis menyelaraskan nama sekolah dan NIP.
+                        </p>
+                      </div>
+                    )}
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-xs font-bold text-slate-700 mb-1">
+                          Nama Lengkap &amp; Gelar Kepala Sekolah <span className="text-rose-500">*</span>
+                        </label>
+                        <input
+                          type="text"
+                          value={formRecord.headmasterName}
+                          onChange={(e) => setFormRecord({ ...formRecord, headmasterName: e.target.value })}
+                          placeholder="Contoh: Dra. Hj. Nurhasanah, M.Pd."
+                          className="w-full text-xs p-2.5 rounded-lg border border-slate-300 bg-white focus:ring-2 focus:ring-teal-500 text-slate-800 font-medium"
+                          required
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-bold text-slate-700 mb-1">
+                          NIP / NIK Kepala Sekolah <span className="text-rose-500">*</span>
+                        </label>
+                        <input
+                          type="text"
+                          value={formRecord.headmasterNip}
+                          onChange={(e) => setFormRecord({ ...formRecord, headmasterNip: e.target.value })}
+                          placeholder="Contoh: 19720815 199802 2 003"
+                          className="w-full text-xs p-2.5 rounded-lg border border-slate-300 bg-white focus:ring-2 focus:ring-teal-500 text-slate-800 font-mono"
+                          required
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2 border-t border-slate-200">
+                      <div>
+                        <label className="block text-xs font-bold text-slate-700 mb-1">
+                          Nama Pengawas Sekolah Pembina (Asesor) <span className="text-rose-500">*</span>
+                        </label>
+                        <input
+                          type="text"
+                          value={formRecord.assessorName}
+                          onChange={(e) => setFormRecord({ ...formRecord, assessorName: e.target.value })}
+                          placeholder="Contoh: HERIANSYAH, S.Si., S.Pd., M.Pd"
+                          className="w-full text-xs p-2.5 rounded-lg border border-slate-300 bg-white focus:ring-2 focus:ring-teal-500 text-slate-800 font-medium"
+                          required
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-bold text-slate-700 mb-1">
+                          NIP Pengawas Sekolah <span className="text-rose-500">*</span>
+                        </label>
+                        <input
+                          type="text"
+                          value={formRecord.assessorNip}
+                          onChange={(e) => setFormRecord({ ...formRecord, assessorNip: e.target.value })}
+                          placeholder="Contoh: 19830819 201001 1 002"
+                          className="w-full text-xs p-2.5 rounded-lg border border-slate-300 bg-white focus:ring-2 focus:ring-teal-500 text-slate-800 font-mono"
+                          required
+                        />
+                      </div>
                     </div>
                   </div>
 
@@ -1935,10 +2102,15 @@ export const PMLearningEnvView: React.FC<PMLearningEnvViewProps> = ({
               <tr>
                 <td className="py-1 font-semibold">Topik Materi</td>
                 <td className="py-1">:</td>
-                <td className="py-1">{selectedRecordForDetail.topic}</td>
+                <td className="py-1" colSpan={4}>{selectedRecordForDetail.topic}</td>
+              </tr>
+              <tr>
+                <td className="py-1 font-semibold">Kepala Satuan Pendidikan</td>
+                <td className="py-1">:</td>
+                <td className="py-1"><strong>{selectedRecordForDetail.headmasterName || 'Dra. Hj. Nurhasanah, M.Pd.'}</strong> (NIP. {selectedRecordForDetail.headmasterNip || '-'})</td>
                 <td className="py-1 font-semibold">Pengawas Pembina</td>
                 <td className="py-1">:</td>
-                <td className="py-1">{selectedRecordForDetail.assessorName}</td>
+                <td className="py-1"><strong>{selectedRecordForDetail.assessorName}</strong> (NIP. {selectedRecordForDetail.assessorNip || '-'})</td>
               </tr>
             </tbody>
           </table>

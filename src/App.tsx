@@ -953,6 +953,7 @@ export default function App() {
                 <PMLearningEnvView
                   records={learningEnvRecords}
                   teachers={teachers}
+                  principals={principals}
                   settings={settings}
                   currentUser={currentUser}
                   onSaveRecord={handleSaveLearningEnvRecord}
@@ -969,6 +970,7 @@ export default function App() {
                 <PMDigitalView
                   records={digitalPMRecords}
                   teachers={teachers}
+                  principals={principals}
                   settings={settings}
                   currentUser={currentUser}
                   onSaveRecord={handleSaveDigitalPMRecord}
@@ -985,6 +987,7 @@ export default function App() {
                 <PMLearningPartnershipView
                   records={partnershipPMRecords}
                   teachers={teachers}
+                  principals={principals}
                   settings={settings}
                   currentUser={currentUser}
                   onSaveRecord={handleSavePartnershipPMRecord}
