@@ -27,7 +27,8 @@ import {
   Laptop,
   FileSearch,
   Handshake,
-  Target
+  Target,
+  Scale
 } from 'lucide-react';
 import { SupervisionRecord, PMReport } from '../types/inspiro';
 import { RadarChartWidget } from './RadarChartWidget';
@@ -41,6 +42,7 @@ export type NavTab =
   | 'supervision'
   | 'coaching'
   | 'teacher-quadrant'
+  | 'academic-pro-contra'
   | 'results'
   | 'reports'
   | 'pm-reports'
@@ -137,6 +139,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
       label: '4 Kuadran Guru',
       icon: Grid2X2,
       badge: 'Matriks Glickman'
+    },
+    {
+      id: 'academic-pro-contra' as NavTab,
+      label: 'Matriks Pro-Kontra Supervisi',
+      icon: Scale,
+      badge: 'Dialektika'
     },
     {
       id: 'results' as NavTab,

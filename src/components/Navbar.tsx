@@ -56,6 +56,10 @@ const TAB_TITLES: Record<NavTab, { title: string; subtitle: string }> = {
     title: 'Matriks 4 Kuadran Guru (Supervisi Perkembangan Glickman)',
     subtitle: 'Pemetaan tipologi guru, tingkat abstraksi & komitmen, serta diferensiasi resep pembinaan'
   },
+  'academic-pro-contra': {
+    title: 'Matriks Analisis Pro-Kontra Supervisi Akademik',
+    subtitle: 'Dialektika inovasi pembelajaran: Aspek, Pro, Kontra, Analisis Dampak, dan Aksi Solutif Pengawas'
+  },
   results: {
     title: 'Hasil Supervisi',
     subtitle: 'Skor akhir, analisis kelebihan, dan rekomendasi tindak lanjut'

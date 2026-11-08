@@ -2345,3 +2345,41 @@ export interface SWOTAnalysisRecord {
   createdAt: string;
   updatedAt: string;
 }
+
+export type ProContraStatus = 'Terealisasi' | 'Dalam Proses' | 'Rencana Tindak Lanjut';
+
+export interface AcademicProContraItem {
+  id: string;
+  aspek: string; // Aspek supervisi / inovasi akademik (misal: "Diferensiasi Pembelajaran", "Pemanfaatan PID (Papan Interaktif Digital)")
+  pro: string; // Argumen pro / poin yang mendukung & manfaat pembelajaran
+  kontra: string; // Argumen kontra / keberatan guru, kendala teknis & beban kerja
+  analisisDampak: string; // Analisis dampak instruksional bila tantangan tidak dimitigasi
+  aksiPenyelesaian: string; // Langkah aksi solutif / intervensi supervisi & mediasi pengawas
+  status?: ProContraStatus;
+}
+
+export interface AcademicProContraRecord {
+  id: string;
+  title: string;
+  schoolName: string;
+  schoolNpsn?: string;
+  teacherId?: string;
+  teacherName?: string;
+  teacherNip?: string;
+  subject?: string;
+  gradeClass?: string;
+  academicYear: string;
+  semester: 'Ganjil' | 'Genap';
+  date: string;
+  headmasterName: string;
+  headmasterNip: string;
+  supervisorName: string;
+  supervisorNip: string;
+  supervisorRole: string;
+  supervisorRank?: string;
+  notes?: string;
+  items: AcademicProContraItem[];
+  status: 'draft' | 'final';
+  createdAt: string;
+  updatedAt: string;
+}

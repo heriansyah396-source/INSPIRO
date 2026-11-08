@@ -32,6 +32,7 @@ import { TeacherQuadrantView } from './components/TeacherQuadrantView';
 import { ContextualProblemView } from './components/ContextualProblemView';
 import { SOARAnalysisView } from './components/SOARAnalysisView';
 import { SWOTAnalysisView } from './components/SWOTAnalysisView';
+import { AcademicProContraView } from './components/AcademicProContraView';
 import { PrincipalList } from './components/PrincipalList';
 import {
   AppSettings,
@@ -46,7 +47,8 @@ import {
   ContextualProblemRecord,
   PMLearningPartnershipRecord,
   SOARAnalysisRecord,
-  SWOTAnalysisRecord
+  SWOTAnalysisRecord,
+  AcademicProContraRecord
 } from './types/inspiro';
 import {
   addTeacher,
@@ -93,7 +95,10 @@ import {
   deleteSOARRecord,
   getSWOTRecords,
   saveSWOTRecord,
-  deleteSWOTRecord
+  deleteSWOTRecord,
+  getAcademicProContraRecords,
+  saveAcademicProContraRecord,
+  deleteAcademicProContraRecord
 } from './utils/storage';
 import {
   auth,
@@ -140,6 +145,7 @@ export default function App() {
   const [contextualProblems, setContextualProblems] = useState<ContextualProblemRecord[]>(getContextualProblems());
   const [soarRecords, setSoarRecords] = useState<SOARAnalysisRecord[]>(getSOARRecords());
   const [swotRecords, setSwotRecords] = useState<SWOTAnalysisRecord[]>(() => getSWOTRecords());
+  const [proContraRecords, setProContraRecords] = useState<AcademicProContraRecord[]>(() => getAcademicProContraRecords());
   const [selectedSwotPrincipalId, setSelectedSwotPrincipalId] = useState<string | undefined>(undefined);
   const [settings, setSettings] = useState<AppSettings>(getSettings());
 
@@ -190,6 +196,7 @@ export default function App() {
     setContextualProblems(getContextualProblems());
     setSoarRecords(getSOARRecords());
     setSwotRecords(getSWOTRecords());
+    setProContraRecords(getAcademicProContraRecords());
     setSettings(getSettings());
   }, []);
 
@@ -623,6 +630,19 @@ export default function App() {
     setCurrentTab('swot-tows');
   };
 
+  // Handlers: Academic Pro-Contra Matrix (Dialektika Inovasi Supervisi)
+  const handleSaveProContraRecord = (record: AcademicProContraRecord) => {
+    saveAcademicProContraRecord(record);
+    refreshData();
+    showToast('Matriks Pro-Kontra Disimpan', `Matriks dialektika supervisi untuk ${record.schoolName} (${record.title}) berhasil disimpan.`, 'success');
+  };
+
+  const handleDeleteProContraRecord = (id: string) => {
+    deleteAcademicProContraRecord(id);
+    refreshData();
+    showToast('Matriks Pro-Kontra Dihapus', 'Dokumen matriks analisis pro-kontra telah dihapus dari sistem.', 'info');
+  };
+
   // Active Record for detail view
   const activeRecord =
     supervisions.find((s) => s.id === selectedSupervisionId) || supervisions[0];
@@ -894,6 +914,19 @@ export default function App() {
                   onStartSupervision={(teacherId) => handleStartNewSupervision(teacherId)}
                   onNavigateToCoaching={() => setCurrentTab('coaching')}
                   onUpdateSettings={handleSaveSettings}
+                  showToast={showToast}
+                />
+              )}
+
+              {/* Tab: Matriks Analisis Pro-Kontra Supervisi Akademik (Dialektika Inovasi) */}
+              {currentTab === 'academic-pro-contra' && (
+                <AcademicProContraView
+                  records={proContraRecords}
+                  principals={principals}
+                  teachers={teachers}
+                  settings={settings}
+                  onSaveRecord={handleSaveProContraRecord}
+                  onDeleteRecord={handleDeleteProContraRecord}
                   showToast={showToast}
                 />
               )}

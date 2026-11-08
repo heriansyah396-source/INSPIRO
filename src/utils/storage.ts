@@ -12,6 +12,7 @@ import { SEED_CONTEXTUAL_PROBLEMS } from '../data/seedContextualProblems';
 import { SEED_PARTNERSHIP_PM_RECORDS } from '../data/seedLearningPartnership';
 import { SEED_SOAR_RECORDS } from '../data/seedSOAR';
 import { SEED_SWOT_RECORDS } from '../data/seedSWOT';
+import { SEED_PRO_CONTRA_RECORDS } from '../data/seedProContra';
 import { SEED_PRINCIPALS } from '../data/seedPrincipals';
 import { SEED_MANAGERIAL_EVALUATIONS } from '../data/seedManagerialEvaluations';
 import { DEFAULT_SIDRAP_LOGO, DEFAULT_TUTWURI_LOGO } from '../data/defaultLogos';
@@ -34,7 +35,9 @@ import {
   ContextualProblemRecord,
   PMLearningPartnershipRecord,
   SOARAnalysisRecord,
-  SWOTAnalysisRecord
+  SWOTAnalysisRecord,
+  AcademicProContraRecord,
+  AcademicProContraItem
 } from '../types/inspiro';
 
 const TEACHERS_KEY = 'inspiro_teachers';
@@ -50,6 +53,7 @@ const CONTEXTUAL_PROBLEMS_KEY = 'inspiro_contextual_problems';
 const COACHING_RECORDS_KEY = 'inspiro_coaching_records';
 const SOAR_RECORDS_KEY = 'inspiro_soar_records';
 const SWOT_RECORDS_KEY = 'inspiro_swot_records';
+const PRO_CONTRA_RECORDS_KEY = 'inspiro_pro_contra_records';
 
 // Helper to safely parse JSON from localStorage
 function safeParse<T>(key: string, fallback: T): T {
@@ -1908,6 +1912,256 @@ export function exportSWOTToWord(record: SWOTAnalysisRecord, settings: AppSettin
   a.href = url;
   const safeTitle = record.schoolName.replace(/[^a-zA-Z0-9]/g, '_');
   a.download = `Analisis_SWOT_TOWS_${safeTitle}_${record.date}.doc`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+// ==========================================
+// 12. ACADEMIC PRO-CONTRA MATRIX CRUD & EXPORT
+// ==========================================
+export function getAcademicProContraRecords(): AcademicProContraRecord[] {
+  const records = safeParse<AcademicProContraRecord[]>(PRO_CONTRA_RECORDS_KEY, []);
+  if (records.length === 0) {
+    saveAcademicProContraRecords(SEED_PRO_CONTRA_RECORDS);
+    return SEED_PRO_CONTRA_RECORDS;
+  }
+  return records;
+}
+
+export function saveAcademicProContraRecords(records: AcademicProContraRecord[]): void {
+  try {
+    localStorage.setItem(PRO_CONTRA_RECORDS_KEY, JSON.stringify(records));
+  } catch (e) {
+    console.error('Error saving academic pro-contra records:', e);
+  }
+}
+
+export function saveAcademicProContraRecord(record: AcademicProContraRecord): void {
+  const current = getAcademicProContraRecords();
+  const index = current.findIndex((r) => r.id === record.id);
+  let updated: AcademicProContraRecord[];
+  if (index >= 0) {
+    updated = [...current];
+    updated[index] = { ...record, updatedAt: new Date().toISOString() };
+  } else {
+    updated = [{ ...record, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }, ...current];
+  }
+  saveAcademicProContraRecords(updated);
+}
+
+export function deleteAcademicProContraRecord(id: string): void {
+  const current = getAcademicProContraRecords();
+  const updated = current.filter((r) => r.id !== id);
+  saveAcademicProContraRecords(updated);
+}
+
+export function exportAcademicProContraToWord(record: AcademicProContraRecord, settings: AppSettings): void {
+  const logoLeft = settings.logoUrl || DEFAULT_SIDRAP_LOGO;
+  const logoRight = settings.logoRightUrl || DEFAULT_TUTWURI_LOGO;
+  const agency = settings.governmentAgency || 'Pemerintah Kabupaten Sidenreng Rappang';
+  const schoolCity = settings.schoolCity || 'Pangkajene Sidenreng';
+
+  const rowsHtml = record.items
+    .map((item, index) => {
+      const statusBadge = item.status === 'Terealisasi'
+        ? '<span style="background-color:#dcfce7; color:#15803d; padding:2px 6px; border-radius:3px; font-weight:bold; font-size:8.5pt;">Terealisasi</span>'
+        : item.status === 'Dalam Proses'
+        ? '<span style="background-color:#fef9c3; color:#854d0e; padding:2px 6px; border-radius:3px; font-weight:bold; font-size:8.5pt;">Dalam Proses</span>'
+        : '<span style="background-color:#e0e7ff; color:#3730a3; padding:2px 6px; border-radius:3px; font-weight:bold; font-size:8.5pt;">Rencana Tindak Lanjut</span>';
+
+      return `
+        <tr>
+          <td style="border:1px solid #94a3b8; padding:8px; vertical-align:top; text-align:center; font-weight:bold; background-color:#f8fafc;">
+            ${index + 1}
+          </td>
+          <td style="border:1px solid #94a3b8; padding:8px; vertical-align:top;">
+            <strong style="color:#0f172a; font-size:10pt;">${item.aspek}</strong>
+            <div style="margin-top:6px;">${statusBadge}</div>
+          </td>
+          <td style="border:1px solid #94a3b8; padding:8px; vertical-align:top; background-color:#f0fdf4; color:#14532d; font-size:9.5pt;">
+            <div style="font-weight:bold; margin-bottom:4px; color:#166534;">Mendukung:</div>
+            ${item.pro || '-'}
+          </td>
+          <td style="border:1px solid #94a3b8; padding:8px; vertical-align:top; background-color:#fef2f2; color:#7f1d1d; font-size:9.5pt;">
+            <div style="font-weight:bold; margin-bottom:4px; color:#991b1b;">Keberatan / Kendala:</div>
+            ${item.kontra || '-'}
+          </td>
+          <td style="border:1px solid #94a3b8; padding:8px; vertical-align:top; background-color:#fffbeb; color:#78350f; font-size:9.5pt;">
+            <div style="font-weight:bold; margin-bottom:4px; color:#92400e;">Analisis Dampak:</div>
+            ${item.analisisDampak || '-'}
+          </td>
+          <td style="border:1px solid #94a3b8; padding:8px; vertical-align:top; background-color:#eff6ff; color:#1e3a8a; font-size:9.5pt;">
+            <div style="font-weight:bold; margin-bottom:4px; color:#1d4ed8;">Aksi Penyelesaian:</div>
+            ${item.aksiPenyelesaian || '-'}
+          </td>
+        </tr>
+      `;
+    })
+    .join('');
+
+  const html = `
+    <!DOCTYPE html>
+    <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+    <head>
+      <meta charset="utf-8">
+      <title>Matriks Analisis Pro-Kontra Supervisi Akademik</title>
+      <style>
+        body {
+          font-family: 'Calibri', 'Times New Roman', sans-serif;
+          font-size: 11pt;
+          line-height: 1.35;
+          color: #0f172a;
+          margin: 20px;
+        }
+        .title-doc {
+          text-align: center;
+          margin-top: 10px;
+          margin-bottom: 14px;
+        }
+        .title-doc h2 { margin: 0; font-size: 13.5pt; text-transform: uppercase; text-decoration: underline; font-weight: bold; }
+        .title-doc p { margin: 4px 0 0 0; font-size: 10pt; font-weight: bold; color: #1e293b; }
+        .table-info { width: 100%; border-collapse: collapse; margin-bottom: 14px; font-size: 10pt; }
+        .table-info td { padding: 3px 6px; vertical-align: top; }
+        .matrix-table { width: 100%; border-collapse: collapse; margin-top: 10px; margin-bottom: 18px; }
+        .matrix-table th { background-color: #1e293b; color: #ffffff; padding: 8px; font-size: 9.5pt; text-transform: uppercase; border: 1px solid #64748b; }
+        .signature-table { width: 100%; margin-top: 30px; border-collapse: collapse; }
+        .signature-table td { width: 33.33%; text-align: center; vertical-align: top; font-size: 10pt; }
+      </style>
+    </head>
+    <body>
+      <!-- KOP RESMI DINAS PENDIDIKAN DAN KEBUDAYAAN SIDRAP DENGAN LOGO GANDA -->
+      <table style="width:100%; border:none; border-bottom:3px double #000000; padding-bottom:8px; margin-bottom:18px;">
+        <tr>
+          <td style="width:75px; text-align:center; vertical-align:middle; border:none; padding-right:8px;">
+            <img src="${logoLeft}" width="70" height="75" style="object-fit:contain;" alt="Logo Kabupaten Sidenreng Rappang" />
+          </td>
+          <td style="text-align:center; vertical-align:middle; border:none; padding:0 8px;">
+            <div style="font-size:12pt; font-weight:bold; text-transform:uppercase; margin:0; line-height:1.2;">
+              ${agency.toUpperCase()}
+            </div>
+            <div style="font-size:13.5pt; font-weight:bold; text-transform:uppercase; margin:2px 0; line-height:1.2;">
+              DINAS PENDIDIKAN DAN KEBUDAYAAN
+            </div>
+            <div style="font-size:10.5pt; font-weight:bold; text-transform:uppercase; margin:0; color:#1e293b; line-height:1.2;">
+              PENGAWAS SEKOLAH PEMBINA KABUPATEN SIDENRENG RAPPANG
+            </div>
+            <div style="font-size:8.5pt; font-style:italic; margin-top:3px; color:#333333; line-height:1.2;">
+              Alamat: Kompleks SKPD Jl. Harapan Baru No. 1, Pangkajene, Kab. Sidenreng Rappang, Sulawesi Selatan (91611)
+            </div>
+          </td>
+          <td style="width:75px; text-align:center; vertical-align:middle; border:none; padding-left:8px;">
+            <img src="${logoRight}" width="70" height="75" style="object-fit:contain;" alt="Logo Tut Wuri Handayani" />
+          </td>
+        </tr>
+      </table>
+
+      <div class="title-doc">
+        <h2>MATRIKS ANALISIS PRO-KONTRA SUPERVISI AKADEMIK</h2>
+        <p>DIALEKTIKA INOVASI PEMBELAJARAN, ANALISIS DAMPAK, DAN AKSI PENYELESAIAN</p>
+      </div>
+
+      <table class="table-info">
+        <tr>
+          <td style="width: 20%;"><strong>Satuan Pendidikan</strong></td>
+          <td style="width: 2%;">:</td>
+          <td style="width: 45%;">${record.schoolName} ${record.schoolNpsn ? `(NPSN: ${record.schoolNpsn})` : ''}</td>
+          <td style="width: 15%;"><strong>Tahun Pelajaran</strong></td>
+          <td style="width: 2%;">:</td>
+          <td>${record.academicYear}</td>
+        </tr>
+        <tr>
+          <td><strong>Guru Sasaran / Mapel</strong></td>
+          <td>:</td>
+          <td>${record.teacherName || '-'} / ${record.subject || '-'} (${record.gradeClass || '-'})</td>
+          <td><strong>Semester</strong></td>
+          <td>:</td>
+          <td>${record.semester}</td>
+        </tr>
+        <tr>
+          <td><strong>Kepala Sekolah</strong></td>
+          <td>:</td>
+          <td>${record.headmasterName} (NIP: ${record.headmasterNip})</td>
+          <td><strong>Tanggal Supervisi</strong></td>
+          <td>:</td>
+          <td>${record.date}</td>
+        </tr>
+        <tr>
+          <td><strong>Pengawas Pembina</strong></td>
+          <td>:</td>
+          <td>${record.supervisorName} (NIP: ${record.supervisorNip})</td>
+          <td><strong>Fokus Analisis</strong></td>
+          <td>:</td>
+          <td>Dialektika Inovasi Supervisi</td>
+        </tr>
+      </table>
+
+      ${
+        record.notes
+          ? `<div style="background-color: #f8fafc; border-left: 4px solid #2563eb; padding: 8px 12px; margin-bottom: 14px; font-size: 10pt;">
+              <strong>Catatan Pengawas Pembina:</strong><br/>
+              <em>"${record.notes}"</em>
+            </div>`
+          : ''
+      }
+
+      <h3 style="font-size: 11pt; text-transform: uppercase; margin-bottom: 6px;">
+        MATRIKS 5 KOLOM: ASPEK, PRO (MENDUKUNG), KONTRA (KEBERATAN), ANALISIS DAMPAK, &amp; AKSI PENYELESAIAN
+      </h3>
+
+      <table class="matrix-table">
+        <thead>
+          <tr>
+            <th style="width:4%;">No</th>
+            <th style="width:18%;">Aspek Supervisi / Inovasi</th>
+            <th style="width:20%;">Pro (Mendukung)</th>
+            <th style="width:20%;">Kontra (Keberatan / Kendala)</th>
+            <th style="width:19%;">Analisis Dampak</th>
+            <th style="width:19%;">Aksi Penyelesaian</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${rowsHtml}
+        </tbody>
+      </table>
+
+      <table class="signature-table">
+        <tr>
+          <td>
+            Guru Mata Pelajaran / Sasaran,<br/>
+            ${record.schoolName}
+            <br/><br/><br/><br/><br/>
+            <strong><u>${record.teacherName || 'Guru Terkait'}</u></strong><br/>
+            NIP. ${record.teacherNip || '-'}
+          </td>
+          <td>
+            Mengetahui,<br/>
+            Kepala Sekolah
+            <br/><br/><br/><br/><br/>
+            <strong><u>${record.headmasterName}</u></strong><br/>
+            NIP. ${record.headmasterNip}
+          </td>
+          <td>
+            ${schoolCity}, ${record.date}<br/>
+            ${record.supervisorRole}
+            <br/><br/><br/><br/><br/>
+            <strong><u>${record.supervisorName}</u></strong><br/>
+            NIP. ${record.supervisorNip}<br/>
+            <span>Pangkat/Gol: ${record.supervisorRank || 'Penata Tk. I / III.d'}</span>
+          </td>
+        </tr>
+      </table>
+    </body>
+    </html>
+  `;
+
+  const blob = new Blob(['\ufeff', html], { type: 'application/msword;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  const safeTitle = record.schoolName.replace(/[^a-zA-Z0-9]/g, '_');
+  a.download = `Matriks_Pro_Kontra_${safeTitle}_${record.date}.doc`;
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
