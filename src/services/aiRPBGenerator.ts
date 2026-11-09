@@ -52,6 +52,177 @@ export function determineQuadrantAndStrategy(
   };
 }
 
+export interface GeneratorSubItemParams {
+  schoolName: string;
+  headmasterName: string;
+  capacity: 'Tinggi' | 'Sedang' | 'Rendah';
+  commitment: 'Tinggi' | 'Sedang' | 'Rendah';
+  quadrant?: RPBQuadrant;
+  strategy?: RPBStrategy;
+  raporPriorities?: string[];
+  theme?: 'standar' | 'literasi-numerasi' | 'digital-kombel' | 'iklim-karakter';
+}
+
+/**
+ * Generates an authentic, context-aware Baseline Diagnosis example for RPB
+ */
+export async function generateBaselineDiagnosisAI(params: GeneratorSubItemParams): Promise<string> {
+  const { quadrant, strategy } = determineQuadrantAndStrategy(params.capacity, params.commitment);
+  const school = params.schoolName?.trim() || 'Satuan Pendidikan Binaan';
+  const headmaster = params.headmasterName?.trim() || 'Kepala Sekolah';
+  const prioritiesText = params.raporPriorities && params.raporPriorities.length > 0
+    ? params.raporPriorities.join(', ')
+    : 'D.1 Kualitas Pembelajaran dan A.1 Kemampuan Literasi';
+  const theme = params.theme || 'standar';
+
+  // 1. Try Gemini API
+  const apiKey = (import.meta as any).env?.VITE_GEMINI_API_KEY || (process.env as any)?.GEMINI_API_KEY;
+  if (apiKey && apiKey !== 'MY_GEMINI_API_KEY' && apiKey.length > 10) {
+    try {
+      const ai = new GoogleGenAI({ apiKey });
+      const prompt = `Sebagai Pengawas Sekolah Pembina di Dinas Pendidikan Kabupaten Sidenreng Rappang berpedoman pada Perdirjen GTK No. 4831/B/HK.03.01/2023:
+Susunlah 1 (SATU) paragraf deskripsi naratif padat, profesional, dan realistis untuk "Diagnosis Kondisi Awal Satuan Pendidikan".
+Data Satuan Pendidikan:
+- Nama Sekolah: ${school}
+- Kepala Sekolah: ${headmaster}
+- Tingkat Kapasitas Kepemimpinan: ${params.capacity}
+- Tingkat Komitmen Perubahan: ${params.commitment}
+- Posisi Kuadran: ${quadrant}
+- Strategi Pendampingan: ${strategy}
+- Prioritas Rapor Pendidikan: ${prioritiesText}
+- Nuansa/Fokus: ${theme}
+
+Kriteria paragraf:
+1. Menggambarkan situasi riil kepemimpinan kepala sekolah, kesiapan dan budaya belajar dewan guru, serta refleksi capaian Rapor Pendidikan terkini.
+2. Panjang sekitar 3-5 kalimat berbobot, lugas, mengacu pada budaya sekolah di Kabupaten Sidenreng Rappang.
+3. Kembalikan HANYA teks paragraf tanpa tanda kutip, tanpa kata pengantar, dan tanpa format markdown.`;
+
+      const response = await ai.models.generateContent({
+        model: 'gemini-2.5-flash',
+        contents: prompt
+      });
+
+      if (response.text && response.text.trim().length > 30) {
+        return response.text.trim();
+      }
+    } catch (e) {
+      console.warn('Gemini generateBaselineDiagnosisAI fallback:', e);
+    }
+  }
+
+  // 2. High-Quality Contextual Domain Templates
+  if (theme === 'literasi-numerasi') {
+    if (params.capacity === 'Tinggi' || params.capacity === 'Sedang') {
+      return `Satuan pendidikan ${school} di bawah kepemimpinan ${headmaster} telah memiliki ekosistem literasi yang aktif dan sarana belajar yang memadai. Berdasarkan telaah Rapor Pendidikan pada indikator ${prioritiesText}, sekolah siap mengeskalasi program numerasi terintegrasi dan asesmen HOTS lintas mata pelajaran guna mengukuhkan kompetensi nalar murid secara berkelanjutan.`;
+    } else {
+      return `Berdasarkan observasi awal di ${school}, capaian indikator ${prioritiesText} masih memerlukan intervensi terstruktur pada strategi membaca pemahaman dan numerasi kontekstual. Kepala sekolah ${headmaster} dan para guru berkomitmen untuk membenahi metode asesmen kelas melalui pendampingan intensif dari pengawas pembina.`;
+    }
+  }
+
+  if (theme === 'digital-kombel') {
+    if (params.commitment === 'Tinggi') {
+      return `Komunitas Belajar (Kombel) internal di ${school} telah berjalan dengan antusiasme tinggi di bawah dorongan ${headmaster}. Pemanfaatan perangkat digital dan Platform Merdeka Mengajar (PMM) mulai membudaya, namun masih memerlukan penguatan dalam penyusunan modul ajar berbasis diferensiasi teknologi serta penguatan kolaborasi antarpendidik.`;
+    } else {
+      return `Di ${school}, pemanfaatan perangkat TIK dan aktivitas Komunitas Belajar (Kombel) masih cenderung berjalan secara administratif dan belum berdampak optimal pada proses belajar. Diperlukan pemicu komitmen dan coaching terarah kepada ${headmaster} serta para guru agar media digital terintegrasi nyata dalam pembelajaran harian.`;
+    }
+  }
+
+  if (theme === 'iklim-karakter') {
+    return `Satuan pendidikan ${school} memiliki modal sosial dan kemitraan paguyuban orang tua yang harmonis. Fokus diagnosis diarahkan pada penguatan iklim keamanan sekolah, pencegahan perundungan, dan pembudayaan disiplin positif ramah anak yang dipelopori langsung oleh ${headmaster} dan tim guru secara konsisten.`;
+  }
+
+  // Default Standard Kuadran
+  if (strategy === 'Pemacu Perubahan (Catalyst)') {
+    return `Satuan pendidikan ${school} memiliki modal kepemimpinan kepala sekolah (${headmaster}) yang sangat visioner dan budaya belajar mandiri guru yang sudah mengakar kuat. Rapor pendidikan berada di zona capaian membanggakan pada indikator ${prioritiesText}, dengan mayoritas guru aktif berbagi di Platform Merdeka Mengajar (PMM). Pendampingan difokuskan pada perluasan dampak pengimbasan ke sekolah sekitar dan inovasi pembelajaran tingkat lanjut.`;
+  }
+
+  if (strategy === 'Penguat Perubahan (Booster)') {
+    return `Satuan pendidikan ${school} di bawah arahan ${headmaster} memiliki komitmen moral perubahan yang sangat tinggi dan iklim kerja yang guyub. Namun demikian, kapasitas teknis dalam analisis perencanaan berbasis data (PBD) serta implementasi pembelajaran berdiferensiasi pada indikator ${prioritiesText} masih memerlukan bimbingan terstruktur dan percontohan langsung (scaffolding).`;
+  }
+
+  if (strategy === 'Pemicu Perubahan (Trigger)') {
+    return `Satuan pendidikan ${school} didukung oleh sarana pembelajaran yang baik dan kompetensi guru yang memadai, namun cenderung berada pada zona nyaman dengan ritme pembelajaran konvensional. ${headmaster} memerlukan pendampingan konsultatif dan pemicu tantangan baru agar sekolah tergerak menuntaskan pembenahan prioritas Rapor Pendidikan ${prioritiesText}.`;
+  }
+
+  // Intervensi Khusus
+  return `Satuan pendidikan ${school} berada pada kondisi yang menuntut intervensi pendampingan langsung dan terstruktur dari Pengawas Pembina. Kapasitas kepemimpinan instruksional dan komitmen pembaharuan tata kelola oleh ${headmaster} masih berada pada tahap awal, di mana indikator ${prioritiesText} membutuhkan restrukturisasi perencanaan dan pemantauan disiplin positif yang intensif.`;
+}
+
+/**
+ * Generates an authentic, context-aware General Objective example for RPB
+ */
+export async function generateGeneralObjectiveAI(params: GeneratorSubItemParams): Promise<string> {
+  const { quadrant, strategy } = determineQuadrantAndStrategy(params.capacity, params.commitment);
+  const school = params.schoolName?.trim() || 'Satuan Pendidikan';
+  const headmaster = params.headmasterName?.trim() || 'Kepala Sekolah';
+  const prioritiesText = params.raporPriorities && params.raporPriorities.length > 0
+    ? params.raporPriorities.join(', ')
+    : 'kualitas pembelajaran dan literasi-numerasi';
+  const theme = params.theme || 'standar';
+
+  // 1. Try Gemini API
+  const apiKey = (import.meta as any).env?.VITE_GEMINI_API_KEY || (process.env as any)?.GEMINI_API_KEY;
+  if (apiKey && apiKey !== 'MY_GEMINI_API_KEY' && apiKey.length > 10) {
+    try {
+      const ai = new GoogleGenAI({ apiKey });
+      const prompt = `Sebagai Pengawas Sekolah Pembina di Dinas Pendidikan Kabupaten Sidenreng Rappang:
+Susunlah 1 (SATU) kalimat/paragraf ringkas tujuan instruksional untuk "Tujuan Umum Pendampingan Berdiferensiasi" berdasarkan Perdirjen GTK No. 4831/B/HK.03.01/2023.
+Konteks:
+- Sekolah: ${school}
+- Kepala Sekolah: ${headmaster}
+- Kuadran: ${quadrant}
+- Strategi: ${strategy}
+- Prioritas: ${prioritiesText}
+- Fokus Nuansa: ${theme}
+
+Kriteria kalimat tujuan:
+1. Dimulai dengan kata kerja operasional yang kuat (Memfasilitasi / Menguatkan / Menstimulasi / Mendampingi secara intensif).
+2. Terukur, lugas, realistis, dan berfokus pada hasil belajar murid serta kepemimpinan sekolah di Kabupaten Sidenreng Rappang.
+3. Kembalikan HANYA teks tujuan tanpa tanda kutip atau markdown.`;
+
+      const response = await ai.models.generateContent({
+        model: 'gemini-2.5-flash',
+        contents: prompt
+      });
+
+      if (response.text && response.text.trim().length > 20) {
+        return response.text.trim();
+      }
+    } catch (e) {
+      console.warn('Gemini generateGeneralObjectiveAI fallback:', e);
+    }
+  }
+
+  // 2. High-Quality Contextual Domain Fallbacks
+  if (theme === 'literasi-numerasi') {
+    return `Meningkatkan kecakapan literasi dan nalar numerasi murid di ${school} melalui pendampingan klinis penyusunan modul ajar interaktif, asesmen diagnostik berkala, dan penguatan pojok baca kelas yang berdampak langsung pada indikator Rapor Pendidikan.`;
+  }
+
+  if (theme === 'digital-kombel') {
+    return `Mengakselerasi transformasi digital pembelajaran dan mengaktifkan Komunitas Belajar (Kombel) sebagai wadah kolaborasi guru dalam menelaah modul ajar berbasis TIK serta berbagi praktik baik di ${school}.`;
+  }
+
+  if (theme === 'iklim-karakter') {
+    return `Mewujudkan iklim belajar yang aman, inklusif, dan bebas perundungan melalui penguatan kepemimpinan kepala sekolah dalam mengimplementasikan disiplin positif dan kemitraan kolaboratif dengan orang tua murid.`;
+  }
+
+  // Standard Strategy Based
+  if (strategy === 'Pemacu Perubahan (Catalyst)') {
+    return `Memfasilitasi akselerasi sekolah rujukan mutu di tingkat kabupaten, memacu agensi kepemimpinan murid (student agency), serta memperluas jejaring pengimbasan praktik baik guru ${school} ke forum KKG/MGMP Kabupaten Sidenreng Rappang.`;
+  }
+
+  if (strategy === 'Penguat Perubahan (Booster)') {
+    return `Memberikan penguatan kapasitas kepemimpinan instruksional dan pendampingan terstruktur pada Kombel agar ${school} mampu menerjemahkan komitmen tinggi menjadi aksi nyata peningkatan mutu pembelajaran berdiferensiasi.`;
+  }
+
+  if (strategy === 'Pemicu Perubahan (Trigger)') {
+    return `Membangkitkan kesadaran urgensi pembenahan mutu melalui coaching reflektif dan pemberian tantangan inovasi pembelajaran terukur demi mendorong perbaikan indikator Rapor Pendidikan di ${school}.`;
+  }
+
+  // Intervensi Khusus
+  return `Mendampingi secara intensif restrukturisasi tata kelola dasar perencanaan pembelajaran, pemenuhan administrasi kurikulum operasional, serta penerapan disiplin kerja pendidik untuk menjamin hak belajar murid di ${school}.`;
+}
+
 export async function generateRPBPlanAI(params: {
   schoolName: string;
   headmasterName: string;

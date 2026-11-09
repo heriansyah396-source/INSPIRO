@@ -32,7 +32,8 @@ import {
   ShieldCheck,
   Award,
   Compass,
-  ChevronRight
+  ChevronRight,
+  RefreshCw
 } from 'lucide-react';
 import {
   RPBRecord,
@@ -46,7 +47,12 @@ import {
 } from '../types/inspiro';
 import { exportRPBToWord } from '../utils/storage';
 import { DEFAULT_SIDRAP_LOGO, DEFAULT_TUTWURI_LOGO } from '../data/defaultLogos';
-import { generateRPBPlanAI, determineQuadrantAndStrategy } from '../services/aiRPBGenerator';
+import {
+  generateRPBPlanAI,
+  determineQuadrantAndStrategy,
+  generateBaselineDiagnosisAI,
+  generateGeneralObjectiveAI
+} from '../services/aiRPBGenerator';
 
 interface RPBViewProps {
   records: RPBRecord[];
@@ -86,6 +92,8 @@ export const RPBView: React.FC<RPBViewProps> = ({
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [activeRecord, setActiveRecord] = useState<RPBRecord | null>(null);
   const [isGeneratingAI, setIsGeneratingAI] = useState(false);
+  const [isGeneratingDiagnosis, setIsGeneratingDiagnosis] = useState(false);
+  const [isGeneratingObjective, setIsGeneratingObjective] = useState(false);
 
   // Form State
   const [formData, setFormData] = useState<Partial<RPBRecord>>({
@@ -348,6 +356,68 @@ export const RPBView: React.FC<RPBViewProps> = ({
       showToast('Gagal memproses AI RPB, silakan coba lagi.', 'warning');
     } finally {
       setIsGeneratingAI(false);
+    }
+  };
+
+  // Generate individual Baseline Diagnosis with AI
+  const handleGenerateDiagnosisAI = async (
+    theme: 'standar' | 'literasi-numerasi' | 'digital-kombel' | 'iklim-karakter' = 'standar'
+  ) => {
+    try {
+      setIsGeneratingDiagnosis(true);
+      const diagnosisText = await generateBaselineDiagnosisAI({
+        schoolName: formData.schoolName || 'Satuan Pendidikan Binaan',
+        headmasterName: formData.headmasterName || 'Kepala Sekolah',
+        capacity: formData.leadershipCapacity || 'Tinggi',
+        commitment: formData.changeCommitment || 'Tinggi',
+        quadrant: formData.quadrant,
+        strategy: formData.strategy,
+        raporPriorities: formData.raporPriorities,
+        theme
+      });
+
+      setFormData((prev) => ({
+        ...prev,
+        baselineDiagnosis: diagnosisText
+      }));
+
+      showToast('✨ Contoh Diagnosis Kondisi Awal berhasil dibuat oleh AI!', 'success');
+    } catch (e) {
+      console.error('Error generating diagnosis:', e);
+      showToast('Gagal menyusun diagnosis dengan AI, silakan coba lagi.', 'warning');
+    } finally {
+      setIsGeneratingDiagnosis(false);
+    }
+  };
+
+  // Generate individual General Objective with AI
+  const handleGenerateObjectiveAI = async (
+    theme: 'standar' | 'literasi-numerasi' | 'digital-kombel' | 'iklim-karakter' = 'standar'
+  ) => {
+    try {
+      setIsGeneratingObjective(true);
+      const objectiveText = await generateGeneralObjectiveAI({
+        schoolName: formData.schoolName || 'Satuan Pendidikan Binaan',
+        headmasterName: formData.headmasterName || 'Kepala Sekolah',
+        capacity: formData.leadershipCapacity || 'Tinggi',
+        commitment: formData.changeCommitment || 'Tinggi',
+        quadrant: formData.quadrant,
+        strategy: formData.strategy,
+        raporPriorities: formData.raporPriorities,
+        theme
+      });
+
+      setFormData((prev) => ({
+        ...prev,
+        generalObjective: objectiveText
+      }));
+
+      showToast('✨ Contoh Tujuan Umum Pendampingan berhasil dirumuskan oleh AI!', 'success');
+    } catch (e) {
+      console.error('Error generating objective:', e);
+      showToast('Gagal menyusun tujuan dengan AI, silakan coba lagi.', 'warning');
+    } finally {
+      setIsGeneratingObjective(false);
     }
   };
 
@@ -1155,32 +1225,200 @@ export const RPBView: React.FC<RPBViewProps> = ({
                       </div>
                     </div>
 
-                    {/* Baseline & Objective */}
-                    <div className="space-y-3">
-                      <div>
-                        <label className="block text-[11px] font-bold text-slate-700 mb-1">
-                          Diagnosis Kondisi Awal Satuan Pendidikan
-                        </label>
+                    {/* Baseline & Objective with AI Generator */}
+                    <div className="space-y-4 pt-1">
+                      {/* 1. DIAGNOSIS KONDISI AWAL */}
+                      <div className="bg-white p-3.5 rounded-xl border border-emerald-200/90 shadow-2xs space-y-2">
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <div className="flex items-center gap-1.5">
+                            <label className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                              <FileText className="w-3.5 h-3.5 text-emerald-600" />
+                              Diagnosis Kondisi Awal Satuan Pendidikan
+                            </label>
+                            <span className="text-[10px] font-semibold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">
+                              Perdirjen 4831/2023
+                            </span>
+                          </div>
+
+                          {/* Tombol AI Generator Utama */}
+                          <button
+                            type="button"
+                            onClick={() => handleGenerateDiagnosisAI('standar')}
+                            disabled={isGeneratingDiagnosis}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white rounded-lg shadow-xs cursor-pointer transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                            title="Buat contoh diagnosis berbasis analisis kuadran dan prioritas Rapor Pendidikan"
+                          >
+                            {isGeneratingDiagnosis ? (
+                              <>
+                                <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                                <span>Menyusun AI...</span>
+                              </>
+                            ) : (
+                              <>
+                                <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+                                <span>✨ Buat Contoh Diagnosis AI</span>
+                              </>
+                            )}
+                          </button>
+                        </div>
+
+                        {/* Variasi Contoh Preset AI */}
+                        <div className="flex flex-wrap items-center gap-1.5 text-[11px] text-slate-500 pt-0.5">
+                          <span className="text-[10px] font-bold text-slate-600 uppercase tracking-wider mr-0.5">
+                            Variasi AI:
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => handleGenerateDiagnosisAI('standar')}
+                            disabled={isGeneratingDiagnosis}
+                            className="px-2 py-0.5 rounded-md bg-emerald-50 hover:bg-emerald-100 text-emerald-800 font-semibold border border-emerald-200 text-[10px] transition-colors cursor-pointer"
+                          >
+                            🏛️ Sesuai Kuadran
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleGenerateDiagnosisAI('literasi-numerasi')}
+                            disabled={isGeneratingDiagnosis}
+                            className="px-2 py-0.5 rounded-md bg-slate-50 hover:bg-slate-100 text-slate-700 font-medium border border-slate-200 text-[10px] transition-colors cursor-pointer"
+                          >
+                            📖 Literasi &amp; Numerasi
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleGenerateDiagnosisAI('digital-kombel')}
+                            disabled={isGeneratingDiagnosis}
+                            className="px-2 py-0.5 rounded-md bg-slate-50 hover:bg-slate-100 text-slate-700 font-medium border border-slate-200 text-[10px] transition-colors cursor-pointer"
+                          >
+                            💻 Digital &amp; Kombel
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleGenerateDiagnosisAI('iklim-karakter')}
+                            disabled={isGeneratingDiagnosis}
+                            className="px-2 py-0.5 rounded-md bg-slate-50 hover:bg-slate-100 text-slate-700 font-medium border border-slate-200 text-[10px] transition-colors cursor-pointer"
+                          >
+                            🛡️ Iklim &amp; Karakter
+                          </button>
+                        </div>
+
                         <textarea
                           rows={3}
                           value={formData.baselineDiagnosis}
                           onChange={(e) => setFormData((p) => ({ ...p, baselineDiagnosis: e.target.value }))}
-                          placeholder="Uraikan kondisi nyata iklim belajar, komitmen guru, dan tantangan yang dihadapi sekolah..."
-                          className="w-full p-2.5 bg-white border border-slate-300 rounded-lg text-xs text-slate-800 focus:ring-2 focus:ring-emerald-500"
+                          placeholder="Uraikan kondisi nyata iklim belajar, komitmen guru, dan tantangan yang dihadapi sekolah... (Atau klik tombol 'Buat Contoh Diagnosis AI' di atas untuk mengisi otomatis)"
+                          className="w-full p-2.5 bg-slate-50/50 hover:bg-white border border-slate-300 rounded-lg text-xs leading-relaxed text-slate-800 focus:bg-white focus:ring-2 focus:ring-emerald-500 transition-all"
                         />
+                        <div className="flex items-center justify-between text-[10px] text-slate-500 px-0.5">
+                          <span>
+                            *Mencakup kepemimpinan kepala sekolah, budaya guru, dan indikator prioritas Rapor Pendidikan.
+                          </span>
+                          {formData.baselineDiagnosis && (
+                            <button
+                              type="button"
+                              onClick={() => setFormData((p) => ({ ...p, baselineDiagnosis: '' }))}
+                              className="text-slate-400 hover:text-rose-600 transition-colors cursor-pointer"
+                            >
+                              Bersihkan
+                            </button>
+                          )}
+                        </div>
                       </div>
 
-                      <div>
-                        <label className="block text-[11px] font-bold text-slate-700 mb-1">
-                          Tujuan Umum Pendampingan Berdiferensiasi
-                        </label>
+                      {/* 2. TUJUAN UMUM PENDAMPINGAN */}
+                      <div className="bg-white p-3.5 rounded-xl border border-blue-200/90 shadow-2xs space-y-2">
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <div className="flex items-center gap-1.5">
+                            <label className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                              <Target className="w-3.5 h-3.5 text-blue-600" />
+                              Tujuan Umum Pendampingan Berdiferensiasi
+                            </label>
+                            <span className="text-[10px] font-semibold text-blue-700 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-200">
+                              Strategi Terpilih
+                            </span>
+                          </div>
+
+                          {/* Tombol AI Generator Utama */}
+                          <button
+                            type="button"
+                            onClick={() => handleGenerateObjectiveAI('standar')}
+                            disabled={isGeneratingObjective}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-lg shadow-xs cursor-pointer transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                            title="Rumuskan kalimat tujuan umum berdiferensiasi secara otomatis dengan AI"
+                          >
+                            {isGeneratingObjective ? (
+                              <>
+                                <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                                <span>Menyusun AI...</span>
+                              </>
+                            ) : (
+                              <>
+                                <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+                                <span>✨ Buat Contoh Tujuan AI</span>
+                              </>
+                            )}
+                          </button>
+                        </div>
+
+                        {/* Variasi Contoh Preset AI */}
+                        <div className="flex flex-wrap items-center gap-1.5 text-[11px] text-slate-500 pt-0.5">
+                          <span className="text-[10px] font-bold text-slate-600 uppercase tracking-wider mr-0.5">
+                            Variasi AI:
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => handleGenerateObjectiveAI('standar')}
+                            disabled={isGeneratingObjective}
+                            className="px-2 py-0.5 rounded-md bg-blue-50 hover:bg-blue-100 text-blue-800 font-semibold border border-blue-200 text-[10px] transition-colors cursor-pointer"
+                          >
+                            🎯 Sesuai Strategi
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleGenerateObjectiveAI('literasi-numerasi')}
+                            disabled={isGeneratingObjective}
+                            className="px-2 py-0.5 rounded-md bg-slate-50 hover:bg-slate-100 text-slate-700 font-medium border border-slate-200 text-[10px] transition-colors cursor-pointer"
+                          >
+                            📚 Mutu Literasi-Numerasi
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleGenerateObjectiveAI('digital-kombel')}
+                            disabled={isGeneratingObjective}
+                            className="px-2 py-0.5 rounded-md bg-slate-50 hover:bg-slate-100 text-slate-700 font-medium border border-slate-200 text-[10px] transition-colors cursor-pointer"
+                          >
+                            🚀 Kombel &amp; TIK
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleGenerateObjectiveAI('iklim-karakter')}
+                            disabled={isGeneratingObjective}
+                            className="px-2 py-0.5 rounded-md bg-slate-50 hover:bg-slate-100 text-slate-700 font-medium border border-slate-200 text-[10px] transition-colors cursor-pointer"
+                          >
+                            🌱 Iklim Aman &amp; Inklusif
+                          </button>
+                        </div>
+
                         <textarea
                           rows={2}
                           value={formData.generalObjective}
                           onChange={(e) => setFormData((p) => ({ ...p, generalObjective: e.target.value }))}
-                          placeholder="Tujuan instruksional yang hendak dicapai bersama kepala sekolah..."
-                          className="w-full p-2.5 bg-white border border-slate-300 rounded-lg text-xs text-slate-800 focus:ring-2 focus:ring-emerald-500"
+                          placeholder="Tujuan instruksional yang hendak dicapai bersama kepala sekolah... (Atau klik tombol 'Buat Contoh Tujuan AI' di atas untuk mengisi otomatis)"
+                          className="w-full p-2.5 bg-slate-50/50 hover:bg-white border border-slate-300 rounded-lg text-xs leading-relaxed text-slate-800 focus:bg-white focus:ring-2 focus:ring-blue-500 transition-all"
                         />
+                        <div className="flex items-center justify-between text-[10px] text-slate-500 px-0.5">
+                          <span>
+                            *Rumusan tujuan operasional berpusat pada murid dan penguatan kapasitas kepemimpinan.
+                          </span>
+                          {formData.generalObjective && (
+                            <button
+                              type="button"
+                              onClick={() => setFormData((p) => ({ ...p, generalObjective: '' }))}
+                              className="text-slate-400 hover:text-rose-600 transition-colors cursor-pointer"
+                            >
+                              Bersihkan
+                            </button>
+                          )}
+                        </div>
                       </div>
                     </div>
                   </div>
