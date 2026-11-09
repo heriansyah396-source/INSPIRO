@@ -40,6 +40,10 @@ const TAB_TITLES: Record<NavTab, { title: string; subtitle: string }> = {
     title: 'Data Kepala Sekolah & Supervisi Manajerial',
     subtitle: 'Profil pimpinan satuan pendidikan, audit 8 SNP, tata kelola RKAS, dan evaluasi manajerial'
   },
+  rpb: {
+    title: 'Rencana Pendampingan Berdiferensiasi (RPB)',
+    subtitle: 'Peran Pengawas Sekolah Transformatif (Perdirjen GTK No. 4831/2023): 4 Kuadran Kapasitas & Strategi Intervensi'
+  },
   'contextual-problems': {
     title: 'Data Awal & Akar Masalah Kontekstual',
     subtitle: 'Identifikasi fakta lapangan, diagnosis akar masalah (5-Whys), dan resep solusi supervisi'

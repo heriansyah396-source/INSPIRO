@@ -2383,3 +2383,67 @@ export interface AcademicProContraRecord {
   createdAt: string;
   updatedAt: string;
 }
+
+// ==========================================
+// RENCANA PENDAMPINGAN BERDIFERENSIASI (RPB)
+// Berdasarkan Perdirjen GTK No. 4831/B/HK.03.01/2023
+// ==========================================
+
+export type RPBQuadrant =
+  | 'Kuadran I: Mandiri (Kapasitas Tinggi, Komitmen Tinggi)'
+  | 'Kuadran II: Berdaya (Kapasitas Rendah, Komitmen Tinggi)'
+  | 'Kuadran III: Statis (Kapasitas Tinggi, Komitmen Rendah)'
+  | 'Kuadran IV: Perlu Intervensi Khusus (Kapasitas Rendah, Komitmen Rendah)';
+
+export type RPBStrategy =
+  | 'Pemacu Perubahan (Catalyst)'
+  | 'Penguat Perubahan (Booster)'
+  | 'Pemicu Perubahan (Trigger)'
+  | 'Pendampingan Intensif (Intervensi Langsung)';
+
+export type RPBMethod = 'Coaching' | 'Mentoring' | 'Fasilitasi' | 'Pelatihan' | 'Konsultasi';
+
+export type RPBStage = 'Perencanaan Program' | 'Pelaksanaan Program' | 'Evaluasi & Refleksi';
+
+export interface RPBItem {
+  id: string;
+  tahap: RPBStage;
+  fokusAspek: string;
+  metode: RPBMethod;
+  aktivitasUtama: string;
+  targetOutput: string;
+  linimasa: string;
+  pihakTerlibat: string;
+  indikatorKeberhasilan: string;
+  status: 'Terjadwal' | 'Sedang Berjalan' | 'Terealisasi';
+}
+
+export interface RPBRecord {
+  id: string;
+  title: string;
+  principalId?: string;
+  schoolName: string;
+  schoolNpsn: string;
+  headmasterName: string;
+  headmasterNip: string;
+  headmasterRank?: string;
+  supervisorName: string;
+  supervisorNip: string;
+  supervisorRole: string;
+  supervisorRank?: string;
+  academicYear: string;
+  semester: 'Ganjil' | 'Genap';
+  date: string;
+  quadrant: RPBQuadrant;
+  strategy: RPBStrategy;
+  leadershipCapacity: 'Tinggi' | 'Sedang' | 'Rendah';
+  changeCommitment: 'Tinggi' | 'Sedang' | 'Rendah';
+  raporPriorities: string[];
+  baselineDiagnosis: string;
+  generalObjective: string;
+  items: RPBItem[];
+  supervisorNotes?: string;
+  status: 'draft' | 'final';
+  createdAt: string;
+  updatedAt: string;
+}

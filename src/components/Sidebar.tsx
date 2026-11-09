@@ -28,7 +28,8 @@ import {
   FileSearch,
   Handshake,
   Target,
-  Scale
+  Scale,
+  Workflow
 } from 'lucide-react';
 import { SupervisionRecord, PMReport } from '../types/inspiro';
 import { RadarChartWidget } from './RadarChartWidget';
@@ -37,6 +38,7 @@ export type NavTab =
   | 'dashboard'
   | 'calendar'
   | 'principals'
+  | 'rpb'
   | 'teachers'
   | 'contextual-problems'
   | 'supervision'
@@ -109,6 +111,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
       label: 'Data Kepala Sekolah',
       icon: School,
       badge: principalCount > 0 ? `${principalCount} Kepsek` : 'Manajerial'
+    },
+    {
+      id: 'rpb' as NavTab,
+      label: 'Rencana Pendampingan (RPB)',
+      icon: Workflow,
+      badge: 'Perdirjen 4831'
     },
     {
       id: 'teachers' as NavTab,

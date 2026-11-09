@@ -33,6 +33,7 @@ import { ContextualProblemView } from './components/ContextualProblemView';
 import { SOARAnalysisView } from './components/SOARAnalysisView';
 import { SWOTAnalysisView } from './components/SWOTAnalysisView';
 import { AcademicProContraView } from './components/AcademicProContraView';
+import { RPBView } from './components/RPBView';
 import { PrincipalList } from './components/PrincipalList';
 import {
   AppSettings,
@@ -48,7 +49,8 @@ import {
   PMLearningPartnershipRecord,
   SOARAnalysisRecord,
   SWOTAnalysisRecord,
-  AcademicProContraRecord
+  AcademicProContraRecord,
+  RPBRecord
 } from './types/inspiro';
 import {
   addTeacher,
@@ -98,7 +100,10 @@ import {
   deleteSWOTRecord,
   getAcademicProContraRecords,
   saveAcademicProContraRecord,
-  deleteAcademicProContraRecord
+  deleteAcademicProContraRecord,
+  getRPBRecords,
+  saveRPBRecord,
+  deleteRPBRecord
 } from './utils/storage';
 import {
   auth,
@@ -146,6 +151,7 @@ export default function App() {
   const [soarRecords, setSoarRecords] = useState<SOARAnalysisRecord[]>(getSOARRecords());
   const [swotRecords, setSwotRecords] = useState<SWOTAnalysisRecord[]>(() => getSWOTRecords());
   const [proContraRecords, setProContraRecords] = useState<AcademicProContraRecord[]>(() => getAcademicProContraRecords());
+  const [rpbRecords, setRpbRecords] = useState<RPBRecord[]>(() => getRPBRecords());
   const [selectedSwotPrincipalId, setSelectedSwotPrincipalId] = useState<string | undefined>(undefined);
   const [settings, setSettings] = useState<AppSettings>(getSettings());
 
@@ -197,6 +203,7 @@ export default function App() {
     setSoarRecords(getSOARRecords());
     setSwotRecords(getSWOTRecords());
     setProContraRecords(getAcademicProContraRecords());
+    setRpbRecords(getRPBRecords());
     setSettings(getSettings());
   }, []);
 
@@ -643,6 +650,19 @@ export default function App() {
     showToast('Matriks Pro-Kontra Dihapus', 'Dokumen matriks analisis pro-kontra telah dihapus dari sistem.', 'info');
   };
 
+  // Handlers: Rencana Pendampingan Berdiferensiasi (RPB - Perdirjen GTK 4831/2023)
+  const handleSaveRPBRecord = (record: RPBRecord) => {
+    saveRPBRecord(record);
+    refreshData();
+    showToast('RPB Disimpan', `Rencana Pendampingan Berdiferensiasi untuk ${record.schoolName} (${record.strategy}) berhasil disimpan.`, 'success');
+  };
+
+  const handleDeleteRPBRecord = (id: string) => {
+    deleteRPBRecord(id);
+    refreshData();
+    showToast('RPB Dihapus', 'Dokumen Rencana Pendampingan Berdiferensiasi telah dihapus dari sistem.', 'info');
+  };
+
   // Active Record for detail view
   const activeRecord =
     supervisions.find((s) => s.id === selectedSupervisionId) || supervisions[0];
@@ -842,6 +862,18 @@ export default function App() {
                   onNavigateToCalendar={() => setCurrentTab('calendar')}
                   onNavigateToSWOT={handleNavigateToSWOT}
                   onUpdateSettings={handleSaveSettings}
+                  showToast={showToast}
+                />
+              )}
+
+              {/* Tab: Rencana Pendampingan Berdiferensiasi (RPB - Perdirjen GTK 4831/2023) */}
+              {currentTab === 'rpb' && (
+                <RPBView
+                  records={rpbRecords}
+                  principals={principals}
+                  settings={settings}
+                  onSaveRecord={handleSaveRPBRecord}
+                  onDeleteRecord={handleDeleteRPBRecord}
                   showToast={showToast}
                 />
               )}

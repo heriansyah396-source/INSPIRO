@@ -13,6 +13,7 @@ import { SEED_PARTNERSHIP_PM_RECORDS } from '../data/seedLearningPartnership';
 import { SEED_SOAR_RECORDS } from '../data/seedSOAR';
 import { SEED_SWOT_RECORDS } from '../data/seedSWOT';
 import { SEED_PRO_CONTRA_RECORDS } from '../data/seedProContra';
+import { SEED_RPB_RECORDS } from '../data/seedRPB';
 import { SEED_PRINCIPALS } from '../data/seedPrincipals';
 import { SEED_MANAGERIAL_EVALUATIONS } from '../data/seedManagerialEvaluations';
 import { DEFAULT_SIDRAP_LOGO, DEFAULT_TUTWURI_LOGO } from '../data/defaultLogos';
@@ -37,7 +38,9 @@ import {
   SOARAnalysisRecord,
   SWOTAnalysisRecord,
   AcademicProContraRecord,
-  AcademicProContraItem
+  AcademicProContraItem,
+  RPBRecord,
+  RPBItem
 } from '../types/inspiro';
 
 const TEACHERS_KEY = 'inspiro_teachers';
@@ -54,6 +57,7 @@ const COACHING_RECORDS_KEY = 'inspiro_coaching_records';
 const SOAR_RECORDS_KEY = 'inspiro_soar_records';
 const SWOT_RECORDS_KEY = 'inspiro_swot_records';
 const PRO_CONTRA_RECORDS_KEY = 'inspiro_pro_contra_records';
+const RPB_RECORDS_KEY = 'inspiro_rpb_records';
 
 // Helper to safely parse JSON from localStorage
 function safeParse<T>(key: string, fallback: T): T {
@@ -2162,6 +2166,274 @@ export function exportAcademicProContraToWord(record: AcademicProContraRecord, s
   a.href = url;
   const safeTitle = record.schoolName.replace(/[^a-zA-Z0-9]/g, '_');
   a.download = `Matriks_Pro_Kontra_${safeTitle}_${record.date}.doc`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+// ==========================================
+// 13. RENCANA PENDAMPINGAN BERDIFERENSIASI (RPB)
+// ==========================================
+export function getRPBRecords(): RPBRecord[] {
+  const records = safeParse<RPBRecord[]>(RPB_RECORDS_KEY, []);
+  if (records.length === 0) {
+    saveRPBRecords(SEED_RPB_RECORDS);
+    return SEED_RPB_RECORDS;
+  }
+  return records;
+}
+
+export function saveRPBRecords(records: RPBRecord[]): void {
+  try {
+    localStorage.setItem(RPB_RECORDS_KEY, JSON.stringify(records));
+  } catch (e) {
+    console.error('Error saving RPB records:', e);
+  }
+}
+
+export function saveRPBRecord(record: RPBRecord): void {
+  const current = getRPBRecords();
+  const index = current.findIndex((r) => r.id === record.id);
+  let updated: RPBRecord[];
+  if (index >= 0) {
+    updated = [...current];
+    updated[index] = { ...record, updatedAt: new Date().toISOString() };
+  } else {
+    updated = [{ ...record, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }, ...current];
+  }
+  saveRPBRecords(updated);
+}
+
+export function deleteRPBRecord(id: string): void {
+  const current = getRPBRecords();
+  const updated = current.filter((r) => r.id !== id);
+  saveRPBRecords(updated);
+}
+
+export function exportRPBToWord(record: RPBRecord, settings: AppSettings): void {
+  const logoLeft = settings.logoUrl || DEFAULT_SIDRAP_LOGO;
+  const logoRight = settings.logoRightUrl || DEFAULT_TUTWURI_LOGO;
+  const agency = settings.governmentAgency || 'Pemerintah Kabupaten Sidenreng Rappang';
+  const schoolCity = settings.schoolCity || 'Pangkajene Sidenreng';
+
+  const rowsHtml = record.items
+    .map((item, index) => {
+      const statusBadge =
+        item.status === 'Terealisasi'
+          ? '<span style="background-color:#dcfce7; color:#15803d; padding:2px 6px; border-radius:3px; font-weight:bold; font-size:8.5pt;">Terealisasi</span>'
+          : item.status === 'Sedang Berjalan'
+          ? '<span style="background-color:#fef9c3; color:#854d0e; padding:2px 6px; border-radius:3px; font-weight:bold; font-size:8.5pt;">Sedang Berjalan</span>'
+          : '<span style="background-color:#e0e7ff; color:#3730a3; padding:2px 6px; border-radius:3px; font-weight:bold; font-size:8.5pt;">Terjadwal</span>';
+
+      const methodBadge = `<span style="background-color:#eff6ff; color:#1e40af; border:1px solid #bfdbfe; padding:2px 6px; border-radius:4px; font-weight:bold; font-size:8.5pt;">${item.metode}</span>`;
+
+      return `
+        <tr>
+          <td style="border:1px solid #94a3b8; padding:8px; vertical-align:top; text-align:center; font-weight:bold; background-color:#f8fafc;">
+            ${index + 1}
+          </td>
+          <td style="border:1px solid #94a3b8; padding:8px; vertical-align:top;">
+            <div style="font-size:8.5pt; font-weight:bold; color:#475569; text-transform:uppercase;">${item.tahap}</div>
+            <strong style="color:#0f172a; font-size:10pt;">${item.fokusAspek}</strong>
+            <div style="margin-top:6px;">${methodBadge} &nbsp; ${statusBadge}</div>
+          </td>
+          <td style="border:1px solid #94a3b8; padding:8px; vertical-align:top; font-size:9.5pt; line-height:1.4;">
+            ${item.aktivitasUtama}
+          </td>
+          <td style="border:1px solid #94a3b8; padding:8px; vertical-align:top; font-size:9.5pt; color:#1e3a8a;">
+            <strong>Output:</strong> ${item.targetOutput}<br/>
+            <span style="font-size:8.5pt; color:#475569;"><strong>Indikator:</strong> ${item.indikatorKeberhasilan}</span>
+          </td>
+          <td style="border:1px solid #94a3b8; padding:8px; vertical-align:top; font-size:9pt;">
+            <strong>${item.linimasa}</strong><br/>
+            <span style="color:#64748b;">${item.pihakTerlibat}</span>
+          </td>
+        </tr>
+      `;
+    })
+    .join('');
+
+  const prioritiesHtml = record.raporPriorities && record.raporPriorities.length > 0
+    ? record.raporPriorities.map((p) => `<span style="background-color:#fee2e2; color:#991b1b; padding:2px 6px; border-radius:3px; font-size:8.5pt; margin-right:4px;">${p}</span>`).join(' ')
+    : '-';
+
+  const html = `
+    <!DOCTYPE html>
+    <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+    <head>
+      <meta charset="utf-8">
+      <title>Rencana Pendampingan Berdiferensiasi (RPB) Satuan Pendidikan</title>
+      <style>
+        body {
+          font-family: 'Calibri', 'Times New Roman', sans-serif;
+          font-size: 11pt;
+          line-height: 1.35;
+          color: #0f172a;
+          margin: 20px;
+        }
+        .title-doc {
+          text-align: center;
+          margin-top: 10px;
+          margin-bottom: 14px;
+        }
+        .title-doc h2 { margin: 0; font-size: 13.5pt; text-transform: uppercase; text-decoration: underline; font-weight: bold; }
+        .title-doc p { margin: 4px 0 0 0; font-size: 10pt; font-weight: bold; color: #1e293b; }
+        .table-info { width: 100%; border-collapse: collapse; margin-bottom: 14px; font-size: 10pt; }
+        .table-info td { padding: 3px 6px; vertical-align: top; }
+        .matrix-table { width: 100%; border-collapse: collapse; margin-top: 10px; margin-bottom: 18px; }
+        .matrix-table th { background-color: #1e293b; color: #ffffff; padding: 8px; font-size: 9.5pt; text-transform: uppercase; border: 1px solid #64748b; }
+        .signature-table { width: 100%; margin-top: 30px; border-collapse: collapse; }
+        .signature-table td { width: 50%; text-align: center; vertical-align: top; font-size: 10pt; }
+      </style>
+    </head>
+    <body>
+      <!-- KOP RESMI DINAS PENDIDIKAN DAN KEBUDAYAAN SIDRAP DENGAN LOGO GANDA -->
+      <table style="width:100%; border:none; border-bottom:3px double #000000; padding-bottom:8px; margin-bottom:18px;">
+        <tr>
+          <td style="width:75px; text-align:center; vertical-align:middle; border:none; padding-right:8px;">
+            <img src="${logoLeft}" width="70" height="75" style="object-fit:contain;" alt="Logo Kabupaten Sidenreng Rappang" />
+          </td>
+          <td style="text-align:center; vertical-align:middle; border:none; padding:0 8px;">
+            <div style="font-size:12pt; font-weight:bold; text-transform:uppercase; margin:0; line-height:1.2;">
+              ${agency.toUpperCase()}
+            </div>
+            <div style="font-size:13.5pt; font-weight:bold; text-transform:uppercase; margin:2px 0; line-height:1.2;">
+              DINAS PENDIDIKAN DAN KEBUDAYAAN
+            </div>
+            <div style="font-size:10.5pt; font-weight:bold; text-transform:uppercase; margin:0; color:#1e293b; line-height:1.2;">
+              PENGAWAS SEKOLAH PEMBINA KABUPATEN SIDENRENG RAPPANG
+            </div>
+            <div style="font-size:8.5pt; font-style:italic; margin-top:3px; color:#333333; line-height:1.2;">
+              Alamat: Kompleks SKPD Jl. Harapan Baru No. 1, Pangkajene, Kab. Sidenreng Rappang, Sulawesi Selatan (91611)
+            </div>
+          </td>
+          <td style="width:75px; text-align:center; vertical-align:middle; border:none; padding-left:8px;">
+            <img src="${logoRight}" width="70" height="75" style="object-fit:contain;" alt="Logo Tut Wuri Handayani" />
+          </td>
+        </tr>
+      </table>
+
+      <div class="title-doc">
+        <h2>RENCANA PENDAMPINGAN BERDIFERENSIASI (RPB) SATUAN PENDIDIKAN</h2>
+        <p>BERDASARKAN PERDIRJEN GTK KEMENDIKBUDRISTEK NO. 4831/B/HK.03.01/2023</p>
+      </div>
+
+      <table class="table-info">
+        <tr>
+          <td style="width: 20%;"><strong>Satuan Pendidikan</strong></td>
+          <td style="width: 2%;">:</td>
+          <td style="width: 45%;">${record.schoolName} (NPSN: ${record.schoolNpsn})</td>
+          <td style="width: 15%;"><strong>Tahun Pelajaran</strong></td>
+          <td style="width: 2%;">:</td>
+          <td>${record.academicYear} (${record.semester})</td>
+        </tr>
+        <tr>
+          <td><strong>Kepala Sekolah</strong></td>
+          <td>:</td>
+          <td>${record.headmasterName}</td>
+          <td><strong>NIP Kepala Sekolah</strong></td>
+          <td>:</td>
+          <td>${record.headmasterNip}</td>
+        </tr>
+        <tr>
+          <td><strong>Pengawas Pembina</strong></td>
+          <td>:</td>
+          <td>${record.supervisorName}</td>
+          <td><strong>NIP Pengawas</strong></td>
+          <td>:</td>
+          <td>${record.supervisorNip}</td>
+        </tr>
+        <tr>
+          <td><strong>Kuadran Kapasitas</strong></td>
+          <td>:</td>
+          <td><strong>${record.quadrant}</strong></td>
+          <td><strong>Strategi Utama</strong></td>
+          <td>:</td>
+          <td><strong style="color:#1d4ed8;">${record.strategy}</strong></td>
+        </tr>
+        <tr>
+          <td><strong>Kapasitas &amp; Komitmen</strong></td>
+          <td>:</td>
+          <td>Kepemimpinan: ${record.leadershipCapacity} | Komitmen: ${record.changeCommitment}</td>
+          <td><strong>Tanggal Penyusunan</strong></td>
+          <td>:</td>
+          <td>${record.date}</td>
+        </tr>
+        <tr>
+          <td><strong>Prioritas Rapor</strong></td>
+          <td>:</td>
+          <td colspan="4">${prioritiesHtml}</td>
+        </tr>
+      </table>
+
+      <div style="background-color: #f8fafc; border-left: 4px solid #2563eb; padding: 8px 12px; margin-bottom: 12px; font-size: 9.5pt;">
+        <strong>Diagnosis Kondisi Awal Satuan Pendidikan:</strong><br/>
+        <em>"${record.baselineDiagnosis}"</em>
+      </div>
+
+      <div style="background-color: #f0fdf4; border-left: 4px solid #16a34a; padding: 8px 12px; margin-bottom: 14px; font-size: 9.5pt;">
+        <strong>Tujuan Umum Pendampingan:</strong><br/>
+        <span>${record.generalObjective}</span>
+      </div>
+
+      <h3 style="font-size: 11pt; text-transform: uppercase; margin-bottom: 6px;">
+        MATRIKS PROGRAM PENDAMPINGAN BERDIFERENSIASI
+      </h3>
+
+      <table class="matrix-table">
+        <thead>
+          <tr>
+            <th style="width:4%;">No</th>
+            <th style="width:28%;">Tahap, Fokus Aspek, &amp; Metode</th>
+            <th style="width:30%;">Aktivitas Utama Pengawas &amp; KS</th>
+            <th style="width:24%;">Target Output &amp; Indikator</th>
+            <th style="width:14%;">Linimasa &amp; Pihak</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${rowsHtml}
+        </tbody>
+      </table>
+
+      ${
+        record.supervisorNotes
+          ? `<div style="background-color: #fffbeb; border-left: 4px solid #d97706; padding: 8px 12px; margin-bottom: 14px; font-size: 9.5pt;">
+              <strong>Catatan Refleksi Pengawas Pembina:</strong><br/>
+              <em>"${record.supervisorNotes}"</em>
+            </div>`
+          : ''
+      }
+
+      <table class="signature-table">
+        <tr>
+          <td>
+            Mengetahui / Menyetujui,<br/>
+            Kepala Satuan Pendidikan
+            <br/><br/><br/><br/><br/>
+            <strong><u>${record.headmasterName}</u></strong><br/>
+            NIP. ${record.headmasterNip}
+          </td>
+          <td>
+            ${schoolCity}, ${record.date}<br/>
+            ${record.supervisorRole}
+            <br/><br/><br/><br/><br/>
+            <strong><u>${record.supervisorName}</u></strong><br/>
+            NIP. ${record.supervisorNip}<br/>
+            <span>Pangkat/Gol: ${record.supervisorRank || 'Penata Tk. I / III.d'}</span>
+          </td>
+        </tr>
+      </table>
+    </body>
+    </html>
+  `;
+
+  const blob = new Blob(['\ufeff', html], { type: 'application/msword;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  const safeTitle = record.schoolName.replace(/[^a-zA-Z0-9]/g, '_');
+  a.download = `RPB_Pendampingan_Berdiferensiasi_${safeTitle}_${record.date}.doc`;
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
