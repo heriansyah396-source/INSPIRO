@@ -34,6 +34,7 @@ import { SOARAnalysisView } from './components/SOARAnalysisView';
 import { SWOTAnalysisView } from './components/SWOTAnalysisView';
 import { AcademicProContraView } from './components/AcademicProContraView';
 import { RPBView } from './components/RPBView';
+import { PrincipalMaturityView } from './components/PrincipalMaturityView';
 import { PrincipalList } from './components/PrincipalList';
 import {
   AppSettings,
@@ -50,7 +51,8 @@ import {
   SOARAnalysisRecord,
   SWOTAnalysisRecord,
   AcademicProContraRecord,
-  RPBRecord
+  RPBRecord,
+  ManagerialMaturityRecord
 } from './types/inspiro';
 import {
   addTeacher,
@@ -103,7 +105,10 @@ import {
   deleteAcademicProContraRecord,
   getRPBRecords,
   saveRPBRecord,
-  deleteRPBRecord
+  deleteRPBRecord,
+  getPrincipalMaturityRecords,
+  savePrincipalMaturityRecord,
+  deletePrincipalMaturityRecord
 } from './utils/storage';
 import {
   auth,
@@ -152,6 +157,7 @@ export default function App() {
   const [swotRecords, setSwotRecords] = useState<SWOTAnalysisRecord[]>(() => getSWOTRecords());
   const [proContraRecords, setProContraRecords] = useState<AcademicProContraRecord[]>(() => getAcademicProContraRecords());
   const [rpbRecords, setRpbRecords] = useState<RPBRecord[]>(() => getRPBRecords());
+  const [maturityRecords, setMaturityRecords] = useState<ManagerialMaturityRecord[]>(() => getPrincipalMaturityRecords());
   const [selectedSwotPrincipalId, setSelectedSwotPrincipalId] = useState<string | undefined>(undefined);
   const [settings, setSettings] = useState<AppSettings>(getSettings());
 
@@ -204,6 +210,7 @@ export default function App() {
     setSwotRecords(getSWOTRecords());
     setProContraRecords(getAcademicProContraRecords());
     setRpbRecords(getRPBRecords());
+    setMaturityRecords(getPrincipalMaturityRecords());
     setSettings(getSettings());
   }, []);
 
@@ -663,6 +670,27 @@ export default function App() {
     showToast('RPB Dihapus', 'Dokumen Rencana Pendampingan Berdiferensiasi telah dihapus dari sistem.', 'info');
   };
 
+  // Handlers: Posisi Mana Saya Sekarang (Diagnosis Kedewasaan Manajerial Kepala Sekolah)
+  const handleSaveMaturityRecord = (record: ManagerialMaturityRecord) => {
+    savePrincipalMaturityRecord(record);
+    refreshData();
+    showToast(
+      'Diagnosis Disimpan',
+      `Hasil diagnosis kedewasaan manajerial ${record.schoolName} (${record.overallLevelLabel}) berhasil disimpan.`,
+      'success'
+    );
+  };
+
+  const handleDeleteMaturityRecord = (id: string) => {
+    deletePrincipalMaturityRecord(id);
+    refreshData();
+    showToast(
+      'Diagnosis Dihapus',
+      'Data diagnosis kedewasaan manajerial telah dihapus dari sistem.',
+      'info'
+    );
+  };
+
   // Active Record for detail view
   const activeRecord =
     supervisions.find((s) => s.id === selectedSupervisionId) || supervisions[0];
@@ -863,6 +891,18 @@ export default function App() {
                   onNavigateToSWOT={handleNavigateToSWOT}
                   onUpdateSettings={handleSaveSettings}
                   showToast={showToast}
+                />
+              )}
+
+              {/* Tab: Posisi Mana Saya Sekarang? (Diagnosis Kedewasaan Manajerial KS) */}
+              {currentTab === 'principal-maturity' && (
+                <PrincipalMaturityView
+                  records={maturityRecords}
+                  principals={principals}
+                  settings={settings}
+                  onSaveRecord={handleSaveMaturityRecord}
+                  onDeleteRecord={handleDeleteMaturityRecord}
+                  showToast={(msg, type) => showToast('Posisi Manajerial', msg, type)}
                 />
               )}
 

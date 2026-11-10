@@ -38,6 +38,7 @@ export type NavTab =
   | 'dashboard'
   | 'calendar'
   | 'principals'
+  | 'principal-maturity'
   | 'rpb'
   | 'teachers'
   | 'contextual-problems'
@@ -111,6 +112,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
       label: 'Data Kepala Sekolah',
       icon: School,
       badge: principalCount > 0 ? `${principalCount} Kepsek` : 'Manajerial'
+    },
+    {
+      id: 'principal-maturity' as NavTab,
+      label: 'Posisi Mana Saya Sekarang?',
+      icon: Compass,
+      badge: 'Kedewasaan KS'
     },
     {
       id: 'rpb' as NavTab,

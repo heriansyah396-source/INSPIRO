@@ -2447,3 +2447,72 @@ export interface RPBRecord {
   createdAt: string;
   updatedAt: string;
 }
+
+// ==========================================
+// POSISI MANA SAYA SEKARANG?
+// Diagnosis Kedewasaan Manajerial Kepala Sekolah
+// Berdasarkan Permendikbudristek 40/2021 & Model Kompetensi KS
+// ==========================================
+
+export type MaturityLevelId = 'inisiasi' | 'berkembang' | 'berdaya' | 'mahir';
+
+export type ManagerialDimensionId =
+  | 'dimensi_pbd'
+  | 'dimensi_instruksional'
+  | 'dimensi_sarana_digital'
+  | 'dimensi_iklim_karakter'
+  | 'dimensi_kemitraan';
+
+export interface ManagerialMaturityRecord {
+  id: string;
+  title: string;
+  date: string;
+  academicYear: string;
+  semester: 'Ganjil' | 'Genap';
+
+  // Principal & School Info
+  principalId?: string;
+  headmasterName: string;
+  headmasterNip: string;
+  headmasterRank?: string;
+  schoolName: string;
+  schoolNpsn?: string;
+
+  // Supervisor Info
+  supervisorName: string;
+  supervisorNip: string;
+  supervisorRole: string;
+  supervisorRank?: string;
+
+  // Scores across 5 dimensions (1 - 4)
+  scores: {
+    dimensi_pbd: number;
+    dimensi_instruksional: number;
+    dimensi_sarana_digital: number;
+    dimensi_iklim_karakter: number;
+    dimensi_kemitraan: number;
+  };
+  dimensionNotes?: {
+    dimensi_pbd?: string;
+    dimensi_instruksional?: string;
+    dimensi_sarana_digital?: string;
+    dimensi_iklim_karakter?: string;
+    dimensi_kemitraan?: string;
+  };
+
+  // Aggregates
+  averageScore: number; // 1.00 - 4.00
+  overallLevel: MaturityLevelId;
+  overallLevelLabel: string;
+
+  // Qualitative & AI Analysis
+  strengthSummary: string;
+  growthAreaSummary: string;
+  aiActionRoadmap: string[];
+  supervisorFeedback?: string;
+
+  status: 'draft' | 'final';
+  createdAt: string;
+  updatedAt: string;
+}
+

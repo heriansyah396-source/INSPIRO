@@ -15,6 +15,7 @@ import { SEED_SWOT_RECORDS } from '../data/seedSWOT';
 import { SEED_PRO_CONTRA_RECORDS } from '../data/seedProContra';
 import { SEED_RPB_RECORDS } from '../data/seedRPB';
 import { SEED_PRINCIPALS } from '../data/seedPrincipals';
+import { SEED_PRINCIPAL_MATURITY_RECORDS } from '../data/seedPrincipalMaturity';
 import { SEED_MANAGERIAL_EVALUATIONS } from '../data/seedManagerialEvaluations';
 import { DEFAULT_SIDRAP_LOGO, DEFAULT_TUTWURI_LOGO } from '../data/defaultLogos';
 import {
@@ -40,7 +41,8 @@ import {
   AcademicProContraRecord,
   AcademicProContraItem,
   RPBRecord,
-  RPBItem
+  RPBItem,
+  ManagerialMaturityRecord
 } from '../types/inspiro';
 
 const TEACHERS_KEY = 'inspiro_teachers';
@@ -58,6 +60,7 @@ const SOAR_RECORDS_KEY = 'inspiro_soar_records';
 const SWOT_RECORDS_KEY = 'inspiro_swot_records';
 const PRO_CONTRA_RECORDS_KEY = 'inspiro_pro_contra_records';
 const RPB_RECORDS_KEY = 'inspiro_rpb_records';
+const PRINCIPAL_MATURITY_RECORDS_KEY = 'inspiro_principal_maturity_records';
 
 // Helper to safely parse JSON from localStorage
 function safeParse<T>(key: string, fallback: T): T {
@@ -2434,6 +2437,258 @@ export function exportRPBToWord(record: RPBRecord, settings: AppSettings): void 
   a.href = url;
   const safeTitle = record.schoolName.replace(/[^a-zA-Z0-9]/g, '_');
   a.download = `RPB_Pendampingan_Berdiferensiasi_${safeTitle}_${record.date}.doc`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+// ==========================================
+// POSISI MANA SAYA SEKARANG (DIAGNOSIS KEDEWASAAN MANAJERIAL KS)
+// ==========================================
+
+export function getPrincipalMaturityRecords(): ManagerialMaturityRecord[] {
+  return safeParse<ManagerialMaturityRecord[]>(PRINCIPAL_MATURITY_RECORDS_KEY, SEED_PRINCIPAL_MATURITY_RECORDS);
+}
+
+export function savePrincipalMaturityRecords(records: ManagerialMaturityRecord[]): void {
+  localStorage.setItem(PRINCIPAL_MATURITY_RECORDS_KEY, JSON.stringify(records));
+}
+
+export function savePrincipalMaturityRecord(record: ManagerialMaturityRecord): ManagerialMaturityRecord[] {
+  const current = getPrincipalMaturityRecords();
+  const index = current.findIndex((r) => r.id === record.id);
+  let updated: ManagerialMaturityRecord[];
+  if (index >= 0) {
+    updated = [...current];
+    updated[index] = { ...record, updatedAt: new Date().toISOString() };
+  } else {
+    updated = [{ ...record, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }, ...current];
+  }
+  savePrincipalMaturityRecords(updated);
+  return updated;
+}
+
+export function deletePrincipalMaturityRecord(id: string): ManagerialMaturityRecord[] {
+  const current = getPrincipalMaturityRecords();
+  const updated = current.filter((r) => r.id !== id);
+  savePrincipalMaturityRecords(updated);
+  return updated;
+}
+
+export function exportPrincipalMaturityToWord(
+  record: ManagerialMaturityRecord,
+  settings?: AppSettings
+): void {
+  const agencyName = settings?.governmentAgency || 'PEMERINTAH KABUPATEN SIDENRENG RAPPANG';
+  const schoolCity = settings?.schoolCity || 'Sidenreng Rappang';
+
+  const dimensionRows = [
+    {
+      no: 1,
+      nama: 'Perencanaan Berbasis Data (PBD) & Efektivitas RKAS/BOS',
+      skor: record.scores.dimensi_pbd,
+      catatan: record.dimensionNotes?.dimensi_pbd || '-'
+    },
+    {
+      no: 2,
+      nama: 'Kepemimpinan Pembelajaran & Komunitas Belajar (Kombel)',
+      skor: record.scores.dimensi_instruksional,
+      catatan: record.dimensionNotes?.dimensi_instruksional || '-'
+    },
+    {
+      no: 3,
+      nama: 'Pengelolaan Sarana & Pemanfaatan Digital (TIK/PMM)',
+      skor: record.scores.dimensi_sarana_digital,
+      catatan: record.dimensionNotes?.dimensi_sarana_digital || '-'
+    },
+    {
+      no: 4,
+      nama: 'Iklim Keamanan, Inklusivitas & Disiplin Positif',
+      skor: record.scores.dimensi_iklim_karakter,
+      catatan: record.dimensionNotes?.dimensi_iklim_karakter || '-'
+    },
+    {
+      no: 5,
+      nama: 'Kemitraan Strategis Orang Tua & Ekosistem Komunitas',
+      skor: record.scores.dimensi_kemitraan,
+      catatan: record.dimensionNotes?.dimensi_kemitraan || '-'
+    }
+  ];
+
+  const rowsHtml = dimensionRows
+    .map(
+      (d) => `
+      <tr>
+        <td style="text-align: center;">${d.no}</td>
+        <td><strong>${d.nama}</strong></td>
+        <td style="text-align: center; font-weight: bold; font-size: 11pt;">${d.skor} / 4</td>
+        <td>${d.catatan}</td>
+      </tr>
+    `
+    )
+    .join('');
+
+  const roadmapHtml = (record.aiActionRoadmap || [])
+    .map((step, idx) => `<li><strong>Langkah ${idx + 1}:</strong> ${step}</li>`)
+    .join('');
+
+  const html = `
+    <html xmlns:o="urn:schemas-microsoft-com:office:office"
+          xmlns:w="urn:schemas-microsoft-com:office:word"
+          xmlns="http://www.w3.org/TR/REC-html40">
+    <head>
+      <meta charset="utf-8">
+      <title>${record.title}</title>
+      <style>
+        body { font-family: 'Times New Roman', Times, serif; font-size: 11pt; line-height: 1.4; color: #1e293b; }
+        .header-table { width: 100%; border-bottom: 3px double #000; margin-bottom: 18px; padding-bottom: 8px; }
+        .header-table td { text-align: center; }
+        .doc-title { text-align: center; font-weight: bold; font-size: 13pt; text-transform: uppercase; margin-bottom: 4px; }
+        .doc-subtitle { text-align: center; font-size: 10.5pt; font-style: italic; margin-bottom: 16px; }
+        .info-table { width: 100%; margin-bottom: 16px; border-collapse: collapse; }
+        .info-table td { padding: 4px 6px; font-size: 10pt; vertical-align: top; }
+        .matrix-table { width: 100%; border-collapse: collapse; margin-bottom: 16px; }
+        .matrix-table th, .matrix-table td { border: 1px solid #475569; padding: 6px 8px; font-size: 9.5pt; vertical-align: top; }
+        .matrix-table th { background-color: #f1f5f9; text-align: center; font-weight: bold; }
+        .box { padding: 10px 14px; margin-bottom: 14px; font-size: 9.5pt; border-radius: 4px; }
+        .box-blue { background-color: #eff6ff; border-left: 4px solid #2563eb; }
+        .box-emerald { background-color: #f0fdf4; border-left: 4px solid #16a34a; }
+        .box-amber { background-color: #fffbeb; border-left: 4px solid #d97706; }
+        .signature-table { width: 100%; margin-top: 30px; border-collapse: collapse; page-break-inside: avoid; }
+        .signature-table td { width: 50%; text-align: center; font-size: 10.5pt; vertical-align: top; }
+      </style>
+    </head>
+    <body>
+      <table class="header-table">
+        <tr>
+          <td>
+            <div style="font-size: 12pt; font-weight: bold; text-transform: uppercase;">${agencyName}</div>
+            <div style="font-size: 14pt; font-weight: bold; text-transform: uppercase;">DINAS PENDIDIKAN DAN KEBUDAYAAN</div>
+            <div style="font-size: 11pt; font-weight: bold; text-transform: uppercase;">PENGAWAS SEKOLAH PEMBINA KABUPATEN SIDENRENG RAPPANG</div>
+            <div style="font-size: 9pt; font-style: italic;">Jalan Poros Pinrang-Sidrap, Kompleks Perkantoran SKPD, Kab. Sidenreng Rappang</div>
+          </td>
+        </tr>
+      </table>
+
+      <div class="doc-title">LEMBAR DIAGNOSIS KEDEWASAAN MANAJERIAL KEPALA SEKOLAH</div>
+      <div class="doc-subtitle">"Posisi Mana Saya Sekarang?" (Self-Discovery &amp; Managerial Maturity Diagnostic)</div>
+
+      <table class="info-table">
+        <tr>
+          <td style="width: 25%; font-weight: bold;">Satuan Pendidikan</td>
+          <td style="width: 2%;">:</td>
+          <td style="width: 35%; font-weight: bold;">${record.schoolName}</td>
+          <td style="width: 18%; font-weight: bold;">Tahun Ajaran / Sem</td>
+          <td style="width: 2%;">:</td>
+          <td style="width: 18%;">${record.academicYear} / ${record.semester}</td>
+        </tr>
+        <tr>
+          <td style="font-weight: bold;">Kepala Sekolah</td>
+          <td>:</td>
+          <td>${record.headmasterName}</td>
+          <td style="font-weight: bold;">NIP Kepala Sekolah</td>
+          <td>:</td>
+          <td>${record.headmasterNip}</td>
+        </tr>
+        <tr>
+          <td style="font-weight: bold;">Pengawas Pembina</td>
+          <td>:</td>
+          <td>${record.supervisorName}</td>
+          <td style="font-weight: bold;">Tanggal Diagnosis</td>
+          <td>:</td>
+          <td>${record.date}</td>
+        </tr>
+      </table>
+
+      <!-- HASIL POSISI & SKOR -->
+      <div class="box box-blue" style="text-align: center; padding: 12px;">
+        <div style="font-size: 10pt; text-transform: uppercase; font-weight: bold; color: #1e40af;">HASIL DIAGNOSIS TINGKAT KEDEWASAAN MANAJERIAL:</div>
+        <div style="font-size: 15pt; font-weight: bold; color: #0f172a; margin: 4px 0;">${record.overallLevelLabel}</div>
+        <div style="font-size: 11pt; font-weight: bold; color: #2563eb;">Indeks Rata-rata Skor: ${record.averageScore.toFixed(2)} dari 4.00 (${Math.round((record.averageScore / 4) * 100)}%)</div>
+      </div>
+
+      <h3 style="font-size: 11pt; text-transform: uppercase; margin-bottom: 6px;">
+        I. MATRIKS EVALUASI 5 DIMENSI KEPEMIMPINAN MANAJERIAL
+      </h3>
+
+      <table class="matrix-table">
+        <thead>
+          <tr>
+            <th style="width: 5%;">No</th>
+            <th style="width: 40%;">Dimensi Kepemimpinan Manajerial</th>
+            <th style="width: 15%;">Capaian Skor</th>
+            <th style="width: 40%;">Catatan Fakta &amp; Bukti Lapangan</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${rowsHtml}
+        </tbody>
+      </table>
+
+      <h3 style="font-size: 11pt; text-transform: uppercase; margin-bottom: 6px;">
+        II. ANALISIS REFLEKTIF KEKUATAN &amp; TITIK RAWAN MANAJERIAL
+      </h3>
+
+      <div class="box box-emerald">
+        <strong>Pilar Kekuatan Utama (Strengths):</strong><br/>
+        <span>${record.strengthSummary}</span>
+      </div>
+
+      <div class="box box-amber">
+        <strong>Titik Rawan &amp; Area Perbaikan Mendesak (Growth Areas):</strong><br/>
+        <span>${record.growthAreaSummary}</span>
+      </div>
+
+      <h3 style="font-size: 11pt; text-transform: uppercase; margin-bottom: 6px;">
+        III. ROADMAP AKSI NAIK TINGKAT (ACTION PLAN)
+      </h3>
+
+      <div class="box box-blue">
+        <ul style="margin: 0; padding-left: 20px;">
+          ${roadmapHtml}
+        </ul>
+      </div>
+
+      ${
+        record.supervisorFeedback
+          ? `<div class="box box-amber">
+              <strong>Catatan Reflektif &amp; Umpan Balik Pengawas Sekolah Pembina:</strong><br/>
+              <em>"${record.supervisorFeedback}"</em>
+            </div>`
+          : ''
+      }
+
+      <table class="signature-table">
+        <tr>
+          <td>
+            Kepala Satuan Pendidikan,<br/>
+            (Refleksi Diri)
+            <br/><br/><br/><br/><br/>
+            <strong><u>${record.headmasterName}</u></strong><br/>
+            NIP. ${record.headmasterNip}<br/>
+            <span>Pangkat/Gol: ${record.headmasterRank || '-'}</span>
+          </td>
+          <td>
+            ${schoolCity}, ${record.date}<br/>
+            ${record.supervisorRole}
+            <br/><br/><br/><br/><br/>
+            <strong><u>${record.supervisorName}</u></strong><br/>
+            NIP. ${record.supervisorNip}<br/>
+            <span>Pangkat/Gol: ${record.supervisorRank || 'Penata Tk. I / III.d'}</span>
+          </td>
+        </tr>
+      </table>
+    </body>
+    </html>
+  `;
+
+  const blob = new Blob(['\ufeff', html], { type: 'application/msword;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  const safeTitle = record.schoolName.replace(/[^a-zA-Z0-9]/g, '_');
+  a.download = `Posisi_Kedewasaan_Manajerial_${safeTitle}_${record.date}.doc`;
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
