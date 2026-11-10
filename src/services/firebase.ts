@@ -64,7 +64,24 @@ export interface FirestoreErrorInfo {
   };
 }
 
+export function isQuotaOrOfflineError(error: unknown): boolean {
+  if (!error) return false;
+  const msg = (error instanceof Error ? error.message : String(error)).toLowerCase();
+  return (
+    msg.includes('quota') ||
+    msg.includes('resource-exhausted') ||
+    msg.includes('the client is offline') ||
+    msg.includes('offline') ||
+    msg.includes('unavailable') ||
+    msg.includes('failed-precondition')
+  );
+}
+
 export function handleFirestoreError(error: unknown, operationType: OperationType, path: string | null) {
+  if (isQuotaOrOfflineError(error)) {
+    console.warn(`Firestore operation '${operationType}' on '${path}' bypassed: daily read quota reached or offline. Operating seamlessly with local storage.`);
+    return;
+  }
   const errInfo: FirestoreErrorInfo = {
     error: error instanceof Error ? error.message : String(error),
     authInfo: {
@@ -85,8 +102,8 @@ export async function testConnection(): Promise<boolean> {
     await getDocFromServer(doc(db, 'test', 'connection'));
     return true;
   } catch (error) {
-    if (error instanceof Error && error.message.includes('the client is offline')) {
-      console.warn('Firebase client is offline, working with cached/local data.');
+    if (isQuotaOrOfflineError(error)) {
+      console.warn('Firebase client is offline or daily read quota is reached, smoothly working with local storage data.');
       return false;
     }
     return true;
