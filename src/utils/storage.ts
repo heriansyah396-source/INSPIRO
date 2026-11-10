@@ -2555,8 +2555,9 @@ export function exportPrincipalMaturityToWord(
         .box-blue { background-color: #eff6ff; border-left: 4px solid #2563eb; }
         .box-emerald { background-color: #f0fdf4; border-left: 4px solid #16a34a; }
         .box-amber { background-color: #fffbeb; border-left: 4px solid #d97706; }
-        .signature-table { width: 100%; margin-top: 30px; border-collapse: collapse; page-break-inside: avoid; }
+        .signature-table { width: 100%; margin-top: 25px; border-collapse: collapse; page-break-inside: avoid; }
         .signature-table td { width: 50%; text-align: center; font-size: 10.5pt; vertical-align: top; }
+        .sig-box { border: 1.5pt dashed #64748b; height: 48pt; text-align: center; vertical-align: middle; padding-top: 14pt; background-color: #f8fafc; font-size: 8.5pt; color: #475569; font-weight: bold; margin: 4pt 15pt; }
       </style>
     </head>
     <body>
@@ -2669,21 +2670,37 @@ export function exportPrincipalMaturityToWord(
         <tr>
           <td>
             Mengetahui / Memvalidasi,<br/>
-            Kepala Satuan Pendidikan<br/>
-            <span style="font-size: 9pt; font-style: italic;">(Refleksi Mandiri Kepala Sekolah)</span>
-            <br/><br/><br/><br/><br/>
-            <strong><u>${record.headmasterName}</u></strong><br/>
-            NIP. ${record.headmasterNip}<br/>
-            <span>Pangkat/Gol: ${record.headmasterRank || '-'}</span>
+            <strong>Kepala Satuan Pendidikan</strong><br/>
+            <span style="font-size: 9pt; font-style: italic; color: #475569;">(Refleksi Mandiri Kepala Sekolah)</span>
           </td>
           <td>
             ${schoolCity}, ${record.date}<br/>
-            ${record.supervisorRole}<br/>
-            <span style="font-size: 9pt; font-style: italic;">(Asesor Evaluator Pembina)</span>
-            <br/><br/><br/><br/><br/>
+            <strong>${record.supervisorRole}</strong><br/>
+            <span style="font-size: 9pt; font-style: italic; color: #475569;">(Asesor Evaluator Pembina)</span>
+          </td>
+        </tr>
+        <tr style="height: 52pt;">
+          <td style="height: 52pt; vertical-align: middle;">
+            <div class="sig-box">
+              TEMPAT TANDA TANGAN &amp; CAP STEMPEL
+            </div>
+          </td>
+          <td style="height: 52pt; vertical-align: middle;">
+            <div class="sig-box">
+              TEMPAT TANDA TANGAN &amp; CAP STEMPEL
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td>
+            <strong><u>${record.headmasterName}</u></strong><br/>
+            NIP. ${record.headmasterNip || '-'}<br/>
+            <span style="font-size: 9pt; color: #475569;">Pangkat/Gol: ${record.headmasterRank || '-'}</span>
+          </td>
+          <td>
             <strong><u>${record.supervisorName}</u></strong><br/>
             NIP. ${record.supervisorNip}<br/>
-            <span>Pangkat/Gol: ${record.supervisorRank || 'Penata Tk. I / III.d'}</span>
+            <span style="font-size: 9pt; color: #475569;">Pangkat/Gol: ${record.supervisorRank || 'Penata Tk. I / III.d'}</span>
           </td>
         </tr>
       </table>

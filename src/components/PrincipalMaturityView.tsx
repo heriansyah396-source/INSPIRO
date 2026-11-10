@@ -32,7 +32,8 @@ import {
   X,
   FileDown,
   RefreshCw,
-  AlertCircle
+  AlertCircle,
+  FileSignature
 } from 'lucide-react';
 import {
   ManagerialMaturityRecord,
@@ -1362,6 +1363,79 @@ export const PrincipalMaturityView: React.FC<PrincipalMaturityViewProps> = ({
                   </ul>
                 </div>
               )}
+              <div className="pt-4 border-t border-slate-200">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-1.5 text-xs font-bold text-slate-800">
+                    <FileSignature className="w-4 h-4 text-indigo-600" />
+                    <span>Lembar Pengesahan &amp; Tempat Tanda Tangan Resmi</span>
+                  </div>
+                  <span className="text-[10px] text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded font-bold border border-emerald-200">
+                    Format Kedinasan Resmi
+                  </span>
+                </div>
+
+                <div className="p-4 bg-slate-50/80 rounded-xl border border-slate-200">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-center text-xs">
+                    {/* Kepala Sekolah */}
+                    <div className="p-3 bg-white rounded-lg border border-slate-200 flex flex-col justify-between">
+                      <div>
+                        <p className="font-semibold text-slate-700">Mengetahui / Memvalidasi,</p>
+                        <p className="font-bold text-slate-900 uppercase mt-0.5">Kepala Satuan Pendidikan</p>
+                        <p className="text-[10px] italic text-slate-500">(Refleksi Mandiri Kepala Sekolah)</p>
+                      </div>
+
+                      <div className="my-3 py-3 border-2 border-dashed border-indigo-200 rounded-lg bg-indigo-50/40 flex flex-col items-center justify-center">
+                        <FileSignature className="w-5 h-5 text-indigo-500 mb-1" />
+                        <span className="text-[10px] font-bold text-indigo-950 uppercase tracking-wider">
+                          Tempat Tanda Tangan &amp; Cap Stempel
+                        </span>
+                        <span className="text-[9px] text-slate-500 italic mt-0.5">
+                          Tanda tangan basah atau stempel sekolah
+                        </span>
+                      </div>
+
+                      <div>
+                        <p className="font-bold underline text-slate-900 uppercase tracking-wide">
+                          {activeRecord.headmasterName}
+                        </p>
+                        <p className="text-[11px] text-slate-600 mt-0.5">NIP. {activeRecord.headmasterNip || '-'}</p>
+                        <p className="text-[10px] text-slate-500 mt-0.5">Pangkat/Gol: {activeRecord.headmasterRank || '-'}</p>
+                      </div>
+                    </div>
+
+                    {/* Pengawas Sekolah Pembina */}
+                    <div className="p-3 bg-white rounded-lg border border-slate-200 flex flex-col justify-between">
+                      <div>
+                        <p className="font-semibold text-slate-700">
+                          {settings.schoolCity || 'Kabupaten Sidenreng Rappang'}, {formatIndonesianDate(activeRecord.date)}
+                        </p>
+                        <p className="font-bold text-slate-900 uppercase mt-0.5">
+                          {activeRecord.supervisorRole || 'Pengawas Sekolah Pembina (Asesor)'}
+                        </p>
+                        <p className="text-[10px] italic text-slate-500">(Asesor Evaluator Pembina)</p>
+                      </div>
+
+                      <div className="my-3 py-3 border-2 border-dashed border-teal-200 rounded-lg bg-teal-50/40 flex flex-col items-center justify-center">
+                        <FileSignature className="w-5 h-5 text-teal-600 mb-1" />
+                        <span className="text-[10px] font-bold text-teal-950 uppercase tracking-wider">
+                          Tempat Tanda Tangan &amp; Cap Stempel
+                        </span>
+                        <span className="text-[9px] text-slate-500 italic mt-0.5">
+                          Tanda tangan basah &amp; cap pengawas
+                        </span>
+                      </div>
+
+                      <div>
+                        <p className="font-bold underline text-slate-900 uppercase tracking-wide">
+                          {activeRecord.supervisorName}
+                        </p>
+                        <p className="text-[11px] text-slate-600 mt-0.5">NIP. {activeRecord.supervisorNip}</p>
+                        <p className="text-[10px] text-slate-500 mt-0.5">Pangkat/Gol: {activeRecord.supervisorRank || 'Penata Tk. I / III.d'}</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
 
             <div className="px-6 py-3 bg-slate-50 border-t border-slate-200 flex items-center justify-between">
@@ -1430,6 +1504,31 @@ export const PrincipalMaturityView: React.FC<PrincipalMaturityViewProps> = ({
                 page-break-before: avoid !important;
                 break-before: avoid !important;
                 color: #000000 !important;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+              }
+              .maturity-sig-table {
+                width: 100% !important;
+                border-collapse: collapse !important;
+                margin-top: 15px !important;
+                page-break-inside: avoid !important;
+                break-inside: avoid !important;
+              }
+              .maturity-sig-box {
+                height: 70px !important;
+                min-height: 70px !important;
+                border: 1.5px dashed #475569 !important;
+                border-radius: 6px !important;
+                display: flex !important;
+                flex-direction: column !important;
+                align-items: center !important;
+                justify-content: center !important;
+                background-color: #f8fafc !important;
+                margin: 4px 12px !important;
+                padding: 4px 8px !important;
+                box-sizing: border-box !important;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
               }
               @page {
                 size: A4 portrait;
@@ -1599,20 +1698,84 @@ export const PrincipalMaturityView: React.FC<PrincipalMaturityViewProps> = ({
           )}
 
           {/* Tanda Tangan Resmi Sempurna Sesuai Standar Kedinasan */}
-          <div className="mt-8 pt-4 border-t border-slate-300 print:border-black/30 break-inside-avoid print:break-inside-avoid">
-            <table className="w-full text-xs text-black" style={{ borderCollapse: 'collapse', border: 'none' }}>
+          <div className="mt-6 pt-3 border-t border-slate-400 print:border-black/40 break-inside-avoid print:break-inside-avoid">
+            <table className="maturity-sig-table w-full text-xs text-black" style={{ borderCollapse: 'collapse', border: 'none' }}>
               <tbody>
+                {/* Baris 1: Jabatan & Titimangsa */}
                 <tr className="align-top" style={{ border: 'none' }}>
                   {/* Kolom Kiri: Kepala Satuan Pendidikan */}
-                  <td className="w-1/2 text-center pb-2" style={{ border: 'none', padding: '0 8px' }}>
+                  <td className="w-1/2 text-center pb-1" style={{ border: 'none', padding: '0 8px' }}>
                     <p className="font-semibold text-slate-900 leading-tight">Mengetahui / Memvalidasi,</p>
-                    <p className="font-bold text-black leading-tight mt-0.5">Kepala Satuan Pendidikan</p>
+                    <p className="font-bold text-black uppercase leading-tight mt-0.5">Kepala Satuan Pendidikan</p>
                     <p className="text-[10px] italic text-slate-700 leading-tight">(Refleksi Mandiri Kepala Sekolah)</p>
+                  </td>
 
-                    {/* Ruang Stempel & Tanda Tangan */}
-                    <div className="h-20" />
+                  {/* Kolom Kanan: Pengawas Sekolah Pembina */}
+                  <td className="w-1/2 text-center pb-1" style={{ border: 'none', padding: '0 8px' }}>
+                    <p className="font-semibold text-slate-900 leading-tight">
+                      {settings.schoolCity || 'Kabupaten Sidenreng Rappang'}, {formatIndonesianDate(activeRecord.date)}
+                    </p>
+                    <p className="font-bold text-black uppercase leading-tight mt-0.5">
+                      {activeRecord.supervisorRole || 'Pengawas Sekolah Pembina (Asesor)'}
+                    </p>
+                    <p className="text-[10px] italic text-slate-700 leading-tight">(Asesor Evaluator Pembina)</p>
+                  </td>
+                </tr>
 
-                    <p className="font-bold underline text-black uppercase tracking-wide leading-tight">
+                {/* Baris 2: TEMPAT TANDA TANGAN & STEMPEL (KOTAK RESMI DEDIKASI TINGGI 70PX) */}
+                <tr style={{ height: '76px', border: 'none' }}>
+                  <td style={{ height: '76px', minHeight: '76px', textAlign: 'center', verticalAlign: 'middle', padding: '4px 10px', border: 'none' }}>
+                    <div className="maturity-sig-box" style={{
+                      height: '68px',
+                      minHeight: '68px',
+                      border: '1.5px dashed #475569',
+                      borderRadius: '6px',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      backgroundColor: '#f8fafc',
+                      margin: '4px 12px',
+                      padding: '4px 8px',
+                      boxSizing: 'border-box'
+                    }}>
+                      <span style={{ fontSize: '10px', color: '#1e293b', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                        TEMPAT TANDA TANGAN &amp; CAP STEMPEL
+                      </span>
+                      <span style={{ fontSize: '8.5px', color: '#64748b', fontStyle: 'italic', marginTop: '2px' }}>
+                        (Kepala Satuan Pendidikan)
+                      </span>
+                    </div>
+                  </td>
+                  <td style={{ height: '76px', minHeight: '76px', textAlign: 'center', verticalAlign: 'middle', padding: '4px 10px', border: 'none' }}>
+                    <div className="maturity-sig-box" style={{
+                      height: '68px',
+                      minHeight: '68px',
+                      border: '1.5px dashed #475569',
+                      borderRadius: '6px',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      backgroundColor: '#f8fafc',
+                      margin: '4px 12px',
+                      padding: '4px 8px',
+                      boxSizing: 'border-box'
+                    }}>
+                      <span style={{ fontSize: '10px', color: '#1e293b', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                        TEMPAT TANDA TANGAN &amp; CAP STEMPEL
+                      </span>
+                      <span style={{ fontSize: '8.5px', color: '#64748b', fontStyle: 'italic', marginTop: '2px' }}>
+                        (Pengawas Sekolah Pembina)
+                      </span>
+                    </div>
+                  </td>
+                </tr>
+
+                {/* Baris 3: Nama Lengkap Bergaris Bawah, NIP, Pangkat/Golongan */}
+                <tr className="align-top" style={{ border: 'none' }}>
+                  <td className="w-1/2 text-center pt-1" style={{ border: 'none', padding: '0 8px' }}>
+                    <p className="font-bold underline text-black uppercase tracking-wide leading-tight text-xs">
                       {activeRecord.headmasterName}
                     </p>
                     <p className="text-[11px] text-slate-800 leading-tight mt-0.5">
@@ -1623,20 +1786,8 @@ export const PrincipalMaturityView: React.FC<PrincipalMaturityViewProps> = ({
                     </p>
                   </td>
 
-                  {/* Kolom Kanan: Pengawas Sekolah Pembina */}
-                  <td className="w-1/2 text-center pb-2" style={{ border: 'none', padding: '0 8px' }}>
-                    <p className="font-semibold text-slate-900 leading-tight">
-                      {settings.schoolCity || 'Sidenreng Rappang'}, {formatIndonesianDate(activeRecord.date)}
-                    </p>
-                    <p className="font-bold text-black leading-tight mt-0.5">
-                      {activeRecord.supervisorRole || 'Pengawas Sekolah Pembina (Asesor)'}
-                    </p>
-                    <p className="text-[10px] italic text-slate-700 leading-tight">(Asesor Evaluator Pembina)</p>
-
-                    {/* Ruang Stempel & Tanda Tangan */}
-                    <div className="h-20" />
-
-                    <p className="font-bold underline text-black uppercase tracking-wide leading-tight">
+                  <td className="w-1/2 text-center pt-1" style={{ border: 'none', padding: '0 8px' }}>
+                    <p className="font-bold underline text-black uppercase tracking-wide leading-tight text-xs">
                       {activeRecord.supervisorName}
                     </p>
                     <p className="text-[11px] text-slate-800 leading-tight mt-0.5">
