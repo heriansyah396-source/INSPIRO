@@ -59,6 +59,28 @@ interface PrincipalMaturityViewProps {
   showToast: (msg: string, type?: 'success' | 'info' | 'warning') => void;
 }
 
+const formatIndonesianDate = (dateStr?: string): string => {
+  if (!dateStr) return '';
+  const months = [
+    'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+    'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+  ];
+  try {
+    const parts = dateStr.split('-');
+    if (parts.length === 3) {
+      const y = parts[0];
+      const m = parseInt(parts[1], 10) - 1;
+      const d = parseInt(parts[2], 10);
+      if (m >= 0 && m < 12) {
+        return `${d} ${months[m]} ${y}`;
+      }
+    }
+  } catch {
+    // fallback
+  }
+  return dateStr;
+};
+
 export const PrincipalMaturityView: React.FC<PrincipalMaturityViewProps> = ({
   records,
   principals,
@@ -386,7 +408,9 @@ export const PrincipalMaturityView: React.FC<PrincipalMaturityViewProps> = ({
   };
 
   return (
-    <div className="space-y-6">
+    <>
+      {/* SCREEN-ONLY INTERACTIVE UI (HIDDEN ON PRINT) */}
+      <div className="space-y-6 print:hidden no-print">
       {/* HEADER BANNER */}
       <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-indigo-950 via-slate-900 to-teal-950 p-6 md:p-8 text-white shadow-xl border border-indigo-800/40">
         <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
@@ -1368,107 +1392,142 @@ export const PrincipalMaturityView: React.FC<PrincipalMaturityViewProps> = ({
           </div>
         </div>
       )}
+      </div>
 
       {/* PRINTABLE OFFICIAL DOCUMENT LAYOUT (PDF / CETAK) */}
       {activeRecord && (
-        <div id="printable-maturity-doc" className="hidden print:block text-black bg-white p-6">
+        <div id="printable-maturity-doc" className="hidden print:block text-black bg-white">
           <style>{`
             @media print {
-              body * { visibility: hidden; }
-              #printable-maturity-doc, #printable-maturity-doc * { visibility: visible; }
-              #printable-maturity-doc {
-                position: absolute;
-                left: 0;
-                top: 0;
-                width: 100%;
-                padding: 15mm;
-                font-family: 'Times New Roman', Times, serif;
-                color: #000;
+              html, body {
+                margin: 0 !important;
+                padding: 0 !important;
+                background: #ffffff !important;
+                color: #000000 !important;
+                font-family: 'Times New Roman', Times, serif !important;
               }
-              @page { size: A4 portrait; margin: 15mm; }
+              .no-print,
+              .print\\:hidden,
+              nav,
+              aside,
+              header,
+              footer,
+              button,
+              .toast-container,
+              [role="dialog"] {
+                display: none !important;
+                visibility: hidden !important;
+                height: 0 !important;
+                margin: 0 !important;
+                padding: 0 !important;
+              }
+              #printable-maturity-doc {
+                display: block !important;
+                position: static !important;
+                width: 100% !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                page-break-before: avoid !important;
+                break-before: avoid !important;
+                color: #000000 !important;
+              }
+              @page {
+                size: A4 portrait;
+                margin: 1.2cm 1cm 1.2cm 1cm;
+              }
             }
           `}</style>
 
-          {/* KOP SURAT DINAS RESMI */}
-          <div className="border-b-4 border-double border-black pb-3 mb-5 text-center relative">
+          {/* KOP SURAT DINAS RESMI DUA LOGO */}
+          <div className="border-b-4 border-double border-black pb-3 mb-5">
             <div className="flex items-center justify-between">
-              <img
-                src={settings.logoUrl || DEFAULT_SIDRAP_LOGO}
-                alt="Logo Pemkab"
-                className="w-16 h-16 object-contain"
-              />
-              <div className="flex-1 px-4">
-                <h4 className="text-xs font-bold uppercase tracking-wider">
+              {/* Logo Kiri: Pemkab Sidenreng Rappang */}
+              <div className="w-20 h-20 flex items-center justify-center shrink-0">
+                <img
+                  src={settings.logoUrl || DEFAULT_SIDRAP_LOGO}
+                  alt="Logo Kabupaten Sidenreng Rappang"
+                  className="h-20 w-20 object-contain"
+                />
+              </div>
+
+              {/* Teks Kop Resmi */}
+              <div className="flex-1 px-4 text-center">
+                <h4 className="text-xs font-bold uppercase tracking-wider text-black">
                   {settings.governmentAgency || 'PEMERINTAH KABUPATEN SIDENRENG RAPPANG'}
                 </h4>
-                <h3 className="text-sm font-black uppercase tracking-wide">
+                <h3 className="text-sm font-black uppercase tracking-wide text-black mt-0.5">
                   DINAS PENDIDIKAN DAN KEBUDAYAAN
                 </h3>
-                <h2 className="text-base font-black uppercase">
+                <h2 className="text-sm font-extrabold uppercase text-black mt-0.5 tracking-tight">
                   PENGAWAS SEKOLAH PEMBINA KABUPATEN SIDENRENG RAPPANG
                 </h2>
-                <p className="text-[9px] italic mt-0.5">
-                  Kompleks SKPD Blok B No. 7, Jl. Harapan Baru, Sidenreng Rappang, Sulawesi Selatan
+                <p className="text-[10px] italic text-slate-700 mt-1">
+                  Alamat: Kompleks SKPD Jl. Harapan Baru No. 1, Pangkajene, Kab. Sidenreng Rappang, Sulawesi Selatan (91611)
                 </p>
               </div>
-              <img
-                src={DEFAULT_TUTWURI_LOGO}
-                alt="Logo Tut Wuri"
-                className="w-16 h-16 object-contain"
-              />
+
+              {/* Logo Kanan: Tut Wuri Handayani / Logo Sekolah (Sesuai Pengaturan) */}
+              <div className="w-20 h-20 flex items-center justify-center shrink-0">
+                <img
+                  src={settings.logoRightUrl || DEFAULT_TUTWURI_LOGO}
+                  alt="Logo Kanan (Tut Wuri / Logo Sekolah)"
+                  className="h-20 w-20 object-contain"
+                />
+              </div>
             </div>
           </div>
 
+          {/* Judul Dokumen */}
           <div className="text-center mb-4">
-            <h2 className="text-sm font-black uppercase tracking-wider underline">
+            <h2 className="text-sm font-black uppercase tracking-wider underline text-black">
               LEMBAR DIAGNOSIS KEDEWASAAN MANAJERIAL KEPALA SEKOLAH
             </h2>
-            <p className="text-xs italic text-slate-700">
+            <p className="text-xs italic text-slate-700 mt-0.5">
               "Posisi Mana Saya Sekarang?" (Self-Discovery &amp; Managerial Maturity Diagnostic)
             </p>
           </div>
 
           {/* Identitas Info */}
-          <table className="w-full text-xs mb-4">
+          <table className="w-full text-xs mb-4" style={{ borderCollapse: 'collapse', border: 'none' }}>
             <tbody>
               <tr>
-                <td className="w-28 font-bold py-1">Satuan Pendidikan</td>
+                <td className="w-32 font-bold py-1">Satuan Pendidikan</td>
                 <td className="w-3">:</td>
-                <td className="font-bold">{activeRecord.schoolName}</td>
-                <td className="w-28 font-bold py-1">Tahun Ajaran / Sem</td>
+                <td className="font-bold text-black">{activeRecord.schoolName}</td>
+                <td className="w-32 font-bold py-1">Tahun Ajaran / Sem</td>
                 <td className="w-3">:</td>
-                <td>
+                <td className="text-black">
                   {activeRecord.academicYear} / {activeRecord.semester}
                 </td>
               </tr>
               <tr>
                 <td className="font-bold py-1">Kepala Sekolah</td>
                 <td>:</td>
-                <td>{activeRecord.headmasterName}</td>
+                <td className="text-black">{activeRecord.headmasterName}</td>
                 <td className="font-bold py-1">NIP Kepala Sekolah</td>
                 <td>:</td>
-                <td>{activeRecord.headmasterNip}</td>
+                <td className="text-black">{activeRecord.headmasterNip}</td>
               </tr>
               <tr>
                 <td className="font-bold py-1">Pengawas Pembina</td>
                 <td>:</td>
-                <td>{activeRecord.supervisorName}</td>
+                <td className="text-black">{activeRecord.supervisorName}</td>
                 <td className="font-bold py-1">Tanggal Diagnosis</td>
                 <td>:</td>
-                <td>{activeRecord.date}</td>
+                <td className="text-black">{formatIndonesianDate(activeRecord.date)}</td>
               </tr>
             </tbody>
           </table>
 
           {/* Posisi Box */}
           <div className="border-2 border-black p-3 mb-4 text-center bg-slate-50">
-            <div className="text-[10px] uppercase font-bold text-slate-600">
+            <div className="text-[10px] uppercase font-bold text-slate-700">
               HASIL DIAGNOSIS TINGKAT KEDEWASAAN MANAJERIAL:
             </div>
             <div className="text-base font-black text-black mt-0.5">
               {activeRecord.overallLevelLabel}
             </div>
-            <div className="text-xs font-bold text-slate-800 mt-0.5">
+            <div className="text-xs font-bold text-black mt-0.5">
               Rata-rata Indeks Skor: {activeRecord.averageScore.toFixed(2)} dari 4.00 (
               {Math.round((activeRecord.averageScore / 4) * 100)}%)
             </div>
@@ -1476,14 +1535,14 @@ export const PrincipalMaturityView: React.FC<PrincipalMaturityViewProps> = ({
 
           {/* Tabel 5 Dimensi */}
           <div className="mb-4">
-            <h4 className="text-xs font-black uppercase mb-1">
+            <h4 className="text-xs font-black uppercase mb-1 text-black">
               I. MATRIKS EVALUASI 5 DIMENSI KEPEMIMPINAN MANAJERIAL
             </h4>
-            <table className="w-full border-collapse border border-black text-[10px]">
+            <table className="w-full border-collapse border border-black text-[10.5px]">
               <thead>
                 <tr className="bg-slate-200">
                   <th className="border border-black p-1 text-center w-8">No</th>
-                  <th className="border border-black p-1 text-left">Dimensi Kepemimpinan Manajerial</th>
+                  <th className="border border-black p-1 text-left w-2/5">Dimensi Kepemimpinan Manajerial</th>
                   <th className="border border-black p-1 text-center w-20">Skor</th>
                   <th className="border border-black p-1 text-left">Catatan Fakta &amp; Bukti Lapangan</th>
                 </tr>
@@ -1506,64 +1565,93 @@ export const PrincipalMaturityView: React.FC<PrincipalMaturityViewProps> = ({
           </div>
 
           {/* Analisis Kekuatan & Titik Rawan */}
-          <div className="mb-4 space-y-2 text-[10px]">
-            <h4 className="text-xs font-black uppercase">
+          <div className="mb-4 space-y-2 text-[10.5px]">
+            <h4 className="text-xs font-black uppercase text-black">
               II. ANALISIS REFLEKTIF KEKUATAN &amp; TITIK RAWAN MANAJERIAL
             </h4>
             <div className="border border-black p-2 bg-slate-50">
-              <strong>Pilar Kekuatan Utama (Strengths):</strong>
-              <p className="mt-0.5">{activeRecord.strengthSummary}</p>
+              <strong className="text-black">Pilar Kekuatan Utama (Strengths):</strong>
+              <p className="mt-0.5 leading-relaxed">{activeRecord.strengthSummary}</p>
             </div>
             <div className="border border-black p-2 bg-slate-50">
-              <strong>Titik Rawan &amp; Area Perbaikan Mendesak (Growth Areas):</strong>
-              <p className="mt-0.5">{activeRecord.growthAreaSummary}</p>
+              <strong className="text-black">Titik Rawan &amp; Area Perbaikan Mendesak (Growth Areas):</strong>
+              <p className="mt-0.5 leading-relaxed">{activeRecord.growthAreaSummary}</p>
             </div>
           </div>
 
           {/* Roadmap */}
-          <div className="mb-4 text-[10px]">
-            <h4 className="text-xs font-black uppercase mb-1">
+          <div className="mb-4 text-[10.5px]">
+            <h4 className="text-xs font-black uppercase mb-1 text-black">
               III. ROADMAP AKSI NAIK TINGKAT (ACTION PLAN)
             </h4>
             <ol className="list-decimal pl-4 space-y-1">
               {(activeRecord.aiActionRoadmap || []).map((step, idx) => (
-                <li key={idx}>{step}</li>
+                <li key={idx} className="leading-relaxed">{step}</li>
               ))}
             </ol>
           </div>
 
           {activeRecord.supervisorFeedback && (
-            <div className="mb-4 text-[10px] border border-black p-2 bg-slate-50">
-              <strong>Catatan Reflektif &amp; Umpan Balik Pengawas Sekolah Pembina:</strong>
-              <p className="mt-0.5 italic">"{activeRecord.supervisorFeedback}"</p>
+            <div className="mb-4 text-[10.5px] border border-black p-2 bg-slate-50">
+              <strong className="text-black">Catatan Reflektif &amp; Umpan Balik Pengawas Sekolah Pembina:</strong>
+              <p className="mt-0.5 italic leading-relaxed">"{activeRecord.supervisorFeedback}"</p>
             </div>
           )}
 
-          {/* Tanda Tangan */}
-          <div className="mt-8 pt-4 flex items-start justify-between text-xs break-inside-avoid">
-            <div className="text-center w-60">
-              <p>Kepala Satuan Pendidikan,</p>
-              <p className="text-[10px] italic">(Refleksi Diri)</p>
-              <div className="h-16" />
-              <p className="font-bold underline">{activeRecord.headmasterName}</p>
-              <p className="text-[10px]">NIP. {activeRecord.headmasterNip}</p>
-            </div>
+          {/* Tanda Tangan Resmi Sempurna Sesuai Standar Kedinasan */}
+          <div className="mt-8 pt-4 border-t border-slate-300 print:border-black/30 break-inside-avoid print:break-inside-avoid">
+            <table className="w-full text-xs text-black" style={{ borderCollapse: 'collapse', border: 'none' }}>
+              <tbody>
+                <tr className="align-top" style={{ border: 'none' }}>
+                  {/* Kolom Kiri: Kepala Satuan Pendidikan */}
+                  <td className="w-1/2 text-center pb-2" style={{ border: 'none', padding: '0 8px' }}>
+                    <p className="font-semibold text-slate-900 leading-tight">Mengetahui / Memvalidasi,</p>
+                    <p className="font-bold text-black leading-tight mt-0.5">Kepala Satuan Pendidikan</p>
+                    <p className="text-[10px] italic text-slate-700 leading-tight">(Refleksi Mandiri Kepala Sekolah)</p>
 
-            <div className="text-center w-60">
-              <p>
-                {settings.schoolCity || 'Sidenreng Rappang'}, {activeRecord.date}
-              </p>
-              <p>{activeRecord.supervisorRole}</p>
-              <div className="h-16" />
-              <p className="font-bold underline">{activeRecord.supervisorName}</p>
-              <p className="text-[10px]">NIP. {activeRecord.supervisorNip}</p>
-              <p className="text-[10px]">
-                Pangkat/Gol: {activeRecord.supervisorRank || 'Penata Tk. I / III.d'}
-              </p>
-            </div>
+                    {/* Ruang Stempel & Tanda Tangan */}
+                    <div className="h-20" />
+
+                    <p className="font-bold underline text-black uppercase tracking-wide leading-tight">
+                      {activeRecord.headmasterName}
+                    </p>
+                    <p className="text-[11px] text-slate-800 leading-tight mt-0.5">
+                      NIP. {activeRecord.headmasterNip || '-'}
+                    </p>
+                    <p className="text-[10px] text-slate-600 leading-tight mt-0.5">
+                      Pangkat/Gol: {activeRecord.headmasterRank || '-'}
+                    </p>
+                  </td>
+
+                  {/* Kolom Kanan: Pengawas Sekolah Pembina */}
+                  <td className="w-1/2 text-center pb-2" style={{ border: 'none', padding: '0 8px' }}>
+                    <p className="font-semibold text-slate-900 leading-tight">
+                      {settings.schoolCity || 'Sidenreng Rappang'}, {formatIndonesianDate(activeRecord.date)}
+                    </p>
+                    <p className="font-bold text-black leading-tight mt-0.5">
+                      {activeRecord.supervisorRole || 'Pengawas Sekolah Pembina (Asesor)'}
+                    </p>
+                    <p className="text-[10px] italic text-slate-700 leading-tight">(Asesor Evaluator Pembina)</p>
+
+                    {/* Ruang Stempel & Tanda Tangan */}
+                    <div className="h-20" />
+
+                    <p className="font-bold underline text-black uppercase tracking-wide leading-tight">
+                      {activeRecord.supervisorName}
+                    </p>
+                    <p className="text-[11px] text-slate-800 leading-tight mt-0.5">
+                      NIP. {activeRecord.supervisorNip}
+                    </p>
+                    <p className="text-[10px] text-slate-600 leading-tight mt-0.5">
+                      Pangkat/Gol: {activeRecord.supervisorRank || 'Penata Tk. I / III.d'}
+                    </p>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 };

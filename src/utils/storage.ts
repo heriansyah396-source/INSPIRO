@@ -2562,11 +2562,17 @@ export function exportPrincipalMaturityToWord(
     <body>
       <table class="header-table">
         <tr>
-          <td>
-            <div style="font-size: 12pt; font-weight: bold; text-transform: uppercase;">${agencyName}</div>
-            <div style="font-size: 14pt; font-weight: bold; text-transform: uppercase;">DINAS PENDIDIKAN DAN KEBUDAYAAN</div>
+          <td style="width: 15%; text-align: center; vertical-align: middle;">
+            <img src="${settings?.logoUrl || DEFAULT_SIDRAP_LOGO}" width="70" height="75" style="object-fit:contain;" alt="Logo Kabupaten Sidenreng Rappang" />
+          </td>
+          <td style="width: 70%; text-align: center; vertical-align: middle;">
+            <div style="font-size: 11pt; font-weight: bold; text-transform: uppercase;">${agencyName}</div>
+            <div style="font-size: 13pt; font-weight: bold; text-transform: uppercase;">DINAS PENDIDIKAN DAN KEBUDAYAAN</div>
             <div style="font-size: 11pt; font-weight: bold; text-transform: uppercase;">PENGAWAS SEKOLAH PEMBINA KABUPATEN SIDENRENG RAPPANG</div>
-            <div style="font-size: 9pt; font-style: italic;">Jalan Poros Pinrang-Sidrap, Kompleks Perkantoran SKPD, Kab. Sidenreng Rappang</div>
+            <div style="font-size: 8.5pt; font-style: italic; color: #475569;">Alamat: Kompleks SKPD Jl. Harapan Baru No. 1, Pangkajene, Kab. Sidenreng Rappang, Sulawesi Selatan (91611)</div>
+          </td>
+          <td style="width: 15%; text-align: center; vertical-align: middle;">
+            <img src="${settings?.logoRightUrl || DEFAULT_TUTWURI_LOGO}" width="70" height="75" style="object-fit:contain;" alt="Logo Kanan (Tut Wuri / Sekolah)" />
           </td>
         </tr>
       </table>
@@ -2662,8 +2668,9 @@ export function exportPrincipalMaturityToWord(
       <table class="signature-table">
         <tr>
           <td>
-            Kepala Satuan Pendidikan,<br/>
-            (Refleksi Diri)
+            Mengetahui / Memvalidasi,<br/>
+            Kepala Satuan Pendidikan<br/>
+            <span style="font-size: 9pt; font-style: italic;">(Refleksi Mandiri Kepala Sekolah)</span>
             <br/><br/><br/><br/><br/>
             <strong><u>${record.headmasterName}</u></strong><br/>
             NIP. ${record.headmasterNip}<br/>
@@ -2671,7 +2678,8 @@ export function exportPrincipalMaturityToWord(
           </td>
           <td>
             ${schoolCity}, ${record.date}<br/>
-            ${record.supervisorRole}
+            ${record.supervisorRole}<br/>
+            <span style="font-size: 9pt; font-style: italic;">(Asesor Evaluator Pembina)</span>
             <br/><br/><br/><br/><br/>
             <strong><u>${record.supervisorName}</u></strong><br/>
             NIP. ${record.supervisorNip}<br/>
