@@ -61,13 +61,14 @@
   }
 
   .no-print,
+  .print\:hidden,
   nav,
   aside,
   header,
   footer,
   button,
   .toast-container,
-  [role="dialog"] {
+  [role="dialog"] > *:not(.printable-content) {
     display: none !important;
     visibility: hidden !important;
     height: 0 !important;
@@ -80,15 +81,25 @@
     display: block !important;
   }
 
-  .print-page {
+  .print-page,
+  #printable-pro-contra-doc,
+  #printable-rpb-doc,
+  #printable-maturity-doc,
+  #printable-contextual-problem-doc,
+  #printable-learning-env-doc,
+  #printable-digital-pm-doc,
+  #printable-swot-tows-report {
     display: block !important;
+    visibility: visible !important;
+    position: static !important;
     width: 100% !important;
     max-width: 100% !important;
     margin: 0 !important;
-    padding: 4px !important;
+    padding: 0 !important;
     box-shadow: none !important;
     border: none !important;
     background: #ffffff !important;
+    color: #000000 !important;
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
   }
@@ -118,6 +129,12 @@
   th, td {
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
+    vertical-align: top !important;
+  }
+
+  th {
+    vertical-align: middle !important;
+    font-weight: bold !important;
   }
 }
 

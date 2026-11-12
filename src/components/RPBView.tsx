@@ -46,6 +46,7 @@ import {
   AppSettings
 } from '../types/inspiro';
 import { exportRPBToWord } from '../utils/storage';
+import { printDocumentElement } from '../utils/documentExport';
 import { DEFAULT_SIDRAP_LOGO, DEFAULT_TUTWURI_LOGO } from '../data/defaultLogos';
 import {
   generateRPBPlanAI,
@@ -508,17 +509,214 @@ export const RPBView: React.FC<RPBViewProps> = ({
     showToast(`Dokumen RPB ${rec.schoolName} berhasil diunduh (.doc)!`, 'success');
   };
 
-  // Direct Print
+  // Direct Print & PDF Export
   const handlePrint = (rec: RPBRecord) => {
     setActiveRecord(rec);
     setTimeout(() => {
-      window.print();
-    }, 200);
+      const docTitle = `RPB_${(rec.schoolName || 'Sekolah').replace(/[^a-zA-Z0-9]/g, '_')}_${rec.academicYear || ''}`;
+      const printed = printDocumentElement('printable-rpb-doc', docTitle, { orientation: 'portrait' });
+      if (!printed) {
+        window.print();
+      }
+    }, 150);
+  };
+
+  // Render official RPB document content (used by modal preview and isolated PDF print)
+  const renderOfficialRPBContent = (rec: RPBRecord) => {
+    return (
+      <div className="text-slate-900 bg-white">
+        {/* KOP Surat Resmi dengan Dua Logo */}
+        <div className="flex items-center justify-between border-b-4 border-double border-slate-900 pb-3 mb-6">
+          <div className="w-20 flex justify-center">
+            <img
+              src={settings.logoUrl || DEFAULT_SIDRAP_LOGO}
+              alt="Logo Kabupaten Sidenreng Rappang"
+              className="h-20 w-auto object-contain"
+            />
+          </div>
+          <div className="flex-1 text-center px-4">
+            <h3 className="text-sm font-bold tracking-wider text-slate-800 uppercase leading-tight">
+              {settings.governmentAgency || 'PEMERINTAH KABUPATEN SIDENRENG RAPPANG'}
+            </h3>
+            <h2 className="text-base font-black tracking-wide text-slate-900 uppercase mt-0.5 leading-tight">
+              DINAS PENDIDIKAN DAN KEBUDAYAAN
+            </h2>
+            <h1 className="text-sm font-extrabold text-blue-900 uppercase mt-0.5 tracking-tight">
+              PENGAWAS SEKOLAH PEMBINA KABUPATEN SIDENRENG RAPPANG
+            </h1>
+            <p className="text-[10px] text-slate-600 italic mt-1 leading-tight">
+              Alamat: Kompleks SKPD Jl. Harapan Baru No. 1, Pangkajene, Kab. Sidenreng Rappang, Sulawesi Selatan (91611)
+            </p>
+          </div>
+          <div className="w-20 flex justify-center">
+            <img
+              src={settings.logoRightUrl || DEFAULT_TUTWURI_LOGO}
+              alt="Logo Tut Wuri Handayani"
+              className="h-20 w-auto object-contain"
+            />
+          </div>
+        </div>
+
+        {/* Judul Dokumen */}
+        <div className="text-center mb-6">
+          <h2 className="text-base font-extrabold uppercase underline tracking-wide text-slate-900">
+            RENCANA PENDAMPINGAN BERDIFERENSIASI (RPB)
+          </h2>
+          <p className="text-xs font-bold text-slate-700 mt-1 uppercase">
+            KERANGKA DIFERENSIASI STRATEGI & METODE PENDAMPINGAN KEPALA SATUAN PENDIDIKAN
+          </p>
+          <p className="text-[10px] text-slate-500 italic mt-0.5">
+            Sesuai Perdirjen GTK Kemendikbudristek No. 4831/B/HK.03.01/2023 tentang Peran Pengawas Sekolah
+          </p>
+        </div>
+
+        {/* Identitas Dokumen */}
+        <div className="grid grid-cols-2 gap-x-6 gap-y-1.5 text-xs pb-4 mb-4 border-b border-slate-200">
+          <div className="flex gap-2">
+            <span className="w-36 font-bold text-slate-700 shrink-0">Satuan Pendidikan</span>
+            <span className="font-bold">:</span>
+            <span className="text-slate-900 font-semibold">{rec.schoolName} {rec.schoolNpsn ? `(NPSN: ${rec.schoolNpsn})` : ''}</span>
+          </div>
+          <div className="flex gap-2">
+            <span className="w-36 font-bold text-slate-700 shrink-0">Tahun Pelajaran</span>
+            <span className="font-bold">:</span>
+            <span className="text-slate-900">{rec.academicYear} ({rec.semester})</span>
+          </div>
+          <div className="flex gap-2">
+            <span className="w-36 font-bold text-slate-700 shrink-0">Kepala Satuan Pendidikan</span>
+            <span className="font-bold">:</span>
+            <span className="text-slate-900 font-semibold">{rec.headmasterName} (NIP. {rec.headmasterNip})</span>
+          </div>
+          <div className="flex gap-2">
+            <span className="w-36 font-bold text-slate-700 shrink-0">Tanggal Penyusunan</span>
+            <span className="font-bold">:</span>
+            <span className="text-slate-900">{rec.date}</span>
+          </div>
+          <div className="flex gap-2">
+            <span className="w-36 font-bold text-slate-700 shrink-0">Pengawas Pembina</span>
+            <span className="font-bold">:</span>
+            <span className="text-slate-900 font-semibold">{rec.supervisorName}</span>
+          </div>
+          <div className="flex gap-2">
+            <span className="w-36 font-bold text-slate-700 shrink-0">NIP Pengawas</span>
+            <span className="font-bold">:</span>
+            <span className="text-slate-900">{rec.supervisorNip}</span>
+          </div>
+        </div>
+
+        {/* Ringkasan Diagnosis Kapasitas & Strategi */}
+        <div className="grid grid-cols-2 gap-4 mb-5 p-3.5 rounded-xl bg-slate-50 border border-slate-200 text-xs">
+          <div>
+            <span className="text-slate-500 block text-[10px] font-semibold uppercase">Diagnosis Kapasitas Sekolah:</span>
+            <strong className="text-slate-900 text-sm">{rec.quadrant}</strong>
+            <p className="text-slate-600 text-[11px] mt-1 leading-relaxed">{rec.baselineDiagnosis}</p>
+          </div>
+          <div>
+            <span className="text-slate-500 block text-[10px] font-semibold uppercase">Strategi Diferensiasi Terpilih:</span>
+            <strong className="text-emerald-800 text-sm">{rec.strategy}</strong>
+            <p className="text-slate-600 text-[11px] mt-1 leading-relaxed">
+              <strong className="text-slate-700">Tujuan Umum:</strong> {rec.generalObjective}
+            </p>
+          </div>
+        </div>
+
+        {/* Rapor Pendidikan Priorities */}
+        {rec.raporPriorities && rec.raporPriorities.length > 0 && (
+          <div className="mb-5 text-xs">
+            <span className="font-bold text-slate-800 block mb-1">Indikator Prioritas Rapor Pendidikan yang Dibenahi:</span>
+            <div className="flex flex-wrap gap-1.5">
+              {rec.raporPriorities.map((p, idx) => (
+                <span key={idx} className="px-2 py-0.5 rounded-md bg-rose-50 border border-rose-200 text-rose-900 text-[10px] font-semibold">
+                  {p}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Tabel RPB */}
+        <div className="overflow-x-auto mb-6">
+          <table className="w-full border-collapse border border-slate-400 text-xs">
+            <thead>
+              <tr className="bg-slate-800 text-white text-[11px] uppercase tracking-wider text-center">
+                <th className="border border-slate-400 p-2 w-10 text-center bg-slate-800 text-white font-bold">No</th>
+                <th className="border border-slate-400 p-2 w-48 text-left bg-slate-800 text-white font-bold">Tahap &amp; Fokus Aspek</th>
+                <th className="border border-slate-400 p-2 w-24 text-center bg-slate-800 text-white font-bold">Metode</th>
+                <th className="border border-slate-400 p-2 text-left bg-blue-900 text-white font-bold">Aktivitas Utama Pengawas &amp; KS</th>
+                <th className="border border-slate-400 p-2 text-left w-44 bg-slate-800 text-white font-bold">Target Output &amp; Indikator</th>
+                <th className="border border-slate-400 p-2 w-28 text-left bg-slate-800 text-white font-bold">Linimasa</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rec.items.map((item, idx) => (
+                <tr key={item.id} className="align-top hover:bg-slate-50/50">
+                  <td className="border border-slate-400 p-2.5 text-center font-bold bg-slate-50 text-slate-900">
+                    {idx + 1}
+                  </td>
+                  <td className="border border-slate-400 p-2.5">
+                    <span className="text-[9px] font-bold text-slate-500 uppercase block">{item.tahap}</span>
+                    <strong className="text-slate-900 block font-bold mt-0.5">{item.fokusAspek}</strong>
+                  </td>
+                  <td className="border border-slate-400 p-2.5 text-center">
+                    <span className="inline-block text-[10px] px-2 py-0.5 rounded font-extrabold bg-blue-100 text-blue-800 border border-blue-200">
+                      {item.metode}
+                    </span>
+                  </td>
+                  <td className="border border-slate-400 p-2.5 text-slate-800 leading-relaxed">
+                    {item.aktivitasUtama}
+                  </td>
+                  <td className="border border-slate-400 p-2.5 text-slate-800">
+                    <div className="font-semibold text-slate-900">{item.targetOutput}</div>
+                    <div className="text-[10px] text-slate-500 mt-1">
+                      <strong>Indikator:</strong> {item.indikatorKeberhasilan}
+                    </div>
+                  </td>
+                  <td className="border border-slate-400 p-2.5 text-slate-700 text-[11px]">
+                    <div className="font-bold">{item.linimasa}</div>
+                    <div className="text-[10px] text-slate-500 mt-0.5">{item.pihakTerlibat}</div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Catatan Pengawas */}
+        {rec.supervisorNotes && (
+          <div className="mb-5 p-3 rounded-lg bg-amber-50/70 border-l-4 border-amber-600 text-xs">
+            <strong className="text-amber-950">Catatan Refleksi Pengawas Pembina:</strong>
+            <p className="text-slate-700 italic mt-0.5 leading-relaxed">{rec.supervisorNotes}</p>
+          </div>
+        )}
+
+        {/* Signature Dual */}
+        <div className="grid grid-cols-2 gap-8 pt-6 text-center text-xs text-slate-800 print:break-inside-avoid print-avoid-break">
+          <div>
+            <p>Mengetahui / Menyetujui,</p>
+            <p className="font-semibold text-slate-600">Kepala Satuan Pendidikan</p>
+            <div className="h-16" />
+            <p className="font-bold underline text-slate-900">{rec.headmasterName}</p>
+            <p className="text-slate-500 text-[11px]">NIP. {rec.headmasterNip}</p>
+          </div>
+
+          <div>
+            <p>{settings.schoolCity || 'Pangkajene Sidenreng'}, {rec.date}</p>
+            <p className="font-semibold text-slate-600">{rec.supervisorRole || 'Pengawas Sekolah Pembina'}</p>
+            <div className="h-16" />
+            <p className="font-bold underline text-slate-900">{rec.supervisorName}</p>
+            <p className="text-slate-500 text-[11px]">NIP. {rec.supervisorNip}</p>
+            <p className="text-slate-400 text-[10px]">{rec.supervisorRank || 'Penata Tk. I / III.d'}</p>
+          </div>
+        </div>
+      </div>
+    );
   };
 
   return (
-    <div className="space-y-6">
-      {/* Top Banner Header */}
+    <>
+      {/* SCREEN-ONLY INTERACTIVE UI (STRICTLY HIDDEN ON PRINT) */}
+      <div className="space-y-6 print:hidden no-print">
+        {/* Top Banner Header */}
       <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-blue-900 rounded-2xl p-6 text-white shadow-xl border border-indigo-800/40 relative overflow-hidden">
         <div className="absolute right-0 top-0 bottom-0 w-1/3 bg-radial from-cyan-500/10 to-transparent pointer-events-none" />
         <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -1702,10 +1900,10 @@ export const RPBView: React.FC<RPBViewProps> = ({
       {/* MODAL DETAIL: PRATINJAU RESMI DOKUMEN KEDINASAN RPB     */}
       {/* ======================================================== */}
       {isDetailOpen && activeRecord && (
-        <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-6">
+        <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-6 no-print print:hidden">
           <div className="bg-white w-full max-w-5xl rounded-2xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[94vh] animate-in fade-in zoom-in-95 duration-150">
             {/* Action Bar */}
-            <div className="px-6 py-3.5 bg-slate-900 text-white flex items-center justify-between shrink-0">
+            <div className="px-6 py-3.5 bg-slate-900 text-white flex items-center justify-between shrink-0 no-print print:hidden">
               <div className="flex items-center gap-2">
                 <Workflow className="w-5 h-5 text-emerald-400" />
                 <span className="font-bold text-sm">Dokumen Rencana Pendampingan Berdiferensiasi (RPB)</span>
@@ -1737,7 +1935,7 @@ export const RPBView: React.FC<RPBViewProps> = ({
             {/* Document Preview */}
             <div className="flex-1 overflow-y-auto p-6 sm:p-8 bg-slate-100">
               <div
-                id="printable-rpb-doc"
+                id="preview-rpb-doc"
                 className="bg-white p-6 sm:p-10 rounded-xl shadow-xs max-w-4xl mx-auto border border-slate-200 text-slate-900 print:shadow-none print:border-none print:p-0"
               >
                 {/* KOP Surat Resmi dengan Dua Logo */}
@@ -1933,5 +2131,17 @@ export const RPBView: React.FC<RPBViewProps> = ({
         </div>
       )}
     </div>
+
+    {/* ======================================================== */}
+    {/* DEDICATED OFFICIAL PRINT CONTAINER (CETAK / PDF)         */}
+    {/* ======================================================== */}
+    {activeRecord && (
+      <div id="printable-rpb-doc" className="hidden print:block text-slate-900 bg-white font-sans w-full">
+        <div className="bg-white p-4 sm:p-8 max-w-4xl mx-auto border-none text-slate-900">
+          {renderOfficialRPBContent(activeRecord)}
+        </div>
+      </div>
+    )}
+  </>
   );
 };

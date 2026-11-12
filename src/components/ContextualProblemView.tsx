@@ -442,7 +442,8 @@ export const ContextualProblemView: React.FC<ContextualProblemViewProps> = ({
   };
 
   return (
-    <div className="space-y-6">
+    <>
+      <div className="space-y-6 print:hidden no-print">
       {/* HEADER SECTION */}
       <div className="bg-gradient-to-r from-amber-950 via-slate-900 to-indigo-950 text-white rounded-2xl p-6 sm:p-8 shadow-xl relative overflow-hidden border border-amber-700/30">
         <div className="absolute right-0 top-0 translate-x-12 -translate-y-8 w-96 h-96 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
@@ -889,10 +890,10 @@ export const ContextualProblemView: React.FC<ContextualProblemViewProps> = ({
 
       {/* DETAIL MODAL */}
       {isDetailOpen && selectedRecordForDetail && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto no-print print:hidden">
           <div className="bg-white w-full max-w-4xl rounded-2xl shadow-2xl border border-slate-200 overflow-hidden my-8 max-h-[90vh] flex flex-col">
             {/* Header */}
-            <div className="p-5 sm:p-6 bg-slate-900 text-white flex items-center justify-between shrink-0">
+            <div className="p-5 sm:p-6 bg-slate-900 text-white flex items-center justify-between shrink-0 no-print print:hidden">
               <div className="space-y-1">
                 <div className="flex items-center gap-2">
                   <span className={`text-xs font-bold px-2.5 py-0.5 rounded-full border ${getSeverityBadge(selectedRecordForDetail.severity)}`}>
@@ -1915,5 +1916,6 @@ export const ContextualProblemView: React.FC<ContextualProblemViewProps> = ({
         </div>
       )}
     </div>
+  </>
   );
 };

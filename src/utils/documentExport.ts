@@ -149,21 +149,33 @@ export function printDocumentElement(
           page-break-after: auto !important;
         }
         th, td {
-          border: 1px solid #000000 !important;
-          padding: 4px 6px !important;
+          border: 1px solid #334155 !important;
+          padding: 6px 8px !important;
           font-size: 8.5pt !important;
-          vertical-align: middle !important;
           -webkit-print-color-adjust: exact !important;
           print-color-adjust: exact !important;
         }
         th {
-          background-color: #f1f5f9 !important;
-          color: #000000 !important;
+          vertical-align: middle !important;
           font-weight: bold !important;
+          -webkit-print-color-adjust: exact !important;
+          print-color-adjust: exact !important;
+        }
+        td {
+          vertical-align: top !important;
+          -webkit-print-color-adjust: exact !important;
+          print-color-adjust: exact !important;
         }
         .print-avoid-break, .signature-block, .avoid-break {
           page-break-inside: avoid !important;
           break-inside: avoid !important;
+        }
+        img {
+          max-height: 80px !important;
+          width: auto !important;
+          object-fit: contain !important;
+          -webkit-print-color-adjust: exact !important;
+          print-color-adjust: exact !important;
         }
         svg {
           display: block !important;
@@ -180,8 +192,8 @@ export function printDocumentElement(
   `);
   doc.close();
 
-  // Allow styles, SVGs, and fonts to render properly before initiating print
-  setTimeout(() => {
+  // Allow styles, images (logos), SVGs, and fonts to render properly before initiating print
+  const triggerPrint = () => {
     try {
       iframe.contentWindow?.focus();
       iframe.contentWindow?.print();
@@ -192,9 +204,32 @@ export function printDocumentElement(
         if (document.body.contains(iframe)) {
           document.body.removeChild(iframe);
         }
-      }, 2500);
+      }, 3000);
     }
-  }, 450);
+  };
+
+  const images = Array.from(doc.images);
+  if (images.length === 0) {
+    setTimeout(triggerPrint, 300);
+  } else {
+    let loadedCount = 0;
+    const checkAll = () => {
+      loadedCount++;
+      if (loadedCount >= images.length) {
+        setTimeout(triggerPrint, 300);
+      }
+    };
+    images.forEach((img) => {
+      if (img.complete) {
+        checkAll();
+      } else {
+        img.onload = checkAll;
+        img.onerror = checkAll;
+      }
+    });
+    // Safety fallback timer if an image hangs
+    setTimeout(triggerPrint, 1200);
+  }
 
   return true;
 }

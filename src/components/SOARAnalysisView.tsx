@@ -45,6 +45,8 @@ import {
   SOARStrategicMatrixStrategy
 } from '../types/inspiro';
 import { exportSOARToWord } from '../utils/storage';
+import { printDocumentElement } from '../utils/documentExport';
+import { DEFAULT_SIDRAP_LOGO, DEFAULT_TUTWURI_LOGO } from '../data/defaultLogos';
 
 interface SOARAnalysisViewProps {
   records: SOARAnalysisRecord[];
@@ -471,7 +473,12 @@ export const SOARAnalysisView: React.FC<SOARAnalysisViewProps> = ({
   };
 
   const handlePrint = () => {
-    window.print();
+    if (!activeRecord) return;
+    const docTitle = `Analisis_SOAR_${(activeRecord.schoolName || 'Sekolah').replace(/[^a-zA-Z0-9]/g, '_')}`;
+    const printed = printDocumentElement('printable-soar-report', docTitle, { orientation: 'portrait' });
+    if (!printed) {
+      window.print();
+    }
   };
 
   // Radar Chart Geometry (4 Axes for S, O, A, R)
@@ -538,7 +545,8 @@ export const SOARAnalysisView: React.FC<SOARAnalysisViewProps> = ({
   };
 
   return (
-    <div className="space-y-6 pb-16">
+    <>
+      <div className="space-y-6 pb-16 print:hidden no-print">
       {/* Top Banner / Header */}
       <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white rounded-2xl p-6 sm:p-8 shadow-xl border border-indigo-900/50 relative overflow-hidden">
         <div className="absolute right-0 top-0 bottom-0 w-96 bg-[radial-gradient(circle_at_top_right,rgba(99,102,241,0.15),transparent_70%)] pointer-events-none" />
@@ -1866,5 +1874,157 @@ export const SOARAnalysisView: React.FC<SOARAnalysisViewProps> = ({
         </div>
       )}
     </div>
+
+    {/* ======================================================== */}
+    {/* DEDICATED OFFICIAL PRINT CONTAINER (CETAK / PDF)         */}
+    {/* ======================================================== */}
+    {activeRecord && (
+      <div id="printable-soar-report" className="hidden print:block text-slate-900 bg-white font-sans w-full">
+        <div className="bg-white p-6 sm:p-10 max-w-4xl mx-auto border-none text-slate-900">
+          {/* KOP Surat Resmi dengan Dua Logo */}
+          <div className="flex items-center justify-between border-b-4 border-double border-slate-900 pb-3 mb-6">
+            <div className="w-20 flex justify-center">
+              <img
+                src={settings.logoUrl || DEFAULT_SIDRAP_LOGO}
+                alt="Logo Kabupaten Sidenreng Rappang"
+                className="h-20 w-auto object-contain"
+              />
+            </div>
+            <div className="flex-1 text-center px-4">
+              <h3 className="text-sm font-bold tracking-wider text-slate-800 uppercase leading-tight">
+                {settings.governmentAgency || 'PEMERINTAH KABUPATEN SIDENRENG RAPPANG'}
+              </h3>
+              <h2 className="text-base font-black tracking-wide text-slate-900 uppercase mt-0.5 leading-tight">
+                DINAS PENDIDIKAN DAN KEBUDAYAAN
+              </h2>
+              <h1 className="text-sm font-extrabold text-indigo-900 uppercase mt-0.5 tracking-tight">
+                PENGAWAS SEKOLAH PEMBINA KABUPATEN SIDENRENG RAPPANG
+              </h1>
+              <p className="text-[10px] text-slate-600 italic mt-1 leading-tight">
+                Alamat: Kompleks SKPD Jl. Harapan Baru No. 1, Pangkajene, Kab. Sidenreng Rappang, Sulawesi Selatan (91611)
+              </p>
+            </div>
+            <div className="w-20 flex justify-center">
+              <img
+                src={settings.logoRightUrl || DEFAULT_TUTWURI_LOGO}
+                alt="Logo Tut Wuri Handayani"
+                className="h-20 w-auto object-contain"
+              />
+            </div>
+          </div>
+
+          {/* Judul Dokumen */}
+          <div className="text-center mb-6">
+            <h2 className="text-base font-extrabold uppercase underline tracking-wide text-slate-900">
+              LAPORAN ANALISIS SOAR & INKUIRI APRESIATIF
+            </h2>
+            <p className="text-xs font-bold text-slate-700 mt-1 uppercase">
+              TRANSFORMASI KEPEMIMPINAN INSTRUKSIONAL BERBASIS KEKUATAN & PELUANG
+            </p>
+          </div>
+
+          {/* Metadata */}
+          <div className="grid grid-cols-2 gap-x-6 gap-y-1.5 text-xs pb-4 mb-5 border-b border-slate-200">
+            <div className="flex gap-2">
+              <span className="w-36 font-bold text-slate-700 shrink-0">Satuan Pendidikan</span>
+              <span className="font-bold">:</span>
+              <span className="text-slate-900 font-semibold">{activeRecord.schoolName}</span>
+            </div>
+            <div className="flex gap-2">
+              <span className="w-36 font-bold text-slate-700 shrink-0">Tahun Pelajaran</span>
+              <span className="font-bold">:</span>
+              <span className="text-slate-900">{activeRecord.academicYear}</span>
+            </div>
+            <div className="flex gap-2">
+              <span className="w-36 font-bold text-slate-700 shrink-0">Tahapan 4D</span>
+              <span className="font-bold">:</span>
+              <span className="text-slate-900 font-semibold">{activeRecord.appreciativeInquiryStage}</span>
+            </div>
+            <div className="flex gap-2">
+              <span className="w-36 font-bold text-slate-700 shrink-0">Tanggal Supervisi</span>
+              <span className="font-bold">:</span>
+              <span className="text-slate-900">{activeRecord.date}</span>
+            </div>
+            <div className="flex gap-2">
+              <span className="w-36 font-bold text-slate-700 shrink-0">Pengawas Pembina</span>
+              <span className="font-bold">:</span>
+              <span className="text-slate-900 font-semibold">{activeRecord.leadSupervisor}</span>
+            </div>
+          </div>
+
+          {/* 4 Kuadran SOAR */}
+          <div className="grid grid-cols-2 gap-4 mb-6">
+            <div className="p-3.5 rounded-xl border border-emerald-300 bg-emerald-50/40">
+              <h4 className="text-xs font-bold text-emerald-900 uppercase mb-2">Strengths (Kekuatan Utama)</h4>
+              <ul className="text-xs space-y-1 list-disc list-inside text-slate-800">
+                {activeRecord.items.filter((i) => i.quadrant === 'strength').map((it) => (
+                  <li key={it.id} className="leading-relaxed">
+                    <strong>[{it.pillar.toUpperCase()}] {it.title}:</strong> {it.description}
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <div className="p-3.5 rounded-xl border border-blue-300 bg-blue-50/40">
+              <h4 className="text-xs font-bold text-blue-900 uppercase mb-2">Opportunities (Peluang Nyata)</h4>
+              <ul className="text-xs space-y-1 list-disc list-inside text-slate-800">
+                {activeRecord.items.filter((i) => i.quadrant === 'opportunity').map((it) => (
+                  <li key={it.id} className="leading-relaxed">
+                    <strong>[{it.pillar.toUpperCase()}] {it.title}:</strong> {it.description}
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <div className="p-3.5 rounded-xl border border-amber-300 bg-amber-50/40">
+              <h4 className="text-xs font-bold text-amber-900 uppercase mb-2">Aspirations (Aspirasi Masa Depan)</h4>
+              <ul className="text-xs space-y-1 list-disc list-inside text-slate-800">
+                {activeRecord.items.filter((i) => i.quadrant === 'aspiration').map((it) => (
+                  <li key={it.id} className="leading-relaxed">
+                    <strong>[{it.pillar.toUpperCase()}] {it.title}:</strong> {it.description}
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <div className="p-3.5 rounded-xl border border-purple-300 bg-purple-50/40">
+              <h4 className="text-xs font-bold text-purple-900 uppercase mb-2">Results (Hasil Nyata &amp; Dampak Terukur)</h4>
+              <ul className="text-xs space-y-1 list-disc list-inside text-slate-800">
+                {activeRecord.items.filter((i) => i.quadrant === 'result').map((it) => (
+                  <li key={it.id} className="leading-relaxed">
+                    <strong>[{it.pillar.toUpperCase()}] {it.title}:</strong> {it.description}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+
+          {/* Catatan Sintesis */}
+          {activeRecord.synthesisNotes && (
+            <div className="mb-6 p-3 rounded-lg bg-slate-50 border-l-4 border-indigo-600 text-xs">
+              <strong className="text-slate-800">Catatan Refleksi Pengawas Pembina:</strong>
+              <p className="text-slate-600 italic mt-0.5 leading-relaxed">{activeRecord.synthesisNotes}</p>
+            </div>
+          )}
+
+          {/* Signatures */}
+          <div className="grid grid-cols-2 gap-8 pt-6 text-center text-xs text-slate-800 print:break-inside-avoid print-avoid-break">
+            <div>
+              <p>Mengetahui / Menyetujui,</p>
+              <p className="font-semibold text-slate-600">Kepala Satuan Pendidikan</p>
+              <div className="h-16" />
+              <p className="font-bold underline text-slate-900">{settings.pengawasPembinaName || 'Kepala Sekolah'}</p>
+              <p className="text-slate-500 text-[11px]">NIP. {settings.pengawasPembinaNip || '-'}</p>
+            </div>
+
+            <div>
+              <p>{settings.schoolCity || 'Pangkajene Sidenreng'}, {activeRecord.date}</p>
+              <p className="font-semibold text-slate-600">Pengawas Sekolah Pembina</p>
+              <div className="h-16" />
+              <p className="font-bold underline text-slate-900">{activeRecord.leadSupervisor || settings.supervisorName || 'HERIANSYAH, S.Si., S.Pd., M.Pd'}</p>
+              <p className="text-slate-500 text-[11px]">NIP. {settings.supervisorNip || '19830819 201001 1 002'}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    )}
+  </>
   );
 };
