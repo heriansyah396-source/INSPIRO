@@ -39,6 +39,7 @@ import {
   ContextualProblemRecord,
   ContextualProblemCategory,
   ContextualDataSource,
+  RootCauseAspect,
   CONTEXTUAL_CATEGORY_LABELS,
   CONTEXTUAL_DATA_SOURCE_LABELS,
   Teacher,
@@ -47,6 +48,13 @@ import {
 import { UserRoleProfile } from '../services/firebase';
 import { exportContextualProblemToWord } from '../utils/contextualProblemExport';
 import { printDocumentElement } from '../utils/documentExport';
+import {
+  CONTEXTUAL_SCENARIOS,
+  generateFullContextualDiagnosisAI,
+  generateFiveWhysOnly,
+  generateRootCausesOnly,
+  generateInterventionOnly
+} from '../services/aiContextualDiagnosisGenerator';
 
 interface ContextualProblemViewProps {
   records: ContextualProblemRecord[];
@@ -229,6 +237,174 @@ export const ContextualProblemView: React.FC<ContextualProblemViewProps> = ({
     setFormRecord(JSON.parse(JSON.stringify(rec)));
     setActiveFormTab('identity_data');
     setIsFormModalOpen(true);
+  };
+
+  // AI States & Handlers
+  const [selectedScenarioId, setSelectedScenarioId] = useState<string>('pasivitas_murid');
+  const [isGeneratingAI, setIsGeneratingAI] = useState(false);
+
+  // Apply selected scenario to form
+  const handleApplyScenario = (scenarioId: string) => {
+    if (!formRecord) return;
+    const scenario = CONTEXTUAL_SCENARIOS.find((s) => s.id === scenarioId) || CONTEXTUAL_SCENARIOS[0];
+
+    const customizedEvidence = formRecord.subject
+      ? scenario.baselineDataEvidence.replace(/matematika|bahasa indonesia|ipa/gi, formRecord.subject)
+      : scenario.baselineDataEvidence;
+
+    setFormRecord({
+      ...formRecord,
+      problemCategory: scenario.problemCategory,
+      problemTitle: scenario.problemTitle,
+      severity: scenario.severity,
+      dataSources: [...scenario.dataSources],
+      baselineDataEvidence: customizedEvidence,
+      fiveWhys: { ...scenario.fiveWhys },
+      rootCauses: { ...scenario.rootCauses },
+      recommendedIntervention: {
+        supervisionAction: scenario.recommendedIntervention.supervisionAction,
+        targetTimeline: scenario.recommendedIntervention.targetTimeline,
+        actionDetails: [...scenario.recommendedIntervention.actionDetails],
+        linkedFeature: scenario.recommendedIntervention.linkedFeature
+      }
+    });
+
+    showToast('✨ Contoh Panduan AI Berhasil Diterapkan!', `Memuat skenario: ${scenario.name}`, 'success');
+  };
+
+  // Generate with AI (Full)
+  const handleAIGenerateFull = async () => {
+    if (!formRecord) return;
+    setIsGeneratingAI(true);
+    try {
+      const generated = await generateFullContextualDiagnosisAI({
+        teacherName: formRecord.teacherName,
+        subject: formRecord.subject,
+        gradeClass: formRecord.gradeClass,
+        schoolName: formRecord.schoolName,
+        problemCategory: formRecord.problemCategory,
+        problemTitle: formRecord.problemTitle,
+        baselineDataEvidence: formRecord.baselineDataEvidence
+      });
+
+      setFormRecord({
+        ...formRecord,
+        problemCategory: generated.problemCategory,
+        problemTitle: generated.problemTitle,
+        severity: generated.severity,
+        dataSources: [...generated.dataSources],
+        baselineDataEvidence: generated.baselineDataEvidence,
+        fiveWhys: { ...generated.fiveWhys },
+        rootCauses: { ...generated.rootCauses },
+        recommendedIntervention: {
+          supervisionAction: generated.recommendedIntervention.supervisionAction,
+          targetTimeline: generated.recommendedIntervention.targetTimeline,
+          actionDetails: [...generated.recommendedIntervention.actionDetails],
+          linkedFeature: generated.recommendedIntervention.linkedFeature
+        }
+      });
+
+      showToast('✨ Diagnosis AI Lengkap Berhasil Dibuat!', 'Seluruh tab telah terisi contoh panduan analisis terpadu.', 'success');
+    } catch (err) {
+      console.error(err);
+      showToast('Info Panduan', 'Menggunakan contoh panduan kurikulum terstandar.', 'info');
+    } finally {
+      setIsGeneratingAI(false);
+    }
+  };
+
+  // Generate 3-Whys only
+  const handleAIGenerateFiveWhys = () => {
+    if (!formRecord) return;
+    const fw = generateFiveWhysOnly(formRecord.problemTitle, formRecord.problemCategory);
+    setFormRecord({
+      ...formRecord,
+      fiveWhys: { ...fw }
+    });
+    showToast('✨ Rantai 3-Whys Berhasil Diisi!', 'Akar terdalam telah dirumuskan secara bertingkat.', 'success');
+  };
+
+  // Generate single why
+  const handleAIGenerateSingleWhy = (field: 'why1' | 'why2' | 'why3') => {
+    if (!formRecord) return;
+    const fw = generateFiveWhysOnly(formRecord.problemTitle, formRecord.problemCategory);
+    setFormRecord({
+      ...formRecord,
+      fiveWhys: {
+        ...formRecord.fiveWhys,
+        [field]: fw[field]
+      }
+    });
+    showToast(`✨ Butir Mengapa ke-${field.replace('why', '')} Terisi!`, 'Diperbarui dengan contoh panduan AI.', 'success');
+  };
+
+  // Generate 5 Dimensions only
+  const handleAIGenerateRootCauses = () => {
+    if (!formRecord) return;
+    const rc = generateRootCausesOnly(formRecord.problemTitle, formRecord.problemCategory);
+    setFormRecord({
+      ...formRecord,
+      rootCauses: { ...rc }
+    });
+    showToast('✨ 5 Dimensi Penyebab Berhasil Diisi!', 'Aspek metode, modul, kelas, murid, & sarana terisi lengkap.', 'success');
+  };
+
+  // Generate single root cause
+  const handleAIGenerateSingleRootCause = (key: keyof RootCauseAspect, label: string) => {
+    if (!formRecord) return;
+    const rc = generateRootCausesOnly(formRecord.problemTitle, formRecord.problemCategory);
+    setFormRecord({
+      ...formRecord,
+      rootCauses: {
+        ...formRecord.rootCauses,
+        [key]: rc[key]
+      }
+    });
+    showToast(`✨ Aspek ${label} Terisi!`, 'Diperbarui dengan contoh panduan AI.', 'success');
+  };
+
+  // Generate Baseline Data only
+  const handleAIGenerateBaselineData = () => {
+    if (!formRecord) return;
+    const scenario = CONTEXTUAL_SCENARIOS.find((s) => s.problemCategory === formRecord.problemCategory) || CONTEXTUAL_SCENARIOS[0];
+    const customizedEvidence = formRecord.subject
+      ? scenario.baselineDataEvidence.replace(/matematika|bahasa indonesia|ipa/gi, formRecord.subject)
+      : scenario.baselineDataEvidence;
+
+    setFormRecord({
+      ...formRecord,
+      dataSources: Array.from(new Set([...formRecord.dataSources, ...scenario.dataSources])),
+      baselineDataEvidence: customizedEvidence
+    });
+    showToast('✨ Fakta Lapangan Berhasil Diisi!', 'Data observasi awal dan sumber bukti telah diperbarui.', 'success');
+  };
+
+  // Generate Problem Title & Urgency
+  const handleAIGenerateProblemTitle = () => {
+    if (!formRecord) return;
+    const scenario = CONTEXTUAL_SCENARIOS.find((s) => s.problemCategory === formRecord.problemCategory) || CONTEXTUAL_SCENARIOS[0];
+    setFormRecord({
+      ...formRecord,
+      problemTitle: scenario.problemTitle,
+      severity: scenario.severity
+    });
+    showToast('✨ Rekomendasi Judul & Urgensi Diperbarui!', 'Rumusan masalah kontekstual tajam dan terfokus.', 'success');
+  };
+
+  // Generate Intervention only
+  const handleAIGenerateIntervention = () => {
+    if (!formRecord) return;
+    const itv = generateInterventionOnly(formRecord.problemTitle, formRecord.problemCategory);
+    setFormRecord({
+      ...formRecord,
+      recommendedIntervention: {
+        supervisionAction: itv.supervisionAction,
+        targetTimeline: itv.targetTimeline,
+        actionDetails: [...itv.actionDetails],
+        linkedFeature: itv.linkedFeature
+      }
+    });
+    showToast('✨ Resep Solusi Supervisi Terarah Dirumuskan!', `Tindakan: ${itv.supervisionAction} dengan langkah konkret siap dijalankan.`, 'success');
   };
 
   // Save Record
@@ -936,6 +1112,48 @@ export const ContextualProblemView: React.FC<ContextualProblemViewProps> = ({
               </button>
             </div>
 
+            {/* QUICK AI SCENARIO GUIDE & AUTO-FILL ASSISTANT BANNER */}
+            <div className="bg-gradient-to-r from-amber-50 via-amber-100/70 to-orange-50 border-b border-amber-200 px-4 py-2.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs shrink-0">
+              <div className="flex items-center gap-2">
+                <span className="p-1 rounded-md bg-amber-600 text-white shadow-xs">
+                  <Sparkles className={`w-3.5 h-3.5 ${isGeneratingAI ? 'animate-spin' : ''}`} />
+                </span>
+                <div>
+                  <span className="font-bold text-amber-950">Panduan Contoh Pengisian AI: </span>
+                  <span className="text-amber-800 hidden md:inline">Pilih contoh kasus nyata supervisi sebagai acuan pengisian otomatis formulir</span>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 w-full sm:w-auto">
+                <select
+                  value={selectedScenarioId}
+                  onChange={(e) => {
+                    setSelectedScenarioId(e.target.value);
+                    handleApplyScenario(e.target.value);
+                  }}
+                  className="px-2.5 py-1.5 bg-white border border-amber-300 rounded-lg text-xs font-bold text-amber-950 shadow-xs focus:ring-2 focus:ring-amber-500 max-w-full sm:max-w-xs cursor-pointer"
+                  title="Pilih contoh skenario masalah nyata"
+                >
+                  {CONTEXTUAL_SCENARIOS.map((sc) => (
+                    <option key={sc.id} value={sc.id}>
+                      {sc.name}
+                    </option>
+                  ))}
+                </select>
+
+                <button
+                  type="button"
+                  onClick={() => handleAIGenerateFull()}
+                  disabled={isGeneratingAI}
+                  className="px-3 py-1.5 bg-amber-600 hover:bg-amber-700 disabled:opacity-50 text-white rounded-lg font-bold text-xs shadow-xs flex items-center gap-1.5 shrink-0 transition cursor-pointer"
+                  title="Terapkan analisis diagnosis otomatis dengan AI"
+                >
+                  <Sparkles className={`w-3.5 h-3.5 ${isGeneratingAI ? 'animate-spin' : ''}`} />
+                  <span>{isGeneratingAI ? 'Meracik AI...' : 'Isi Semua dengan AI'}</span>
+                </button>
+              </div>
+            </div>
+
             {/* Modal Body */}
             <div className="p-6 overflow-y-auto space-y-6 text-sm">
               {/* TAB 1: DATA AWAL & FAKTA */}
@@ -1050,11 +1268,22 @@ export const ContextualProblemView: React.FC<ContextualProblemViewProps> = ({
                     </div>
                   </div>
 
-                  {/* Baseline evidence textarea */}
+                  {/* Baseline evidence textarea with AI auto-fill */}
                   <div>
-                    <label className="block text-xs font-semibold text-slate-700 mb-1">
-                      Uraian Data Awal & Fakta Konkret Lapangan
-                    </label>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="text-xs font-semibold text-slate-700">
+                        Uraian Data Awal & Fakta Konkret Lapangan
+                      </label>
+                      <button
+                        type="button"
+                        onClick={handleAIGenerateBaselineData}
+                        className="px-2.5 py-1 bg-amber-100 hover:bg-amber-200 text-amber-950 border border-amber-300 rounded-lg text-[11px] font-bold flex items-center gap-1 transition cursor-pointer"
+                        title="Isi contoh fakta konkret lapangan dengan AI"
+                      >
+                        <Sparkles className="w-3 h-3 text-amber-700" />
+                        <span>Isi Fakta Lapangan (AI)</span>
+                      </button>
+                    </div>
                     <textarea
                       rows={4}
                       value={formRecord.baselineDataEvidence}
@@ -1089,9 +1318,20 @@ export const ContextualProblemView: React.FC<ContextualProblemViewProps> = ({
                   </div>
 
                   <div>
-                    <label className="block text-xs font-semibold text-slate-700 mb-1">
-                      Judul / Pernyataan Masalah Kontekstual
-                    </label>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="text-xs font-semibold text-slate-700">
+                        Judul / Pernyataan Masalah Kontekstual
+                      </label>
+                      <button
+                        type="button"
+                        onClick={handleAIGenerateProblemTitle}
+                        className="px-2.5 py-1 bg-amber-100 hover:bg-amber-200 text-amber-950 border border-amber-300 rounded-lg text-[11px] font-bold flex items-center gap-1 transition cursor-pointer"
+                        title="Rekomendasikan rumusan judul masalah dengan AI"
+                      >
+                        <Sparkles className="w-3 h-3 text-amber-700" />
+                        <span>Rekomendasi Judul (AI)</span>
+                      </button>
+                    </div>
                     <input
                       type="text"
                       value={formRecord.problemTitle}
@@ -1143,14 +1383,38 @@ export const ContextualProblemView: React.FC<ContextualProblemViewProps> = ({
               {activeFormTab === 'root_causes' && (
                 <div className="space-y-5">
                   <div className="p-4 bg-amber-50 rounded-xl border border-amber-200 space-y-3">
-                    <h4 className="text-xs font-bold text-amber-950 uppercase">
-                      Rantai Analisis "3-Whys" (Menemukan Akar Terdalam)
-                    </h4>
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                      <h4 className="text-xs font-bold text-amber-950 uppercase flex items-center gap-1.5">
+                        <Target className="w-4 h-4 text-amber-700" />
+                        <span>Rantai Analisis "3-Whys" (Menemukan Akar Terdalam)</span>
+                      </h4>
+                      <button
+                        type="button"
+                        onClick={handleAIGenerateFiveWhys}
+                        className="px-2.5 py-1 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-[11px] font-bold flex items-center gap-1 shadow-xs transition self-start sm:self-auto cursor-pointer"
+                        title="Buat rantai 3-Whys otomatis dengan AI"
+                      >
+                        <Sparkles className="w-3 h-3 text-amber-200" />
+                        <span>Isi Rantai 3-Whys (AI)</span>
+                      </button>
+                    </div>
+
                     <div className="space-y-2">
                       <div>
-                        <label className="block text-[11px] font-semibold text-slate-700 mb-1">
-                          1. Mengapa masalah di atas tampak terjadi di kelas?
-                        </label>
+                        <div className="flex items-center justify-between mb-1">
+                          <label className="text-[11px] font-semibold text-slate-700">
+                            1. Mengapa masalah di atas tampak terjadi di kelas?
+                          </label>
+                          <button
+                            type="button"
+                            onClick={() => handleAIGenerateSingleWhy('why1')}
+                            className="text-[10px] text-amber-800 hover:text-amber-950 font-bold bg-amber-100 hover:bg-amber-200 border border-amber-200 px-1.5 py-0.5 rounded flex items-center gap-1 transition cursor-pointer"
+                            title="Generate butir 1 dengan AI"
+                          >
+                            <Sparkles className="w-2.5 h-2.5 text-amber-700" />
+                            <span>AI Contoh</span>
+                          </button>
+                        </div>
                         <input
                           type="text"
                           value={formRecord.fiveWhys.why1}
@@ -1164,9 +1428,20 @@ export const ContextualProblemView: React.FC<ContextualProblemViewProps> = ({
                         />
                       </div>
                       <div>
-                        <label className="block text-[11px] font-semibold text-slate-700 mb-1">
-                          2. Mengapa kondisi pertama tersebut terjadi?
-                        </label>
+                        <div className="flex items-center justify-between mb-1">
+                          <label className="text-[11px] font-semibold text-slate-700">
+                            2. Mengapa kondisi pertama tersebut terjadi?
+                          </label>
+                          <button
+                            type="button"
+                            onClick={() => handleAIGenerateSingleWhy('why2')}
+                            className="text-[10px] text-amber-800 hover:text-amber-950 font-bold bg-amber-100 hover:bg-amber-200 border border-amber-200 px-1.5 py-0.5 rounded flex items-center gap-1 transition cursor-pointer"
+                            title="Generate butir 2 dengan AI"
+                          >
+                            <Sparkles className="w-2.5 h-2.5 text-amber-700" />
+                            <span>AI Contoh</span>
+                          </button>
+                        </div>
                         <input
                           type="text"
                           value={formRecord.fiveWhys.why2}
@@ -1180,9 +1455,20 @@ export const ContextualProblemView: React.FC<ContextualProblemViewProps> = ({
                         />
                       </div>
                       <div>
-                        <label className="block text-[11px] font-semibold text-amber-900 mb-1">
-                          3. Mengapa kondisi kedua terjadi? (Akar Utama yang Perlu Dibenahi Pengawas)
-                        </label>
+                        <div className="flex items-center justify-between mb-1">
+                          <label className="text-[11px] font-semibold text-amber-900">
+                            3. Mengapa kondisi kedua terjadi? (Akar Utama yang Perlu Dibenahi Pengawas)
+                          </label>
+                          <button
+                            type="button"
+                            onClick={() => handleAIGenerateSingleWhy('why3')}
+                            className="text-[10px] text-amber-900 hover:text-amber-950 font-bold bg-amber-200 hover:bg-amber-300 border border-amber-300 px-1.5 py-0.5 rounded flex items-center gap-1 transition cursor-pointer"
+                            title="Generate butir 3 (Akar Utama) dengan AI"
+                          >
+                            <Sparkles className="w-2.5 h-2.5 text-amber-800" />
+                            <span>AI Akar Utama</span>
+                          </button>
+                        </div>
                         <input
                           type="text"
                           value={formRecord.fiveWhys.why3}
@@ -1200,14 +1486,37 @@ export const ContextualProblemView: React.FC<ContextualProblemViewProps> = ({
 
                   {/* 5 Dimensi Akar Masalah Detail */}
                   <div className="space-y-3">
-                    <h4 className="text-xs font-bold text-slate-800 uppercase">
-                      Pemetaan 5 Dimensi Penyebab Kontekstual
-                    </h4>
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                      <h4 className="text-xs font-bold text-slate-800 uppercase flex items-center gap-1.5">
+                        <Layers className="w-4 h-4 text-amber-600" />
+                        <span>Pemetaan 5 Dimensi Penyebab Kontekstual</span>
+                      </h4>
+                      <button
+                        type="button"
+                        onClick={handleAIGenerateRootCauses}
+                        className="px-2.5 py-1 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-[11px] font-bold flex items-center gap-1 shadow-xs transition self-start sm:self-auto cursor-pointer"
+                        title="Isi 5 dimensi penyebab otomatis dengan AI"
+                      >
+                        <Sparkles className="w-3 h-3 text-amber-200" />
+                        <span>Isi 5 Dimensi (AI)</span>
+                      </button>
+                    </div>
+
                     <div className="space-y-3 text-xs">
                       <div>
-                        <label className="block font-semibold text-slate-700 mb-0.5">
-                          1. Dari Sisi Metode & Pedagogi Guru
-                        </label>
+                        <div className="flex items-center justify-between mb-0.5">
+                          <label className="font-semibold text-slate-700">
+                            1. Dari Sisi Metode &amp; Pedagogi Guru
+                          </label>
+                          <button
+                            type="button"
+                            onClick={() => handleAIGenerateSingleRootCause('aspekMetodeGuru', 'Metode & Pedagogi')}
+                            className="text-[10px] text-amber-800 hover:text-amber-950 font-semibold bg-amber-50 hover:bg-amber-100 border border-amber-200 px-1.5 py-0.5 rounded flex items-center gap-1 transition cursor-pointer"
+                          >
+                            <Sparkles className="w-2.5 h-2.5 text-amber-600" />
+                            <span>AI Contoh</span>
+                          </button>
+                        </div>
                         <textarea
                           rows={2}
                           value={formRecord.rootCauses.aspekMetodeGuru}
@@ -1221,9 +1530,19 @@ export const ContextualProblemView: React.FC<ContextualProblemViewProps> = ({
                         />
                       </div>
                       <div>
-                        <label className="block font-semibold text-slate-700 mb-0.5">
-                          2. Dari Sisi Kesiapan Perencanaan & Modul Ajar
-                        </label>
+                        <div className="flex items-center justify-between mb-0.5">
+                          <label className="font-semibold text-slate-700">
+                            2. Dari Sisi Kesiapan Perencanaan &amp; Modul Ajar
+                          </label>
+                          <button
+                            type="button"
+                            onClick={() => handleAIGenerateSingleRootCause('aspekPerencanaanModul', 'Perencanaan & Modul')}
+                            className="text-[10px] text-amber-800 hover:text-amber-950 font-semibold bg-amber-50 hover:bg-amber-100 border border-amber-200 px-1.5 py-0.5 rounded flex items-center gap-1 transition cursor-pointer"
+                          >
+                            <Sparkles className="w-2.5 h-2.5 text-amber-600" />
+                            <span>AI Contoh</span>
+                          </button>
+                        </div>
                         <textarea
                           rows={2}
                           value={formRecord.rootCauses.aspekPerencanaanModul}
@@ -1237,9 +1556,19 @@ export const ContextualProblemView: React.FC<ContextualProblemViewProps> = ({
                         />
                       </div>
                       <div>
-                        <label className="block font-semibold text-slate-700 mb-0.5">
-                          3. Dari Sisi Pengelolaan Kelas & Alokasi Waktu
-                        </label>
+                        <div className="flex items-center justify-between mb-0.5">
+                          <label className="font-semibold text-slate-700">
+                            3. Dari Sisi Pengelolaan Kelas &amp; Alokasi Waktu
+                          </label>
+                          <button
+                            type="button"
+                            onClick={() => handleAIGenerateSingleRootCause('aspekPengelolaanKelas', 'Pengelolaan Kelas')}
+                            className="text-[10px] text-amber-800 hover:text-amber-950 font-semibold bg-amber-50 hover:bg-amber-100 border border-amber-200 px-1.5 py-0.5 rounded flex items-center gap-1 transition cursor-pointer"
+                          >
+                            <Sparkles className="w-2.5 h-2.5 text-amber-600" />
+                            <span>AI Contoh</span>
+                          </button>
+                        </div>
                         <textarea
                           rows={2}
                           value={formRecord.rootCauses.aspekPengelolaanKelas}
@@ -1253,9 +1582,19 @@ export const ContextualProblemView: React.FC<ContextualProblemViewProps> = ({
                         />
                       </div>
                       <div>
-                        <label className="block font-semibold text-slate-700 mb-0.5">
-                          4. Dari Sisi Karakteristik & Kesiapan Murid
-                        </label>
+                        <div className="flex items-center justify-between mb-0.5">
+                          <label className="font-semibold text-slate-700">
+                            4. Dari Sisi Karakteristik &amp; Kesiapan Murid
+                          </label>
+                          <button
+                            type="button"
+                            onClick={() => handleAIGenerateSingleRootCause('aspekKarakteristikMurid', 'Karakteristik Murid')}
+                            className="text-[10px] text-amber-800 hover:text-amber-950 font-semibold bg-amber-50 hover:bg-amber-100 border border-amber-200 px-1.5 py-0.5 rounded flex items-center gap-1 transition cursor-pointer"
+                          >
+                            <Sparkles className="w-2.5 h-2.5 text-amber-600" />
+                            <span>AI Contoh</span>
+                          </button>
+                        </div>
                         <textarea
                           rows={2}
                           value={formRecord.rootCauses.aspekKarakteristikMurid}
@@ -1269,9 +1608,19 @@ export const ContextualProblemView: React.FC<ContextualProblemViewProps> = ({
                         />
                       </div>
                       <div>
-                        <label className="block font-semibold text-slate-700 mb-0.5">
-                          5. Dari Sisi Sarana & Daya Dukung
-                        </label>
+                        <div className="flex items-center justify-between mb-0.5">
+                          <label className="font-semibold text-slate-700">
+                            5. Dari Sisi Sarana &amp; Daya Dukung
+                          </label>
+                          <button
+                            type="button"
+                            onClick={() => handleAIGenerateSingleRootCause('aspekDayaDukung', 'Sarana & Daya Dukung')}
+                            className="text-[10px] text-amber-800 hover:text-amber-950 font-semibold bg-amber-50 hover:bg-amber-100 border border-amber-200 px-1.5 py-0.5 rounded flex items-center gap-1 transition cursor-pointer"
+                          >
+                            <Sparkles className="w-2.5 h-2.5 text-amber-600" />
+                            <span>AI Contoh</span>
+                          </button>
+                        </div>
                         <textarea
                           rows={2}
                           value={formRecord.rootCauses.aspekDayaDukung}
@@ -1292,6 +1641,27 @@ export const ContextualProblemView: React.FC<ContextualProblemViewProps> = ({
               {/* TAB 4: RESEP SOLUSI SUPERVISI */}
               {activeFormTab === 'intervention' && (
                 <div className="space-y-4">
+                  <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <div>
+                      <h4 className="text-xs font-bold text-amber-950 uppercase flex items-center gap-1.5">
+                        <Target className="w-4 h-4 text-amber-700" />
+                        <span>Resep Tindakan Supervisi Terarah</span>
+                      </h4>
+                      <p className="text-[11px] text-amber-800">
+                        Rumusan solusi berdasarkan akar masalah 3-Whys &amp; 5 Dimensi
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleAIGenerateIntervention}
+                      className="px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 shadow-xs transition self-start sm:self-auto cursor-pointer"
+                      title="Racik resep tindakan supervisi terarah otomatis dengan AI"
+                    >
+                      <Sparkles className="w-3.5 h-3.5 text-amber-200" />
+                      <span>Racik Resep Solusi (AI)</span>
+                    </button>
+                  </div>
+
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-xs font-semibold text-slate-700 mb-1">
