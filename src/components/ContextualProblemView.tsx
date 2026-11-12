@@ -1893,25 +1893,135 @@ export const ContextualProblemView: React.FC<ContextualProblemViewProps> = ({
             </ol>
           </div>
 
-          {/* Signatures */}
-          <div className="grid grid-cols-3 text-center text-xs mt-8">
-            <div>
-              Mengetahui,<br />
-              Kepala Satuan Pendidikan<br /><br /><br /><br />
-              <strong>{selectedRecordForDetail.headmasterName || settings.pengawasPembinaName || 'Dra. Hj. Nurhasanah, M.Pd.'}</strong><br />
-              NIP. {selectedRecordForDetail.headmasterNip || settings.pengawasPembinaNip || '19720815 199802 2 003'}
-            </div>
-            <div>
-              Guru Sasaran / Dampingan<br /><br /><br /><br />
-              <strong>{selectedRecordForDetail.teacherName || 'Perwakilan Guru'}</strong><br />
-              NIP. {selectedRecordForDetail.teacherNip || '-'}
-            </div>
-            <div>
-              {settings.schoolCity || 'Kabupaten Sidenreng Rappang'}, {selectedRecordForDetail.date}<br />
-              Pengawas Sekolah Pembina<br /><br /><br /><br />
-              <strong>{selectedRecordForDetail.assessorName}</strong><br />
-              NIP. {selectedRecordForDetail.assessorNip}
-            </div>
+          {/* Tanda Tangan Resmi Tripartit Standar Kedinasan */}
+          <div className="mt-8 pt-4 border-t border-slate-300 print:border-black/30 break-inside-avoid print:break-inside-avoid">
+            <table className="sig-table w-full text-xs text-slate-900" style={{ borderCollapse: 'collapse', border: 'none', width: '100%' }}>
+              <tbody>
+                {/* Baris 1: Jabatan & Titimangsa */}
+                <tr className="align-top" style={{ border: 'none' }}>
+                  <td className="w-1/3 text-center pb-1 no-border" style={{ border: 'none', padding: '0 6px', verticalAlign: 'top' }}>
+                    <p className="text-slate-700 leading-tight">Mengetahui,</p>
+                    <p className="font-bold text-slate-900 leading-tight mt-0.5">Kepala Satuan Pendidikan</p>
+                    <p className="text-[10px] text-slate-500 italic leading-tight">(Penanggung Jawab Sekolah)</p>
+                  </td>
+
+                  <td className="w-1/3 text-center pb-1 no-border" style={{ border: 'none', padding: '0 6px', verticalAlign: 'top' }}>
+                    <p className="text-slate-700 leading-tight">Guru Sasaran / Dampingan,</p>
+                    <p className="font-bold text-slate-900 leading-tight mt-0.5">{selectedRecordForDetail.schoolName}</p>
+                    <p className="text-[10px] text-slate-500 italic leading-tight">(Pendidik Terobservasi)</p>
+                  </td>
+
+                  <td className="w-1/3 text-center pb-1 no-border" style={{ border: 'none', padding: '0 6px', verticalAlign: 'top' }}>
+                    <p className="text-slate-700 leading-tight">
+                      {settings.schoolCity || 'Kabupaten Sidenreng Rappang'}, {selectedRecordForDetail.date}
+                    </p>
+                    <p className="font-bold text-slate-900 leading-tight mt-0.5">
+                      Pengawas Sekolah Pembina
+                    </p>
+                    <p className="text-[10px] text-slate-500 italic leading-tight">(Asesor Analisis Masalah)</p>
+                  </td>
+                </tr>
+
+                {/* Baris 2: KOTAK RESMI TEMPAT TANDA TANGAN & STEMPEL (TINGGI 72PX) */}
+                <tr style={{ height: '78px', border: 'none' }}>
+                  <td className="no-border" style={{ height: '78px', minHeight: '78px', textAlign: 'center', verticalAlign: 'middle', padding: '4px 6px', border: 'none' }}>
+                    <div className="official-sig-box" style={{
+                      height: '70px',
+                      minHeight: '70px',
+                      border: '1.5px dashed #475569',
+                      borderRadius: '6px',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      backgroundColor: '#f8fafc',
+                      margin: '4px 6px',
+                      padding: '4px 6px',
+                      boxSizing: 'border-box'
+                    }}>
+                      <span style={{ fontSize: '9.5px', color: '#1e293b', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                        TEMPAT TANDA TANGAN &amp; CAP STEMPEL
+                      </span>
+                      <span style={{ fontSize: '8px', color: '#64748b', fontStyle: 'italic', marginTop: '2px' }}>
+                        (Kepala Satuan Pendidikan)
+                      </span>
+                    </div>
+                  </td>
+
+                  <td className="no-border" style={{ height: '78px', minHeight: '78px', textAlign: 'center', verticalAlign: 'middle', padding: '4px 6px', border: 'none' }}>
+                    <div className="official-sig-box" style={{
+                      height: '70px',
+                      minHeight: '70px',
+                      border: '1.5px dashed #475569',
+                      borderRadius: '6px',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      backgroundColor: '#f8fafc',
+                      margin: '4px 6px',
+                      padding: '4px 6px',
+                      boxSizing: 'border-box'
+                    }}>
+                      <span style={{ fontSize: '9.5px', color: '#1e293b', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                        TEMPAT TANDA TANGAN
+                      </span>
+                      <span style={{ fontSize: '8px', color: '#64748b', fontStyle: 'italic', marginTop: '2px' }}>
+                        (Guru Sasaran / Dampingan)
+                      </span>
+                    </div>
+                  </td>
+
+                  <td className="no-border" style={{ height: '78px', minHeight: '78px', textAlign: 'center', verticalAlign: 'middle', padding: '4px 6px', border: 'none' }}>
+                    <div className="official-sig-box" style={{
+                      height: '70px',
+                      minHeight: '70px',
+                      border: '1.5px dashed #0284c7',
+                      borderRadius: '6px',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      backgroundColor: '#f0f9ff',
+                      margin: '4px 6px',
+                      padding: '4px 6px',
+                      boxSizing: 'border-box'
+                    }}>
+                      <span style={{ fontSize: '9.5px', color: '#0369a1', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                        TEMPAT TANDA TANGAN &amp; CAP PENGAWAS
+                      </span>
+                      <span style={{ fontSize: '8px', color: '#0284c7', fontStyle: 'italic', marginTop: '2px' }}>
+                        (Pengawas Sekolah Pembina)
+                      </span>
+                    </div>
+                  </td>
+                </tr>
+
+                {/* Baris 3: Nama & NIP */}
+                <tr className="align-top" style={{ border: 'none' }}>
+                  <td className="text-center pt-1 no-border" style={{ border: 'none', padding: '2px 6px' }}>
+                    <p className="font-bold underline text-slate-900 text-xs uppercase tracking-wide">
+                      {selectedRecordForDetail.headmasterName || settings.pengawasPembinaName || 'Dra. Hj. Nurhasanah, M.Pd.'}
+                    </p>
+                    <p className="text-[11px] text-slate-600 mt-0.5">NIP. {selectedRecordForDetail.headmasterNip || settings.pengawasPembinaNip || '19720815 199802 2 003'}</p>
+                  </td>
+
+                  <td className="text-center pt-1 no-border" style={{ border: 'none', padding: '2px 6px' }}>
+                    <p className="font-bold underline text-slate-900 text-xs uppercase tracking-wide">
+                      {selectedRecordForDetail.teacherName || 'Perwakilan Guru'}
+                    </p>
+                    <p className="text-[11px] text-slate-600 mt-0.5">NIP. {selectedRecordForDetail.teacherNip || '-'}</p>
+                  </td>
+
+                  <td className="text-center pt-1 no-border" style={{ border: 'none', padding: '2px 6px' }}>
+                    <p className="font-bold underline text-slate-900 text-xs uppercase tracking-wide">
+                      {selectedRecordForDetail.assessorName}
+                    </p>
+                    <p className="text-[11px] text-slate-600 mt-0.5">NIP. {selectedRecordForDetail.assessorNip}</p>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
           </div>
         </div>
       )}

@@ -149,9 +149,31 @@ export function printDocumentElement(
           page-break-after: auto !important;
         }
         th, td {
-          border: 1px solid #334155 !important;
+          border: 1px solid #334155;
           padding: 6px 8px !important;
           font-size: 8.5pt !important;
+          -webkit-print-color-adjust: exact !important;
+          print-color-adjust: exact !important;
+        }
+        table.sig-table, table.sig-table tr, table.sig-table td,
+        .sig-table, .sig-table tr, .sig-table td,
+        td.no-border, tr.no-border {
+          border: none !important;
+          background: transparent !important;
+        }
+        .official-sig-box, .maturity-sig-box {
+          height: 70px !important;
+          min-height: 70px !important;
+          border: 1.5px dashed #475569 !important;
+          border-radius: 6px !important;
+          background-color: #f8fafc !important;
+          display: flex !important;
+          flex-direction: column !important;
+          align-items: center !important;
+          justify-content: center !important;
+          margin: 4px 6px !important;
+          padding: 4px 6px !important;
+          box-sizing: border-box !important;
           -webkit-print-color-adjust: exact !important;
           print-color-adjust: exact !important;
         }

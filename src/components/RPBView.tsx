@@ -689,24 +689,99 @@ export const RPBView: React.FC<RPBViewProps> = ({
           </div>
         )}
 
-        {/* Signature Dual */}
-        <div className="grid grid-cols-2 gap-8 pt-6 text-center text-xs text-slate-800 print:break-inside-avoid print-avoid-break">
-          <div>
-            <p>Mengetahui / Menyetujui,</p>
-            <p className="font-semibold text-slate-600">Kepala Satuan Pendidikan</p>
-            <div className="h-16" />
-            <p className="font-bold underline text-slate-900">{rec.headmasterName}</p>
-            <p className="text-slate-500 text-[11px]">NIP. {rec.headmasterNip}</p>
-          </div>
+        {/* Tanda Tangan Resmi Standar Kedinasan (Kepala Satuan Pendidikan & Pengawas Pembina) */}
+        <div className="mt-8 pt-4 border-t border-slate-300 print:border-black/30 break-inside-avoid print:break-inside-avoid">
+          <table className="sig-table w-full text-xs text-slate-900" style={{ borderCollapse: 'collapse', border: 'none', width: '100%' }}>
+            <tbody>
+              {/* Baris 1: Jabatan & Titimangsa */}
+              <tr className="align-top" style={{ border: 'none' }}>
+                <td className="w-1/2 text-center pb-1 no-border" style={{ border: 'none', padding: '0 8px', verticalAlign: 'top' }}>
+                  <p className="text-slate-700 leading-tight">Mengetahui / Menyetujui,</p>
+                  <p className="font-bold text-slate-900 leading-tight mt-0.5">Kepala Satuan Pendidikan</p>
+                  <p className="text-[10px] text-slate-500 italic leading-tight">(Penanggung Jawab Program Satuan Pendidikan)</p>
+                </td>
 
-          <div>
-            <p>{settings.schoolCity || 'Pangkajene Sidenreng'}, {rec.date}</p>
-            <p className="font-semibold text-slate-600">{rec.supervisorRole || 'Pengawas Sekolah Pembina'}</p>
-            <div className="h-16" />
-            <p className="font-bold underline text-slate-900">{rec.supervisorName}</p>
-            <p className="text-slate-500 text-[11px]">NIP. {rec.supervisorNip}</p>
-            <p className="text-slate-400 text-[10px]">{rec.supervisorRank || 'Penata Tk. I / III.d'}</p>
-          </div>
+                <td className="w-1/2 text-center pb-1 no-border" style={{ border: 'none', padding: '0 8px', verticalAlign: 'top' }}>
+                  <p className="text-slate-700 leading-tight">
+                    {settings.schoolCity || 'Kabupaten Sidenreng Rappang'}, {rec.date}
+                  </p>
+                  <p className="font-bold text-slate-900 leading-tight mt-0.5">
+                    {rec.supervisorRole || 'Pengawas Sekolah Pembina'}
+                  </p>
+                  <p className="text-[10px] text-slate-500 italic leading-tight">(Co-Pilot / Mitra Pendamping Transformasi)</p>
+                </td>
+              </tr>
+
+              {/* Baris 2: KOTAK RESMI TEMPAT TANDA TANGAN & STEMPEL (TINGGI 72PX) */}
+              <tr style={{ height: '78px', border: 'none' }}>
+                <td className="no-border" style={{ height: '78px', minHeight: '78px', textAlign: 'center', verticalAlign: 'middle', padding: '4px 8px', border: 'none' }}>
+                  <div className="official-sig-box" style={{
+                    height: '70px',
+                    minHeight: '70px',
+                    border: '1.5px dashed #475569',
+                    borderRadius: '6px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    backgroundColor: '#f8fafc',
+                    margin: '4px 12px',
+                    padding: '4px 8px',
+                    boxSizing: 'border-box'
+                  }}>
+                    <span style={{ fontSize: '9.5px', color: '#1e293b', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                      TEMPAT TANDA TANGAN &amp; CAP STEMPEL
+                    </span>
+                    <span style={{ fontSize: '8px', color: '#64748b', fontStyle: 'italic', marginTop: '2px' }}>
+                      (Kepala Satuan Pendidikan)
+                    </span>
+                  </div>
+                </td>
+
+                <td className="no-border" style={{ height: '78px', minHeight: '78px', textAlign: 'center', verticalAlign: 'middle', padding: '4px 8px', border: 'none' }}>
+                  <div className="official-sig-box" style={{
+                    height: '70px',
+                    minHeight: '70px',
+                    border: '1.5px dashed #0284c7',
+                    borderRadius: '6px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    backgroundColor: '#f0f9ff',
+                    margin: '4px 12px',
+                    padding: '4px 8px',
+                    boxSizing: 'border-box'
+                  }}>
+                    <span style={{ fontSize: '9.5px', color: '#0369a1', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                      TEMPAT TANDA TANGAN &amp; CAP PENGAWAS
+                    </span>
+                    <span style={{ fontSize: '8px', color: '#0284c7', fontStyle: 'italic', marginTop: '2px' }}>
+                      (Pengawas Sekolah Pembina)
+                    </span>
+                  </div>
+                </td>
+              </tr>
+
+              {/* Baris 3: Nama & NIP */}
+              <tr className="align-top" style={{ border: 'none' }}>
+                <td className="text-center pt-1 no-border" style={{ border: 'none', padding: '2px 8px' }}>
+                  <p className="font-bold underline text-slate-900 text-xs uppercase tracking-wide">
+                    {rec.headmasterName}
+                  </p>
+                  <p className="text-[11px] text-slate-600 mt-0.5">NIP. {rec.headmasterNip || '-'}</p>
+                </td>
+
+                <td className="text-center pt-1 no-border" style={{ border: 'none', padding: '2px 8px' }}>
+                  <p className="font-bold underline text-slate-900 text-xs uppercase tracking-wide">
+                    {rec.supervisorName}
+                  </p>
+                  <p className="text-[11px] text-slate-600 mt-0.5">NIP. {rec.supervisorNip}</p>
+                  <p className="text-[10px] text-slate-500 mt-0.5">{rec.supervisorRank || 'Penata Tk. I / III.d'}</p>
+                </td>
+              </tr>
+            </tbody>
+          </table>
         </div>
       </div>
     );
