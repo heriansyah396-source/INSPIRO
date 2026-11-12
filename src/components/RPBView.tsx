@@ -712,54 +712,14 @@ export const RPBView: React.FC<RPBViewProps> = ({
                 </td>
               </tr>
 
-              {/* Baris 2: KOTAK RESMI TEMPAT TANDA TANGAN & STEMPEL (TINGGI 72PX) */}
-              <tr style={{ height: '78px', border: 'none' }}>
-                <td className="no-border" style={{ height: '78px', minHeight: '78px', textAlign: 'center', verticalAlign: 'middle', padding: '4px 8px', border: 'none' }}>
-                  <div className="official-sig-box" style={{
-                    height: '70px',
-                    minHeight: '70px',
-                    border: '1.5px dashed #475569',
-                    borderRadius: '6px',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    backgroundColor: '#f8fafc',
-                    margin: '4px 12px',
-                    padding: '4px 8px',
-                    boxSizing: 'border-box'
-                  }}>
-                    <span style={{ fontSize: '9.5px', color: '#1e293b', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                      TEMPAT TANDA TANGAN &amp; CAP STEMPEL
-                    </span>
-                    <span style={{ fontSize: '8px', color: '#64748b', fontStyle: 'italic', marginTop: '2px' }}>
-                      (Kepala Satuan Pendidikan)
-                    </span>
-                  </div>
+              {/* Baris 2: RUANG KOSONG TANDA TANGAN & STEMPEL (KETINGGIAN PRESISI 80PX BERSIH TANPA TEKS AGAR TANDA TANGAN TIDAK TERTINDIH) */}
+              <tr style={{ height: '80px', border: 'none' }}>
+                <td className="no-border" style={{ height: '80px', minHeight: '80px', border: 'none', padding: '0 8px', verticalAlign: 'middle' }}>
+                  <div style={{ height: '80px', minHeight: '80px', width: '100%' }}>&nbsp;</div>
                 </td>
 
-                <td className="no-border" style={{ height: '78px', minHeight: '78px', textAlign: 'center', verticalAlign: 'middle', padding: '4px 8px', border: 'none' }}>
-                  <div className="official-sig-box" style={{
-                    height: '70px',
-                    minHeight: '70px',
-                    border: '1.5px dashed #0284c7',
-                    borderRadius: '6px',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    backgroundColor: '#f0f9ff',
-                    margin: '4px 12px',
-                    padding: '4px 8px',
-                    boxSizing: 'border-box'
-                  }}>
-                    <span style={{ fontSize: '9.5px', color: '#0369a1', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                      TEMPAT TANDA TANGAN &amp; CAP PENGAWAS
-                    </span>
-                    <span style={{ fontSize: '8px', color: '#0284c7', fontStyle: 'italic', marginTop: '2px' }}>
-                      (Pengawas Sekolah Pembina)
-                    </span>
-                  </div>
+                <td className="no-border" style={{ height: '80px', minHeight: '80px', border: 'none', padding: '0 8px', verticalAlign: 'middle' }}>
+                  <div style={{ height: '80px', minHeight: '80px', width: '100%' }}>&nbsp;</div>
                 </td>
               </tr>
 

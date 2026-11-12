@@ -1722,53 +1722,13 @@ export const PrincipalMaturityView: React.FC<PrincipalMaturityViewProps> = ({
                   </td>
                 </tr>
 
-                {/* Baris 2: TEMPAT TANDA TANGAN & STEMPEL (KOTAK RESMI DEDIKASI TINGGI 70PX) */}
+                {/* Baris 2: RUANG KOSONG TANDA TANGAN & STEMPEL (KETINGGIAN PRESISI 76PX BERSIH TANPA TEKS AGAR TIDAK TERTINDIH) */}
                 <tr style={{ height: '76px', border: 'none' }}>
-                  <td style={{ height: '76px', minHeight: '76px', textAlign: 'center', verticalAlign: 'middle', padding: '4px 10px', border: 'none' }}>
-                    <div className="maturity-sig-box" style={{
-                      height: '68px',
-                      minHeight: '68px',
-                      border: '1.5px dashed #475569',
-                      borderRadius: '6px',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      backgroundColor: '#f8fafc',
-                      margin: '4px 12px',
-                      padding: '4px 8px',
-                      boxSizing: 'border-box'
-                    }}>
-                      <span style={{ fontSize: '10px', color: '#1e293b', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                        TEMPAT TANDA TANGAN &amp; CAP STEMPEL
-                      </span>
-                      <span style={{ fontSize: '8.5px', color: '#64748b', fontStyle: 'italic', marginTop: '2px' }}>
-                        (Kepala Satuan Pendidikan)
-                      </span>
-                    </div>
+                  <td style={{ height: '76px', minHeight: '76px', border: 'none', padding: '0 10px', verticalAlign: 'middle' }}>
+                    <div style={{ height: '76px', minHeight: '76px', width: '100%' }}>&nbsp;</div>
                   </td>
-                  <td style={{ height: '76px', minHeight: '76px', textAlign: 'center', verticalAlign: 'middle', padding: '4px 10px', border: 'none' }}>
-                    <div className="maturity-sig-box" style={{
-                      height: '68px',
-                      minHeight: '68px',
-                      border: '1.5px dashed #475569',
-                      borderRadius: '6px',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      backgroundColor: '#f8fafc',
-                      margin: '4px 12px',
-                      padding: '4px 8px',
-                      boxSizing: 'border-box'
-                    }}>
-                      <span style={{ fontSize: '10px', color: '#1e293b', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                        TEMPAT TANDA TANGAN &amp; CAP STEMPEL
-                      </span>
-                      <span style={{ fontSize: '8.5px', color: '#64748b', fontStyle: 'italic', marginTop: '2px' }}>
-                        (Pengawas Sekolah Pembina)
-                      </span>
-                    </div>
+                  <td style={{ height: '76px', minHeight: '76px', border: 'none', padding: '0 10px', verticalAlign: 'middle' }}>
+                    <div style={{ height: '76px', minHeight: '76px', width: '100%' }}>&nbsp;</div>
                   </td>
                 </tr>
 

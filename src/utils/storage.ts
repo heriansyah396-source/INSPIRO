@@ -2138,30 +2138,21 @@ export function exportAcademicProContraToWord(record: AcademicProContraRecord, s
           <td style="width:33.33%; text-align:center; vertical-align:top; border:none; padding:4px;">
             Guru Mata Pelajaran / Sasaran,<br/>
             <strong>${record.schoolName}</strong>
-            <div style="height:65px; border:1.5px dashed #475569; border-radius:4px; margin:10px auto; width:85%; background-color:#f8fafc; text-align:center; padding-top:20px; box-sizing:border-box;">
-              <span style="font-size:8.5pt; font-weight:bold; color:#1e293b; text-transform:uppercase;">TEMPAT TANDA TANGAN</span><br/>
-              <span style="font-size:7.5pt; color:#64748b; font-style:italic;">(Guru Sasaran / Terkait)</span>
-            </div>
+            <div style="height:70px; line-height:70px;">&nbsp;</div>
             <strong><u>${record.teacherName || 'Guru Terkait'}</u></strong><br/>
             NIP. ${record.teacherNip || '-'}
           </td>
           <td style="width:33.33%; text-align:center; vertical-align:top; border:none; padding:4px;">
             Mengetahui,<br/>
             <strong>Kepala Satuan Pendidikan</strong>
-            <div style="height:65px; border:1.5px dashed #475569; border-radius:4px; margin:10px auto; width:85%; background-color:#f8fafc; text-align:center; padding-top:20px; box-sizing:border-box;">
-              <span style="font-size:8.5pt; font-weight:bold; color:#1e293b; text-transform:uppercase;">TEMPAT TANDA TANGAN &amp; STEMPEL</span><br/>
-              <span style="font-size:7.5pt; color:#64748b; font-style:italic;">(Kepala Satuan Pendidikan)</span>
-            </div>
+            <div style="height:70px; line-height:70px;">&nbsp;</div>
             <strong><u>${record.headmasterName}</u></strong><br/>
             NIP. ${record.headmasterNip}
           </td>
           <td style="width:33.33%; text-align:center; vertical-align:top; border:none; padding:4px;">
             ${schoolCity}, ${record.date}<br/>
             <strong>${record.supervisorRole}</strong>
-            <div style="height:65px; border:1.5px dashed #0284c7; border-radius:4px; margin:10px auto; width:85%; background-color:#f0f9ff; text-align:center; padding-top:20px; box-sizing:border-box;">
-              <span style="font-size:8.5pt; font-weight:bold; color:#0369a1; text-transform:uppercase;">TEMPAT TANDA TANGAN &amp; PENGAWAS</span><br/>
-              <span style="font-size:7.5pt; color:#0284c7; font-style:italic;">(Pengawas Sekolah Pembina)</span>
-            </div>
+            <div style="height:70px; line-height:70px;">&nbsp;</div>
             <strong><u>${record.supervisorName}</u></strong><br/>
             NIP. ${record.supervisorNip}<br/>
             <span>Pangkat/Gol: ${record.supervisorRank || 'Penata Tk. I / III.d'}</span>
