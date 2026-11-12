@@ -14,6 +14,7 @@ import { SEED_SOAR_RECORDS } from '../data/seedSOAR';
 import { SEED_SWOT_RECORDS } from '../data/seedSWOT';
 import { SEED_PRO_CONTRA_RECORDS } from '../data/seedProContra';
 import { SEED_RPB_RECORDS } from '../data/seedRPB';
+import { SEED_QUICK_WINS_RECORDS } from '../data/seedQuickWins';
 import { SEED_PRINCIPALS } from '../data/seedPrincipals';
 import { SEED_PRINCIPAL_MATURITY_RECORDS } from '../data/seedPrincipalMaturity';
 import { SEED_MANAGERIAL_EVALUATIONS } from '../data/seedManagerialEvaluations';
@@ -42,11 +43,14 @@ import {
   AcademicProContraItem,
   RPBRecord,
   RPBItem,
-  ManagerialMaturityRecord
+  ManagerialMaturityRecord,
+  QuickWinsRecord,
+  QuickWinsActionItem
 } from '../types/inspiro';
 
 const TEACHERS_KEY = 'inspiro_teachers';
 const PRINCIPALS_KEY = 'inspiro_principals';
+const QUICK_WINS_RECORDS_KEY = 'inspiro_quick_wins_records_v1';
 const MANAGERIAL_EVALUATIONS_KEY = 'inspiro_managerial_evaluations';
 const SUPERVISIONS_KEY = 'inspiro_supervisions';
 const SETTINGS_KEY = 'inspiro_settings';
@@ -2679,16 +2683,12 @@ export function exportPrincipalMaturityToWord(
             <span style="font-size: 9pt; font-style: italic; color: #475569;">(Asesor Evaluator Pembina)</span>
           </td>
         </tr>
-        <tr style="height: 52pt;">
-          <td style="height: 52pt; vertical-align: middle;">
-            <div class="sig-box">
-              TEMPAT TANDA TANGAN &amp; CAP STEMPEL
-            </div>
+        <tr style="height: 65pt;">
+          <td style="height: 65pt; vertical-align: middle;">
+            <div style="height: 65pt; line-height: 65pt;">&nbsp;</div>
           </td>
-          <td style="height: 52pt; vertical-align: middle;">
-            <div class="sig-box">
-              TEMPAT TANDA TANGAN &amp; CAP STEMPEL
-            </div>
+          <td style="height: 65pt; vertical-align: middle;">
+            <div style="height: 65pt; line-height: 65pt;">&nbsp;</div>
           </td>
         </tr>
         <tr>
@@ -2714,6 +2714,272 @@ export function exportPrincipalMaturityToWord(
   a.href = url;
   const safeTitle = record.schoolName.replace(/[^a-zA-Z0-9]/g, '_');
   a.download = `Posisi_Kedewasaan_Manajerial_${safeTitle}_${record.date}.doc`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+// ========================================================================
+// 15. PETA LANGKAH NYATA 30-60-90 HARI (QUICK WINS) CRUD & WORD EXPORT
+// ========================================================================
+
+export function getQuickWinsRecords(): QuickWinsRecord[] {
+  const records = safeParse<QuickWinsRecord[]>(QUICK_WINS_RECORDS_KEY, []);
+  if (!records || records.length === 0) {
+    saveQuickWinsRecords(SEED_QUICK_WINS_RECORDS);
+    return SEED_QUICK_WINS_RECORDS;
+  }
+  return records;
+}
+
+export function saveQuickWinsRecords(records: QuickWinsRecord[]): void {
+  try {
+    localStorage.setItem(QUICK_WINS_RECORDS_KEY, JSON.stringify(records));
+  } catch (e) {
+    console.error('Error saving quick wins records:', e);
+  }
+}
+
+export function saveQuickWinsRecord(record: QuickWinsRecord): void {
+  const current = getQuickWinsRecords();
+  const index = current.findIndex((r) => r.id === record.id);
+  let updated: QuickWinsRecord[];
+  if (index >= 0) {
+    updated = [...current];
+    updated[index] = { ...record, updatedAt: new Date().toISOString() };
+  } else {
+    updated = [{ ...record, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }, ...current];
+  }
+  saveQuickWinsRecords(updated);
+}
+
+export function deleteQuickWinsRecord(id: string): void {
+  const current = getQuickWinsRecords();
+  const updated = current.filter((r) => r.id !== id);
+  saveQuickWinsRecords(updated);
+}
+
+/**
+ * Ekspor Peta Langkah Nyata 30-60-90 Hari ke Microsoft Word (.doc)
+ * Dilengkapi Kop Resmi Sidrap, Tabel Aksi 3 Babak, Kanvas Sebelum-Sesudah, dan Tanda Tangan Bersih
+ */
+export function exportQuickWinsToWord(record: QuickWinsRecord, settings: AppSettings): void {
+  const logoLeft = settings.logoUrl || DEFAULT_SIDRAP_LOGO;
+  const logoRight = settings.logoRightUrl || DEFAULT_TUTWURI_LOGO;
+  const agency = settings.governmentAgency || 'PEMERINTAH KABUPATEN SIDENRENG RAPPANG';
+  const schoolCity = settings.schoolCity || 'Kabupaten Sidenreng Rappang';
+
+  const rowsHtml = record.items
+    .map((item, index) => {
+      const statusBadge =
+        item.status === 'tuntas'
+          ? '<span style="background-color:#dcfce7; color:#15803d; padding:2px 6px; border-radius:3px; font-weight:bold; font-size:8pt;">TUNTAS</span>'
+          : item.status === 'butuh_bantuan'
+          ? '<span style="background-color:#fef9c3; color:#a16207; padding:2px 6px; border-radius:3px; font-weight:bold; font-size:8pt;">BUTUH BANTUAN PENGAWAS</span>'
+          : item.status === 'proses'
+          ? '<span style="background-color:#dbeafe; color:#1d4ed8; padding:2px 6px; border-radius:3px; font-weight:bold; font-size:8pt;">DALAM PROSES</span>'
+          : '<span style="background-color:#f1f5f9; color:#64748b; padding:2px 6px; border-radius:3px; font-weight:bold; font-size:8pt;">BELUM DIMULAI</span>';
+
+      const phaseBadge = item.phase === '30-days'
+        ? '<span style="color:#0284c7; font-weight:bold;">Fase 30 Hari (Fondasi)</span>'
+        : item.phase === '60-days'
+        ? '<span style="color:#059669; font-weight:bold;">Fase 60 Hari (Eksperimen)</span>'
+        : '<span style="color:#7c3aed; font-weight:bold;">Fase 90 Hari (Pengimbasan)</span>';
+
+      return `
+        <tr>
+          <td style="text-align:center; vertical-align:top; border:1px solid #475569; padding:6px; font-size:9pt;">${index + 1}</td>
+          <td style="vertical-align:top; border:1px solid #475569; padding:6px; font-size:9pt;">
+            ${phaseBadge}<br/>
+            <strong>${item.week}</strong>
+          </td>
+          <td style="vertical-align:top; border:1px solid #475569; padding:6px; font-size:9pt;">
+            <strong>${item.actionTitle}</strong><br/>
+            <span style="color:#334155; font-size:8.5pt;">${item.actionDetail}</span>
+            ${item.notes ? `<br/><span style="color:#0369a1; font-size:8pt; font-style:italic;">Catatan: ${item.notes}</span>` : ''}
+          </td>
+          <td style="vertical-align:top; border:1px solid #475569; padding:6px; font-size:9pt; font-weight:bold; color:#1e293b;">
+            ${item.pic}
+          </td>
+          <td style="vertical-align:top; border:1px solid #475569; padding:6px; font-size:9pt; color:#0f766e;">
+            ${item.evidenceTarget}
+          </td>
+          <td style="text-align:center; vertical-align:top; border:1px solid #475569; padding:6px;">
+            ${statusBadge}
+          </td>
+        </tr>
+      `;
+    })
+    .join('');
+
+  const html = `
+    <!DOCTYPE html>
+    <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+    <head>
+      <meta charset="utf-8">
+      <title>Peta Langkah Nyata 30-60-90 Hari - ${record.schoolName}</title>
+      <style>
+        body {
+          font-family: 'Calibri', 'Times New Roman', sans-serif;
+          font-size: 11pt;
+          line-height: 1.35;
+          color: #0f172a;
+          margin: 20px;
+        }
+        .title-doc {
+          text-align: center;
+          margin-top: 10px;
+          margin-bottom: 14px;
+        }
+        .title-doc h2 { margin: 0; font-size: 13.5pt; text-transform: uppercase; text-decoration: underline; font-weight: bold; }
+        .title-doc p { margin: 4px 0 0 0; font-size: 10pt; font-weight: bold; color: #1e293b; }
+        .table-info { width: 100%; border-collapse: collapse; margin-bottom: 14px; font-size: 10pt; }
+        .table-info td { padding: 3px 6px; vertical-align: top; }
+        .action-table { width: 100%; border-collapse: collapse; margin-top: 10px; margin-bottom: 18px; }
+        .action-table th { background-color: #1e293b; color: #ffffff; padding: 8px; font-size: 9.5pt; text-transform: uppercase; border: 1px solid #475569; }
+        .signature-table { width: 100%; margin-top: 30px; border-collapse: collapse; border: none; }
+        .signature-table td { width: 50%; text-align: center; vertical-align: top; border: none; padding: 4px; font-size: 10pt; }
+      </style>
+    </head>
+    <body>
+      <!-- KOP RESMI DINAS PENDIDIKAN DAN KEBUDAYAAN SIDRAP DENGAN LOGO GANDA -->
+      <table style="width:100%; border:none; border-bottom:3px double #000000; padding-bottom:8px; margin-bottom:18px;">
+        <tr>
+          <td style="width:75px; text-align:center; vertical-align:middle; border:none; padding-right:8px;">
+            <img src="${logoLeft}" width="70" height="75" style="object-fit:contain;" alt="Logo Kabupaten Sidenreng Rappang" />
+          </td>
+          <td style="text-align:center; vertical-align:middle; border:none; padding:0 8px;">
+            <div style="font-size:12pt; font-weight:bold; text-transform:uppercase; margin:0; line-height:1.2;">
+              ${agency.toUpperCase()}
+            </div>
+            <div style="font-size:13.5pt; font-weight:bold; text-transform:uppercase; margin:2px 0; line-height:1.2;">
+              DINAS PENDIDIKAN DAN KEBUDAYAAN
+            </div>
+            <div style="font-size:10.5pt; font-weight:bold; text-transform:uppercase; margin:0; color:#1e293b; line-height:1.2;">
+              PENGAWAS SEKOLAH PEMBINA KABUPATEN SIDENRENG RAPPANG
+            </div>
+            <div style="font-size:8.5pt; font-style:italic; margin-top:3px; color:#333333; line-height:1.2;">
+              Alamat: Kompleks SKPD Jl. Harapan Baru No. 1, Pangkajene, Kab. Sidenreng Rappang, Sulawesi Selatan (91611)
+            </div>
+          </td>
+          <td style="width:75px; text-align:center; vertical-align:middle; border:none; padding-left:8px;">
+            <img src="${logoRight}" width="70" height="75" style="object-fit:contain;" alt="Logo Tut Wuri Handayani" />
+          </td>
+        </tr>
+      </table>
+
+      <div class="title-doc">
+        <h2>PETA LANGKAH NYATA PENDAMPINGAN 30–60–90 HARI</h2>
+        <p>QUICK WINS ACTION PLAN: INSTRUMEN PENGUNCI EKSEKUSI DI LAPANGAN</p>
+      </div>
+
+      <table class="table-info">
+        <tr>
+          <td style="width: 22%;"><strong>Satuan Pendidikan</strong></td>
+          <td style="width: 2%;">:</td>
+          <td style="width: 44%;">${record.schoolName} ${record.schoolNpsn ? `(NPSN: ${record.schoolNpsn})` : ''}</td>
+          <td style="width: 14%;"><strong>Tahun Pelajaran</strong></td>
+          <td style="width: 2%;">:</td>
+          <td>${record.academicYear} (${record.semester})</td>
+        </tr>
+        <tr>
+          <td><strong>Kepala Sekolah</strong></td>
+          <td>:</td>
+          <td>${record.headmasterName} (NIP. ${record.headmasterNip || '-'})</td>
+          <td><strong>Tanggal Mulai</strong></td>
+          <td>:</td>
+          <td>${record.startDate}</td>
+        </tr>
+        <tr>
+          <td><strong>Pengawas Pembina</strong></td>
+          <td>:</td>
+          <td>${record.supervisorName} (NIP. ${record.supervisorNip})</td>
+          <td><strong>Strategi RPB</strong></td>
+          <td>:</td>
+          <td>${record.rpbStrategy || 'Pemacu Perubahan (Catalyst)'}</td>
+        </tr>
+        <tr>
+          <td><strong>Pilar / Fokus Sasaran</strong></td>
+          <td>:</td>
+          <td colspan="4"><strong>${record.targetPillar}</strong></td>
+        </tr>
+      </table>
+
+      <!-- KANVAS KOMPARASI SEBELUM VS SESUDAH 90 HARI -->
+      <table style="width:100%; border-collapse:collapse; margin-bottom:16px;">
+        <tr>
+          <td style="width:50%; vertical-align:top; border:1px solid #94a3b8; background-color:#fff1f2; padding:10px; border-radius:4px;">
+            <strong style="color:#9f1239; font-size:10pt;">KONDISI AWAL SEBELUM PENDAMPINGAN:</strong><br/>
+            <p style="margin:4px 0 0 0; font-size:9.5pt; color:#4c0519; line-height:1.4;">${record.beforeCondition}</p>
+          </td>
+          <td style="width:50%; vertical-align:top; border:1px solid #94a3b8; background-color:#f0fdf4; padding:10px; border-radius:4px;">
+            <strong style="color:#166534; font-size:10pt;">TARGET DAMPAK NYATA PADA HARI KE-90:</strong><br/>
+            <p style="margin:4px 0 0 0; font-size:9.5pt; color:#14532d; line-height:1.4;">${record.expectedImpact}</p>
+          </td>
+        </tr>
+      </table>
+
+      <h3 style="font-size: 11pt; text-transform: uppercase; margin-bottom: 6px;">
+        MATRIKS TAHAPAN AKSI 30-60-90 HARI, PENANGGUNG JAWAB (PIC), &amp; TARGET BUKTI LAPANGAN
+      </h3>
+
+      <table class="action-table">
+        <thead>
+          <tr>
+            <th style="width:4%;">No</th>
+            <th style="width:16%;">Tahap &amp; Waktu</th>
+            <th style="width:36%;">Aksi Nyata Lapangan &amp; Uraian Langkah</th>
+            <th style="width:16%;">Penanggung Jawab (PIC)</th>
+            <th style="width:16%;">Target Bukti Lapangan</th>
+            <th style="width:12%;">Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${rowsHtml}
+        </tbody>
+      </table>
+
+      ${
+        record.supervisorNotes
+          ? `<div style="background-color: #f8fafc; border-left: 4px solid #0284c7; padding: 8px 12px; margin-bottom: 16px; font-size: 9.5pt;">
+              <strong>Komitmen Kawalan &amp; Catatan Pengawas Pembina:</strong><br/>
+              <span style="color:#334155; font-style:italic;">"${record.supervisorNotes}"</span>
+            </div>`
+          : ''
+      }
+
+      <!-- BLOK TANDA TANGAN BERSIH DENGAN KETINGGIAN 70PX TANPA TERTINDIH -->
+      <table class="signature-table" style="width:100%; margin-top:28px; border-collapse:collapse; border:none;">
+        <tr style="border:none;">
+          <td style="width:50%; text-align:center; vertical-align:top; border:none; padding:4px;">
+            Mengetahui / Menyetujui,<br/>
+            <strong>Kepala Satuan Pendidikan</strong>
+            <div style="height:70px; line-height:70px;">&nbsp;</div>
+            <strong><u>${record.headmasterName}</u></strong><br/>
+            NIP. ${record.headmasterNip || '-'}<br/>
+            <span style="font-size:9pt; color:#475569;">Pangkat/Gol: ${record.headmasterRank || '-'}</span>
+          </td>
+          <td style="width:50%; text-align:center; vertical-align:top; border:none; padding:4px;">
+            ${schoolCity}, ${record.startDate}<br/>
+            <strong>${record.supervisorRole}</strong>
+            <div style="height:70px; line-height:70px;">&nbsp;</div>
+            <strong><u>${record.supervisorName}</u></strong><br/>
+            NIP. ${record.supervisorNip}<br/>
+            <span style="font-size:9pt; color:#475569;">Pangkat/Gol: ${record.supervisorRank || 'Penata Tk. I / III.d'}</span>
+          </td>
+        </tr>
+      </table>
+    </body>
+    </html>
+  `;
+
+  const blob = new Blob(['\ufeff', html], { type: 'application/msword;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  const safeTitle = (record.schoolName || 'Sekolah').replace(/[^a-zA-Z0-9]/g, '_');
+  a.download = `Peta_Langkah_Nyata_30_60_90_${safeTitle}_${record.startDate}.doc`;
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);

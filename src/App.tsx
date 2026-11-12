@@ -34,6 +34,7 @@ import { SOARAnalysisView } from './components/SOARAnalysisView';
 import { SWOTAnalysisView } from './components/SWOTAnalysisView';
 import { AcademicProContraView } from './components/AcademicProContraView';
 import { RPBView } from './components/RPBView';
+import { QuickWinsView } from './components/QuickWinsView';
 import { PrincipalMaturityView } from './components/PrincipalMaturityView';
 import { PrincipalList } from './components/PrincipalList';
 import {
@@ -52,7 +53,8 @@ import {
   SWOTAnalysisRecord,
   AcademicProContraRecord,
   RPBRecord,
-  ManagerialMaturityRecord
+  ManagerialMaturityRecord,
+  QuickWinsRecord
 } from './types/inspiro';
 import {
   addTeacher,
@@ -106,6 +108,9 @@ import {
   getRPBRecords,
   saveRPBRecord,
   deleteRPBRecord,
+  getQuickWinsRecords,
+  saveQuickWinsRecord,
+  deleteQuickWinsRecord,
   getPrincipalMaturityRecords,
   savePrincipalMaturityRecord,
   deletePrincipalMaturityRecord
@@ -157,6 +162,7 @@ export default function App() {
   const [swotRecords, setSwotRecords] = useState<SWOTAnalysisRecord[]>(() => getSWOTRecords());
   const [proContraRecords, setProContraRecords] = useState<AcademicProContraRecord[]>(() => getAcademicProContraRecords());
   const [rpbRecords, setRpbRecords] = useState<RPBRecord[]>(() => getRPBRecords());
+  const [quickWinsRecords, setQuickWinsRecords] = useState<QuickWinsRecord[]>(() => getQuickWinsRecords());
   const [maturityRecords, setMaturityRecords] = useState<ManagerialMaturityRecord[]>(() => getPrincipalMaturityRecords());
   const [selectedSwotPrincipalId, setSelectedSwotPrincipalId] = useState<string | undefined>(undefined);
   const [settings, setSettings] = useState<AppSettings>(getSettings());
@@ -210,6 +216,7 @@ export default function App() {
     setSwotRecords(getSWOTRecords());
     setProContraRecords(getAcademicProContraRecords());
     setRpbRecords(getRPBRecords());
+    setQuickWinsRecords(getQuickWinsRecords());
     setMaturityRecords(getPrincipalMaturityRecords());
     setSettings(getSettings());
   }, []);
@@ -670,6 +677,27 @@ export default function App() {
     showToast('RPB Dihapus', 'Dokumen Rencana Pendampingan Berdiferensiasi telah dihapus dari sistem.', 'info');
   };
 
+  // Handlers: Peta Langkah Nyata 30-60-90 Hari (Quick Wins Impact Tracker)
+  const handleSaveQuickWinsRecord = (record: QuickWinsRecord) => {
+    saveQuickWinsRecord(record);
+    refreshData();
+    showToast(
+      'Peta Langkah Disimpan',
+      `Peta Langkah Nyata 30-60-90 Hari untuk ${record.schoolName} (${record.targetPillar}) berhasil disimpan.`,
+      'success'
+    );
+  };
+
+  const handleDeleteQuickWinsRecord = (id: string) => {
+    deleteQuickWinsRecord(id);
+    refreshData();
+    showToast(
+      'Peta Langkah Dihapus',
+      'Dokumen Peta Langkah Nyata 30-60-90 Hari telah dihapus dari sistem.',
+      'info'
+    );
+  };
+
   // Handlers: Posisi Mana Saya Sekarang (Diagnosis Kedewasaan Manajerial Kepala Sekolah)
   const handleSaveMaturityRecord = (record: ManagerialMaturityRecord) => {
     savePrincipalMaturityRecord(record);
@@ -915,6 +943,18 @@ export default function App() {
                   onSaveRecord={handleSaveRPBRecord}
                   onDeleteRecord={handleDeleteRPBRecord}
                   showToast={showToast}
+                />
+              )}
+
+              {/* Tab: Peta Langkah Nyata (30-60-90 Hari - Quick Wins) */}
+              {currentTab === 'quick-wins' && (
+                <QuickWinsView
+                  records={quickWinsRecords}
+                  principals={principals}
+                  settings={settings}
+                  onSaveRecord={handleSaveQuickWinsRecord}
+                  onDeleteRecord={handleDeleteQuickWinsRecord}
+                  showToast={(msg, type) => showToast('Peta Langkah Nyata', msg, type)}
                 />
               )}
 

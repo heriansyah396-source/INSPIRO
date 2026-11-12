@@ -2516,3 +2516,49 @@ export interface ManagerialMaturityRecord {
   updatedAt: string;
 }
 
+// ========================================================================
+// PETA LANGKAH NYATA (30-60-90 HARI) / QUICK WINS ACTION PLAN
+// ========================================================================
+
+export type QuickWinsPhase = '30-days' | '60-days' | '90-days';
+export type QuickWinsItemStatus = 'belum' | 'proses' | 'butuh_bantuan' | 'tuntas';
+
+export interface QuickWinsActionItem {
+  id: string;
+  phase: QuickWinsPhase;
+  phaseTitle: string; // e.g. "Fase 1 (Hari 1–30): Fondasi & Kemenangan Cepat"
+  week: string; // e.g. "Minggu 1–2"
+  actionTitle: string; // Aksi Nyata Konkret
+  actionDetail: string; // Deskripsi & Langkah Pelaksanaan
+  pic: string; // Penanggung Jawab: Guru Sasaran, Kepala Sekolah, Pengawas Pembina, Kombel
+  evidenceTarget: string; // Bukti Nyata Lapangan (artefak, modul, asesmen, foto kegiatan)
+  status: QuickWinsItemStatus;
+  notes?: string; // Catatan Lapangan / Kendala / Catatan Dukungan Pengawas
+}
+
+export interface QuickWinsRecord {
+  id: string;
+  title: string;
+  schoolName: string;
+  schoolNpsn: string;
+  headmasterName: string;
+  headmasterNip: string;
+  headmasterRank?: string;
+  supervisorName: string;
+  supervisorNip: string;
+  supervisorRole: string;
+  supervisorRank?: string;
+  academicYear: string;
+  semester: string;
+  startDate: string; // YYYY-MM-DD
+  targetPillar: string; // e.g. "Pembelajaran Berdiferensiasi & PMM", "Iklim Keamanan & Karakter"
+  rpbStrategy?: string; // e.g. "Pemacu Perubahan (Catalyst)"
+  beforeCondition: string; // Kondisi Awal Lapangan (Sebelum Pendampingan)
+  expectedImpact: string; // Dampak Nyata Terwujud pada Hari ke-90
+  items: QuickWinsActionItem[];
+  supervisorNotes?: string; // Catatan & Komitmen Kawalan Pengawas Pembina
+  status: 'draft' | 'berjalan' | 'tuntas';
+  createdAt: string;
+  updatedAt: string;
+}
+

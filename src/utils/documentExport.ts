@@ -162,20 +162,14 @@ export function printDocumentElement(
           background: transparent !important;
         }
         .official-sig-box, .maturity-sig-box {
-          height: 70px !important;
-          min-height: 70px !important;
-          border: 1.5px dashed #475569 !important;
-          border-radius: 6px !important;
-          background-color: #f8fafc !important;
-          display: flex !important;
-          flex-direction: column !important;
-          align-items: center !important;
-          justify-content: center !important;
-          margin: 4px 6px !important;
-          padding: 4px 6px !important;
+          height: 80px !important;
+          min-height: 80px !important;
+          border: none !important;
+          background: transparent !important;
+          display: block !important;
+          margin: 0 !important;
+          padding: 0 !important;
           box-sizing: border-box !important;
-          -webkit-print-color-adjust: exact !important;
-          print-color-adjust: exact !important;
         }
         th {
           vertical-align: middle !important;

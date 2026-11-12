@@ -40,6 +40,7 @@ export type NavTab =
   | 'principals'
   | 'principal-maturity'
   | 'rpb'
+  | 'quick-wins'
   | 'teachers'
   | 'contextual-problems'
   | 'supervision'
@@ -124,6 +125,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
       label: 'Rencana Pendampingan (RPB)',
       icon: Workflow,
       badge: 'Perdirjen 4831'
+    },
+    {
+      id: 'quick-wins' as NavTab,
+      label: 'Langkah Nyata (30-60-90)',
+      icon: Target,
+      badge: 'Quick Wins'
     },
     {
       id: 'teachers' as NavTab,

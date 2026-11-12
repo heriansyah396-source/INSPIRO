@@ -48,6 +48,10 @@ const TAB_TITLES: Record<NavTab, { title: string; subtitle: string }> = {
     title: 'Rencana Pendampingan Berdiferensiasi (RPB)',
     subtitle: 'Peran Pengawas Sekolah Transformatif (Perdirjen GTK No. 4831/2023): 4 Kuadran Kapasitas & Strategi Intervensi'
   },
+  'quick-wins': {
+    title: 'Peta Langkah Nyata 30–60–90 Hari (Quick Wins Impact Tracker)',
+    subtitle: 'Kunci Eksekusi Pendampingan Lapangan: Target Mingguan, Bukti Nyata di Kelas, dan Pantauan Lampu Lalu Lintas'
+  },
   'contextual-problems': {
     title: 'Data Awal & Akar Masalah Kontekstual',
     subtitle: 'Identifikasi fakta lapangan, diagnosis akar masalah (5-Whys), dan resep solusi supervisi'
