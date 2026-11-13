@@ -37,6 +37,8 @@ import { RPBView } from './components/RPBView';
 import { QuickWinsView } from './components/QuickWinsView';
 import { PrincipalMaturityView } from './components/PrincipalMaturityView';
 import { PrincipalList } from './components/PrincipalList';
+import { MoralFeedbackView } from './components/MoralFeedbackView';
+import { PublicMoralFeedbackModal } from './components/PublicMoralFeedbackModal';
 import {
   AppSettings,
   SupervisionRecord,
@@ -54,7 +56,8 @@ import {
   AcademicProContraRecord,
   RPBRecord,
   ManagerialMaturityRecord,
-  QuickWinsRecord
+  QuickWinsRecord,
+  MoralFeedbackRecord
 } from './types/inspiro';
 import {
   addTeacher,
@@ -113,7 +116,11 @@ import {
   deleteQuickWinsRecord,
   getPrincipalMaturityRecords,
   savePrincipalMaturityRecord,
-  deletePrincipalMaturityRecord
+  deletePrincipalMaturityRecord,
+  getMoralFeedbackRecords,
+  saveMoralFeedbackRecord,
+  saveMoralFeedbackRecords,
+  deleteMoralFeedbackRecord
 } from './utils/storage';
 import {
   auth,
@@ -136,6 +143,9 @@ import {
   syncSettingsToCloud,
   fetchCloudSettings,
   fetchCloudManagedAccounts,
+  syncMoralFeedbackToCloud,
+  deleteMoralFeedbackFromCloud,
+  fetchCloudMoralFeedbacks,
   UserRoleProfile
 } from './services/firebase';
 
@@ -164,6 +174,7 @@ export default function App() {
   const [rpbRecords, setRpbRecords] = useState<RPBRecord[]>(() => getRPBRecords());
   const [quickWinsRecords, setQuickWinsRecords] = useState<QuickWinsRecord[]>(() => getQuickWinsRecords());
   const [maturityRecords, setMaturityRecords] = useState<ManagerialMaturityRecord[]>(() => getPrincipalMaturityRecords());
+  const [moralFeedbacks, setMoralFeedbacks] = useState<MoralFeedbackRecord[]>(() => getMoralFeedbackRecords());
   const [selectedSwotPrincipalId, setSelectedSwotPrincipalId] = useState<string | undefined>(undefined);
   const [settings, setSettings] = useState<AppSettings>(getSettings());
 
@@ -193,6 +204,13 @@ export default function App() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
     return !!localStorage.getItem('inspiro_active_session');
   });
+  const [isPublicMoralRoute, setIsPublicMoralRoute] = useState<boolean>(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      return params.get('pintu') === 'suara-hati';
+    }
+    return false;
+  });
   const [teacherToEdit, setTeacherToEdit] = useState<Teacher | null>(null);
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
   const [confirmModal, setConfirmModal] = useState<{
@@ -218,6 +236,7 @@ export default function App() {
     setRpbRecords(getRPBRecords());
     setQuickWinsRecords(getQuickWinsRecords());
     setMaturityRecords(getPrincipalMaturityRecords());
+    setMoralFeedbacks(getMoralFeedbackRecords());
     setSettings(getSettings());
   }, []);
 
@@ -323,6 +342,19 @@ export default function App() {
         localEvals.forEach((e) => map.set(e.id, e));
         cloudManagerialEvals.forEach((e) => map.set(e.id, e));
         saveManagerialEvaluations(Array.from(map.values()));
+      }
+
+      // 8. Sync Moral Feedbacks & 360 Reflections from Cloud
+      const cloudMoralFeedbacks = await fetchCloudMoralFeedbacks();
+      if (cloudMoralFeedbacks && cloudMoralFeedbacks.length > 0) {
+        setMoralFeedbacks((prev) => {
+          const map = new Map<string, MoralFeedbackRecord>();
+          prev.forEach((m) => map.set(m.id, m));
+          cloudMoralFeedbacks.forEach((m) => map.set(m.id, m));
+          const merged = Array.from(map.values());
+          saveMoralFeedbackRecords(merged);
+          return merged;
+        });
       }
     } catch (err) {
       console.warn('Initial cloud sync:', err);
@@ -719,6 +751,32 @@ export default function App() {
     );
   };
 
+  // Handlers: Refleksi 360° & Pesan Moral Pengawas (2 Pintu Mandiri + 1 Catatan Lapangan)
+  const handleSaveMoralFeedback = async (record: MoralFeedbackRecord) => {
+    saveMoralFeedbackRecord(record);
+    refreshData();
+    await syncMoralFeedbackToCloud(record).catch((err) =>
+      console.warn('Cloud sync moral feedback:', err)
+    );
+  };
+
+  const handleDeleteMoralFeedback = (id: string) => {
+    setConfirmModal({
+      isOpen: true,
+      title: 'Hapus Pesan Moral?',
+      message: 'Apakah Anda yakin ingin menghapus catatan suara hati / pesan moral ini dari arsip?',
+      onConfirm: () => {
+        deleteMoralFeedbackRecord(id);
+        deleteMoralFeedbackFromCloud(id).catch((err) =>
+          console.warn('Cloud delete moral feedback:', err)
+        );
+        refreshData();
+        setConfirmModal(null);
+        showToast('Catatan Dihapus', 'Pesan moral berhasil dihapus dari sistem dan Cloud.', 'info');
+      }
+    });
+  };
+
   // Active Record for detail view
   const activeRecord =
     supervisions.find((s) => s.id === selectedSupervisionId) || supervisions[0];
@@ -727,12 +785,48 @@ export default function App() {
   const printRecord =
     printSupervisionId ? supervisions.find((s) => s.id === printSupervisionId) : null;
 
+  // PUBLIC DOOR 1 (?pintu=suara-hati): Dedicated no-login page even if device had a prior session
+  if (isPublicMoralRoute) {
+    return (
+      <div className="min-h-screen bg-slate-900">
+        <ToastContainer toasts={toasts} onDismiss={dismissToast} />
+        <PublicMoralFeedbackModal
+          isOpen={true}
+          inlinePage={true}
+          onClose={() => {}}
+          mode="public_guru"
+          principals={principals}
+          settings={settings}
+          onNavigateToLogin={() => {
+            if (typeof window !== 'undefined') {
+              const url = new URL(window.location.href);
+              url.searchParams.delete('pintu');
+              window.history.replaceState({}, '', url.toString());
+            }
+            setIsPublicMoralRoute(false);
+          }}
+          onSubmit={async (record) => {
+            await handleSaveMoralFeedback(record);
+            showToast(
+              'Suara Hati Terkirim',
+              'Terima kasih. Pesan moral Anda telah disimpan aman untuk Pengawas Pembina.',
+              'success'
+            );
+          }}
+        />
+      </div>
+    );
+  }
+
   // INITIAL SCREEN: If not authenticated, render LoginView as the initial screen
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen bg-slate-900">
         <ToastContainer toasts={toasts} onDismiss={dismissToast} />
         <LoginView
+          principals={principals}
+          settings={settings}
+          onSubmitPublicFeedback={handleSaveMoralFeedback}
           onLoginSuccess={(profile) => {
             setCurrentUser(profile);
             setIsAuthenticated(true);
@@ -1190,6 +1284,21 @@ export default function App() {
                   settings={settings}
                   onNavigateToSupervision={(teacherId) => handleStartNewSupervision(teacherId)}
                   onUpdateSettings={handleSaveSettings}
+                  showToast={showToast}
+                />
+              )}
+
+              {/* Tab: Refleksi 360° & Pesan Moral Pengawas (2 Pintu Mandiri + 1 Catatan Lapangan) */}
+              {currentTab === 'moral-feedback' && (
+                <MoralFeedbackView
+                  records={moralFeedbacks}
+                  principals={principals}
+                  settings={settings}
+                  currentUser={currentUser}
+                  onSaveRecord={(rec) => {
+                    handleSaveMoralFeedback(rec);
+                  }}
+                  onDeleteRecord={handleDeleteMoralFeedback}
                   showToast={showToast}
                 />
               )}

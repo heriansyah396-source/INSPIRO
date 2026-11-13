@@ -13,8 +13,8 @@ import {
   EyeOff,
   LogIn,
   AlertCircle,
-  Sparkles,
-  Info
+  Info,
+  HeartHandshake
 } from 'lucide-react';
 import {
   loginWithEmail,
@@ -25,18 +25,27 @@ import {
 import {
   authenticateUser,
   getManagedAccounts,
-  saveManagedAccounts
+  saveManagedAccounts,
+  getPrincipals,
+  getSettings
 } from '../utils/storage';
-import { ManagedAccount } from '../types/inspiro';
+import { AppSettings, ManagedAccount, MoralFeedbackRecord, Principal } from '../types/inspiro';
+import { PublicMoralFeedbackModal } from './PublicMoralFeedbackModal';
 
 interface LoginViewProps {
   onLoginSuccess: (profile: UserRoleProfile) => void;
   onEnterGuestMode?: () => void;
+  principals?: Principal[];
+  settings?: AppSettings;
+  onSubmitPublicFeedback?: (record: MoralFeedbackRecord) => Promise<void> | void;
   showToast: (title: string, desc?: string, type?: 'success' | 'warning' | 'error') => void;
 }
 
 export const LoginView: React.FC<LoginViewProps> = ({
   onLoginSuccess,
+  principals,
+  settings,
+  onSubmitPublicFeedback,
   showToast
 }) => {
   // Role selection: 'pengawas' or 'kepala_sekolah'
@@ -50,6 +59,16 @@ export const LoginView: React.FC<LoginViewProps> = ({
   const [loginEmail, setLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(true);
+  const [isPublicMoralModalOpen, setIsPublicMoralModalOpen] = useState<boolean>(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      return params.get('pintu') === 'suara-hati';
+    }
+    return false;
+  });
+
+  const resolvedPrincipals = principals && principals.length > 0 ? principals : getPrincipals();
+  const resolvedSettings = settings || getSettings();
 
   // Sync cloud managed accounts on mount
   React.useEffect(() => {
@@ -572,6 +591,32 @@ export const LoginView: React.FC<LoginViewProps> = ({
           </div>
         </div>
 
+        {/* Pintu 1: Akses Mandiri Guru Tanpa Login (Ruang Aman Psikologis) */}
+        <div className="mt-4 bg-white/10 backdrop-blur-md border border-teal-400/30 rounded-2xl p-4 sm:p-5 text-slate-100 shadow-xl">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-xl bg-teal-500/20 border border-teal-400/40 text-teal-200 flex items-center justify-center shrink-0">
+                <HeartHandshake className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="text-xs sm:text-sm font-extrabold text-white">
+                  Pintu Suara Hati Guru &amp; Sekolah (Tanpa Login)
+                </h3>
+                <p className="text-[11px] text-slate-300 leading-relaxed mt-0.5">
+                  Titipkan pesan moral, apresiasi, atau nasihat langsung ke Pengawas Pembina secara aman dan bisa Anonim tanpa masuk ke aplikasi.
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => setIsPublicMoralModalOpen(true)}
+              className="px-4 py-2.5 rounded-xl bg-teal-500 hover:bg-teal-400 text-slate-950 font-extrabold text-xs shadow-md transition-colors cursor-pointer shrink-0 whitespace-nowrap"
+            >
+              Isi Pesan Moral
+            </button>
+          </div>
+        </div>
+
         {/* Outer footer */}
         <div className="text-center mt-6 text-[11px] text-slate-400 space-y-1">
           <p className="font-semibold text-slate-300">
@@ -585,6 +630,25 @@ export const LoginView: React.FC<LoginViewProps> = ({
           </p>
         </div>
       </div>
+
+      {/* Modal Pintu 1 Guru (Tanpa Login) */}
+      <PublicMoralFeedbackModal
+        isOpen={isPublicMoralModalOpen}
+        onClose={() => setIsPublicMoralModalOpen(false)}
+        mode="public_guru"
+        principals={resolvedPrincipals}
+        settings={resolvedSettings}
+        onSubmit={async (record) => {
+          if (onSubmitPublicFeedback) {
+            await onSubmitPublicFeedback(record);
+          }
+          showToast(
+            'Suara Hati Terkirim',
+            'Terima kasih. Pesan moral Anda telah disimpan aman untuk Pengawas Pembina.',
+            'success'
+          );
+        }}
+      />
     </div>
   );
 };

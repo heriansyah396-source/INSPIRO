@@ -30,7 +30,7 @@ import {
 import firebaseConfig from '@/firebase-applet-config.json';
 
 export { onAuthStateChanged };
-import { SupervisionRecord, Teacher, Principal, ManagerialEvaluationRecord, AppSettings, PMReport, ManagedAccount, VisitAgenda } from '../types/inspiro';
+import { SupervisionRecord, Teacher, Principal, ManagerialEvaluationRecord, AppSettings, PMReport, ManagedAccount, VisitAgenda, MoralFeedbackRecord } from '../types/inspiro';
 
 // Initialize Firebase App
 export const app = initializeApp(firebaseConfig);
@@ -482,6 +482,43 @@ export async function fetchCloudManagerialEvaluations(): Promise<ManagerialEvalu
     const list: ManagerialEvaluationRecord[] = [];
     snap.forEach((d) => {
       list.push(d.data() as ManagerialEvaluationRecord);
+    });
+    return list;
+  } catch (error) {
+    handleFirestoreError(error, OperationType.LIST, path);
+    return [];
+  }
+}
+
+// 9. Cloud Moral Feedback & 360 Reflection Sync
+export async function syncMoralFeedbackToCloud(record: MoralFeedbackRecord): Promise<void> {
+  const path = `moral_feedbacks/${record.id}`;
+  try {
+    const cleanRecord = Object.fromEntries(
+      Object.entries(record).filter(([, value]) => value !== undefined)
+    );
+    await setDoc(doc(db, 'moral_feedbacks', record.id), cleanRecord);
+  } catch (error) {
+    handleFirestoreError(error, OperationType.WRITE, path);
+  }
+}
+
+export async function deleteMoralFeedbackFromCloud(id: string): Promise<void> {
+  const path = `moral_feedbacks/${id}`;
+  try {
+    await deleteDoc(doc(db, 'moral_feedbacks', id));
+  } catch (error) {
+    handleFirestoreError(error, OperationType.DELETE, path);
+  }
+}
+
+export async function fetchCloudMoralFeedbacks(): Promise<MoralFeedbackRecord[]> {
+  const path = 'moral_feedbacks';
+  try {
+    const snap = await getDocs(collection(db, 'moral_feedbacks'));
+    const list: MoralFeedbackRecord[] = [];
+    snap.forEach((d) => {
+      list.push(d.data() as MoralFeedbackRecord);
     });
     return list;
   } catch (error) {

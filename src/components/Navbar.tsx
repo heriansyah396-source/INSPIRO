@@ -112,6 +112,10 @@ const TAB_TITLES: Record<NavTab, { title: string; subtitle: string }> = {
     title: 'Growth Tracker: Komparasi Multi-Siklus Guru',
     subtitle: 'Evaluasi peningkatan kompetensi guru lintas Siklus 1, 2, 3, dan Siklus Lanjutan'
   },
+  'moral-feedback': {
+    title: 'Refleksi 360° & Pesan Moral Pengawas',
+    subtitle: 'Suara hati guru (tanpa login) & kepala sekolah, Barometer Kehadiran 4 Dimensi, dan Cermin Refleksi AI'
+  },
   settings: {
     title: 'Pengaturan Sistem',
     subtitle: 'Identitas sekolah, data pengawas, dan backup / restore database'

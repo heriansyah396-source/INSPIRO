@@ -202,6 +202,85 @@
         }
       },
       "required": ["id", "teacherId", "status", "finalScore", "category"]
+    },
+    "MoralFeedbackEntity": {
+      "title": "MoralFeedbackEntity",
+      "description": "360-degree moral feedback and heartfelt reflection submitted by teachers and principals for the school supervisor.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique moral feedback document ID.",
+          "maxLength": 128
+        },
+        "date": {
+          "type": "string",
+          "description": "Submission date YYYY-MM-DD.",
+          "maxLength": 20
+        },
+        "schoolName": {
+          "type": "string",
+          "description": "Associated school name.",
+          "maxLength": 200
+        },
+        "senderRole": {
+          "type": "string",
+          "enum": ["Guru", "Kepala Sekolah", "Komunitas Belajar"],
+          "description": "Role of sender."
+        },
+        "isAnonymous": {
+          "type": "boolean",
+          "description": "Whether sender identity is masked."
+        },
+        "senderName": {
+          "type": "string",
+          "description": "Sender name or anonymous label.",
+          "maxLength": 150
+        },
+        "sourceChannel": {
+          "type": "string",
+          "enum": ["mandiri_guru", "mandiri_kepsek", "catatan_lapangan"],
+          "description": "Submission door channel."
+        },
+        "category": {
+          "type": "string",
+          "enum": ["apresiasi_penguat", "nasihat_pengingat", "suasana_psikologis", "harapan_doa"],
+          "description": "Moral feedback category."
+        },
+        "averageScore": {
+          "type": "number",
+          "description": "Average barometer score from 1.00 to 5.00."
+        },
+        "message": {
+          "type": "string",
+          "description": "Heartfelt moral message for the supervisor.",
+          "maxLength": 4000
+        },
+        "supervisorReflection": {
+          "type": "string",
+          "description": "Personal reflection written by the supervisor.",
+          "maxLength": 3000
+        },
+        "supervisorCommitment": {
+          "type": "string",
+          "description": "Behavioral commitment for next school visit.",
+          "maxLength": 2000
+        },
+        "status": {
+          "type": "string",
+          "enum": ["baru", "direfleksikan", "tindak_lanjut"],
+          "description": "Reflection lifecycle state."
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Creation ISO timestamp."
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "Last update ISO timestamp."
+        }
+      },
+      "required": ["id", "date", "schoolName", "senderRole", "isAnonymous", "senderName", "sourceChannel", "category", "averageScore", "message", "status", "createdAt", "updatedAt"]
     }
   },
   "firestore": {
@@ -228,6 +307,12 @@
         "$ref": "#/entities/SupervisionEntity"
       },
       "description": "Academic supervision observation records and follow-up plans."
+    },
+    "/moral_feedbacks/{feedbackId}": {
+      "schema": {
+        "$ref": "#/entities/MoralFeedbackEntity"
+      },
+      "description": "360-degree moral feedback & supervisor self-reflection records."
     }
   }
 }

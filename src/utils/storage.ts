@@ -18,6 +18,7 @@ import { SEED_QUICK_WINS_RECORDS } from '../data/seedQuickWins';
 import { SEED_PRINCIPALS } from '../data/seedPrincipals';
 import { SEED_PRINCIPAL_MATURITY_RECORDS } from '../data/seedPrincipalMaturity';
 import { SEED_MANAGERIAL_EVALUATIONS } from '../data/seedManagerialEvaluations';
+import { SEED_MORAL_FEEDBACK_RECORDS } from '../data/seedMoralFeedback';
 import { DEFAULT_SIDRAP_LOGO, DEFAULT_TUTWURI_LOGO } from '../data/defaultLogos';
 import {
   AppSettings,
@@ -45,7 +46,11 @@ import {
   RPBItem,
   ManagerialMaturityRecord,
   QuickWinsRecord,
-  QuickWinsActionItem
+  QuickWinsActionItem,
+  MoralFeedbackRecord,
+  MoralAISynthesis,
+  MORAL_CATEGORY_LABELS,
+  MORAL_SOURCE_LABELS
 } from '../types/inspiro';
 
 const TEACHERS_KEY = 'inspiro_teachers';
@@ -65,6 +70,7 @@ const SWOT_RECORDS_KEY = 'inspiro_swot_records';
 const PRO_CONTRA_RECORDS_KEY = 'inspiro_pro_contra_records';
 const RPB_RECORDS_KEY = 'inspiro_rpb_records';
 const PRINCIPAL_MATURITY_RECORDS_KEY = 'inspiro_principal_maturity_records';
+const MORAL_FEEDBACK_KEY = 'inspiro_moral_feedback_records_v1';
 
 // Helper to safely parse JSON from localStorage
 function safeParse<T>(key: string, fallback: T): T {
@@ -2986,3 +2992,273 @@ export function exportQuickWinsToWord(record: QuickWinsRecord, settings: AppSett
   URL.revokeObjectURL(url);
 }
 
+// ========================================================================
+// 20. REFLEKSI 360° & PESAN MORAL PENGAWAS (SUARA HATI PENDIDIK)
+// ========================================================================
+
+export function getMoralFeedbackRecords(): MoralFeedbackRecord[] {
+  const records = safeParse<MoralFeedbackRecord[]>(MORAL_FEEDBACK_KEY, []);
+  if (records.length === 0) {
+    saveMoralFeedbackRecords(SEED_MORAL_FEEDBACK_RECORDS);
+    return SEED_MORAL_FEEDBACK_RECORDS;
+  }
+  return records;
+}
+
+export function saveMoralFeedbackRecords(records: MoralFeedbackRecord[]): void {
+  try {
+    localStorage.setItem(MORAL_FEEDBACK_KEY, JSON.stringify(records));
+  } catch (e) {
+    console.error('Error saving moral feedback records:', e);
+  }
+}
+
+export function saveMoralFeedbackRecord(record: MoralFeedbackRecord): void {
+  const current = getMoralFeedbackRecords();
+  const idx = current.findIndex((r) => r.id === record.id);
+  const now = new Date().toISOString();
+  let updated: MoralFeedbackRecord[];
+  if (idx >= 0) {
+    updated = [...current];
+    updated[idx] = { ...record, updatedAt: now };
+  } else {
+    updated = [{ ...record, createdAt: record.createdAt || now, updatedAt: now }, ...current];
+  }
+  saveMoralFeedbackRecords(updated);
+}
+
+export function deleteMoralFeedbackRecord(id: string): boolean {
+  const current = getMoralFeedbackRecords();
+  const filtered = current.filter((r) => r.id !== id);
+  if (filtered.length === current.length) return false;
+  saveMoralFeedbackRecords(filtered);
+  return true;
+}
+
+export function exportMoralFeedbackToWord(
+  records: MoralFeedbackRecord[],
+  settings: AppSettings,
+  aiSynthesis?: MoralAISynthesis | null
+): void {
+  const agency = settings.governmentAgency || 'PEMERINTAH KABUPATEN SIDENRENG RAPPANG';
+  const schoolCity = settings.schoolCity || 'Kabupaten Sidenreng Rappang';
+  const supervisorName = settings.supervisorName || 'HERIANSYAH, S.Si., S.Pd., M.Pd';
+  const supervisorNip = settings.supervisorNip || '19830819 201001 1 002';
+  const supervisorRole = settings.supervisorRole || 'Pengawas Sekolah Pembina';
+  const supervisorRank = settings.supervisorRank || 'Penata Tk. I / III.d';
+  const logoLeft = settings.logoUrl || DEFAULT_SIDRAP_LOGO;
+  const logoRight = settings.logoRightUrl || DEFAULT_TUTWURI_LOGO;
+  const todayStr = new Date().toISOString().split('T')[0];
+
+  const total = records.length || 1;
+  const avgMenenangkan = (records.reduce((a, b) => a + b.barometer.menenangkan, 0) / total).toFixed(2);
+  const avgMendengarkan = (records.reduce((a, b) => a + b.barometer.mendengarkan, 0) / total).toFixed(2);
+  const avgSolutif = (records.reduce((a, b) => a + b.barometer.solutif, 0) / total).toFixed(2);
+  const avgMemuliakan = (records.reduce((a, b) => a + b.barometer.memuliakan, 0) / total).toFixed(2);
+
+  const escapeHtml = (str?: string) =>
+    (str || '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
+
+  const rowsHtml = records
+    .map((r, idx) => {
+      const cat = MORAL_CATEGORY_LABELS[r.category]?.label || r.category;
+      const src = MORAL_SOURCE_LABELS[r.sourceChannel]?.shortLabel || r.sourceChannel;
+      const statusText =
+        r.status === 'tindak_lanjut'
+          ? 'SUDAH TINDAK LANJUT'
+          : r.status === 'direfleksikan'
+          ? 'SUDAH DIREFLEKSIKAN'
+          : 'BARU';
+      const senderLabel = r.isAnonymous
+        ? `Anonim (${r.senderRole})`
+        : `${escapeHtml(r.senderName)} (${r.senderRole})`;
+
+      return `
+        <tr>
+          <td style="border:1px solid #cbd5e1; padding:6px; text-align:center;">${idx + 1}</td>
+          <td style="border:1px solid #cbd5e1; padding:6px;">
+            <strong>${r.date}</strong><br/>
+            <span style="font-size:8.5pt; color:#475569;">${escapeHtml(r.schoolName)}</span><br/>
+            <span style="font-size:8.5pt; color:#0f766e;">${escapeHtml(src)}</span>
+          </td>
+          <td style="border:1px solid #cbd5e1; padding:6px;">
+            <strong>${senderLabel}</strong><br/>
+            <span style="font-size:8.5pt; color:#334155;">${escapeHtml(cat)}</span><br/>
+            <span style="font-size:8.5pt; color:#0369a1;">Skor: ${r.averageScore.toFixed(2)} / 5.00</span>
+          </td>
+          <td style="border:1px solid #cbd5e1; padding:6px;">
+            <p style="margin:0 0 4px 0;">"${escapeHtml(r.message)}"</p>
+            ${
+              r.specificMoment
+                ? `<div style="font-size:8.5pt; color:#64748b;"><em>Momen: ${escapeHtml(r.specificMoment)}</em></div>`
+                : ''
+            }
+          </td>
+          <td style="border:1px solid #cbd5e1; padding:6px;">
+            <div style="font-size:8.5pt; font-weight:bold; color:#0f172a; margin-bottom:3px;">[${statusText}]</div>
+            ${
+              r.supervisorReflection
+                ? `<div style="font-size:9pt; margin-bottom:4px;"><strong>Hikmah:</strong> ${escapeHtml(r.supervisorReflection)}</div>`
+                : '<div style="font-size:8.5pt; color:#64748b;"><em>Menunggu catatan refleksi pengawas</em></div>'
+            }
+            ${
+              r.supervisorCommitment
+                ? `<div style="font-size:9pt; color:#065f46;"><strong>Komitmen:</strong> ${escapeHtml(r.supervisorCommitment)}</div>`
+                : ''
+            }
+          </td>
+        </tr>
+      `;
+    })
+    .join('');
+
+  const aiHtml = aiSynthesis
+    ? `
+      <div style="background-color:#f8fafc; border:1px solid #cbd5e1; border-left:4px solid #0f766e; padding:10px 12px; margin-bottom:16px; font-size:9.5pt;">
+        <div style="font-weight:bold; text-transform:uppercase; color:#0f766e; margin-bottom:6px;">
+          RINGKASAN CERMIN REFLEKSI ETIS &amp; KUALITATIF PENGAWAS
+        </div>
+        <p style="margin:0 0 6px 0;">${escapeHtml(aiSynthesis.overallTone)}</p>
+        <p style="margin:4px 0;"><strong>Hal Baik yang Patut Dijaga:</strong></p>
+        <ul style="margin:0 0 6px 18px;">
+          ${aiSynthesis.keyStrengthsToKeep.map((s) => `<li>${escapeHtml(s)}</li>`).join('')}
+        </ul>
+        <p style="margin:4px 0;"><strong>Titik Buta (Blind Spot) untuk Diperbaiki:</strong></p>
+        <ul style="margin:0 0 6px 18px;">
+          ${aiSynthesis.blindSpotsToWatch.map((s) => `<li>${escapeHtml(s)}</li>`).join('')}
+        </ul>
+        <p style="margin:4px 0;"><strong>Komitmen Penyesuaian Sikap Pengawas:</strong></p>
+        <ul style="margin:0 0 6px 18px;">
+          ${aiSynthesis.personalCommitments.map((s) => `<li>${escapeHtml(s)}</li>`).join('')}
+        </ul>
+        <p style="margin:6px 0 0 0; font-style:italic; color:#334155;">"${escapeHtml(aiSynthesis.closingReflection)}"</p>
+      </div>
+    `
+    : '';
+
+  const html = `
+    <!DOCTYPE html>
+    <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+    <head>
+      <meta charset="utf-8">
+      <title>Jurnal Refleksi 360 dan Pesan Moral Pengawas</title>
+      <style>
+        body { font-family: 'Calibri', 'Times New Roman', sans-serif; font-size: 10.5pt; line-height: 1.35; color: #0f172a; margin: 20px; }
+        .title-doc { text-align: center; margin: 14px 0; }
+        .title-doc h2 { margin: 0; font-size: 13.5pt; text-transform: uppercase; text-decoration: underline; font-weight: bold; }
+        .title-doc p { margin: 4px 0 0 0; font-size: 9.5pt; font-weight: bold; color: #334155; }
+        .baro-table { width: 100%; border-collapse: collapse; margin-bottom: 14px; font-size: 9.5pt; }
+        .baro-table th, .baro-table td { border: 1px solid #94a3b8; padding: 6px; text-align: center; }
+        .baro-table th { background-color: #f1f5f9; }
+        .main-table { width: 100%; border-collapse: collapse; font-size: 9.5pt; margin-bottom: 16px; }
+        .main-table th { background-color: #0f172a; color: #ffffff; border: 1px solid #334155; padding: 6px; text-align: left; }
+      </style>
+    </head>
+    <body>
+      <table style="width:100%; border-bottom:3px double #000000; padding-bottom:10px; margin-bottom:12px; border-collapse:collapse;">
+        <tr>
+          <td style="width:75px; text-align:center; vertical-align:middle; border:none; padding-right:8px;">
+            <img src="${logoLeft}" width="70" height="75" style="object-fit:contain;" alt="Logo Kabupaten Sidenreng Rappang" />
+          </td>
+          <td style="text-align:center; vertical-align:middle; border:none; padding:0 8px;">
+            <div style="font-size:12pt; font-weight:bold; text-transform:uppercase; margin:0; line-height:1.2;">${agency.toUpperCase()}</div>
+            <div style="font-size:13.5pt; font-weight:bold; text-transform:uppercase; margin:2px 0; line-height:1.2;">DINAS PENDIDIKAN DAN KEBUDAYAAN</div>
+            <div style="font-size:10.5pt; font-weight:bold; text-transform:uppercase; margin:0; color:#1e293b; line-height:1.2;">PENGAWAS SEKOLAH PEMBINA KABUPATEN SIDENRENG RAPPANG</div>
+            <div style="font-size:8.5pt; font-style:italic; margin-top:3px; color:#333333; line-height:1.2;">Alamat: Kompleks SKPD Jl. Harapan Baru No. 1, Pangkajene, Kab. Sidenreng Rappang, Sulawesi Selatan (91611)</div>
+          </td>
+          <td style="width:75px; text-align:center; vertical-align:middle; border:none; padding-left:8px;">
+            <img src="${logoRight}" width="70" height="75" style="object-fit:contain;" alt="Logo Tut Wuri Handayani" />
+          </td>
+        </tr>
+      </table>
+
+      <div class="title-doc">
+        <h2>JURNAL REFLEKSI 360° &amp; PESAN MORAL PENGAWAS SEKOLAH</h2>
+        <p>INSTRUMEN KUALITAS LAYANAN PENDAMPINGAN BERBASIS SUARA HATI GURU &amp; KEPALA SEKOLAH</p>
+      </div>
+
+      <table style="width:100%; border-collapse:collapse; margin-bottom:12px; font-size:10pt;">
+        <tr>
+          <td style="width:22%;"><strong>Nama Pengawas Pembina</strong></td>
+          <td style="width:2%;">:</td>
+          <td style="width:42%;">${supervisorName}</td>
+          <td style="width:16%;"><strong>Tanggal Cetak</strong></td>
+          <td style="width:2%;">:</td>
+          <td>${todayStr}</td>
+        </tr>
+        <tr>
+          <td><strong>NIP / Pangkat Golongan</strong></td>
+          <td>:</td>
+          <td>${supervisorNip} (${supervisorRank})</td>
+          <td><strong>Jumlah Suara Hati</strong></td>
+          <td>:</td>
+          <td>${records.length} Pesan Terekam</td>
+        </tr>
+      </table>
+
+      <table class="baro-table">
+        <thead>
+          <tr>
+            <th>Menenangkan &amp; Aman Psikologis</th>
+            <th>Mau Mendengarkan Sebelum Menilai</th>
+            <th>Solutif Tanpa Beban Tambahan</th>
+            <th>Memuliakan Profesi Pendidik</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>${avgMenenangkan} / 5.00</strong></td>
+            <td><strong>${avgMendengarkan} / 5.00</strong></td>
+            <td><strong>${avgSolutif} / 5.00</strong></td>
+            <td><strong>${avgMemuliakan} / 5.00</strong></td>
+          </tr>
+        </tbody>
+      </table>
+
+      ${aiHtml}
+
+      <table class="main-table">
+        <thead>
+          <tr>
+            <th style="width:5%;">No</th>
+            <th style="width:18%;">Tanggal &amp; Kanal</th>
+            <th style="width:18%;">Pengirim &amp; Kategori</th>
+            <th style="width:32%;">Pesan Moral / Suara Hati</th>
+            <th style="width:27%;">Refleksi Hati &amp; Komitmen Pengawas</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${rowsHtml || '<tr><td colspan="5" style="text-align:center; padding:12px;">Belum ada pesan moral tercatat.</td></tr>'}
+        </tbody>
+      </table>
+
+      <table class="signature-table" style="width:100%; margin-top:28px; border-collapse:collapse; border:none;">
+        <tr style="border:none;">
+          <td style="width:50%; border:none;">&nbsp;</td>
+          <td style="width:50%; text-align:center; vertical-align:top; border:none; padding:4px;">
+            ${schoolCity}, ${todayStr}<br/>
+            <strong>${supervisorRole}</strong>
+            <div style="height:70px; line-height:70px;">&nbsp;</div>
+            <strong><u>${supervisorName}</u></strong><br/>
+            NIP. ${supervisorNip}<br/>
+            <span style="font-size:9pt; color:#475569;">Pangkat/Gol: ${supervisorRank}</span>
+          </td>
+        </tr>
+      </table>
+    </body>
+    </html>
+  `;
+
+  const blob = new Blob(['\ufeff', html], { type: 'application/msword;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `Refleksi_360_Pesan_Moral_Pengawas_${todayStr}.doc`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}

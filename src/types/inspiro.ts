@@ -2562,3 +2562,111 @@ export interface QuickWinsRecord {
   updatedAt: string;
 }
 
+// ========================================================================
+// REFLEKSI 360° & PESAN MORAL PENGAWAS (2 PINTU MANDIRI + 1 ARSIP LAPANGAN)
+// ========================================================================
+
+export type MoralFeedbackCategory =
+  | 'apresiasi_penguat'
+  | 'nasihat_pengingat'
+  | 'suasana_psikologis'
+  | 'harapan_doa';
+
+export type MoralFeedbackSource =
+  | 'mandiri_guru'
+  | 'mandiri_kepsek'
+  | 'catatan_lapangan';
+
+export type MoralFeedbackStatus = 'baru' | 'direfleksikan' | 'tindak_lanjut';
+
+export interface MoralBarometerScores {
+  menenangkan: number;
+  mendengarkan: number;
+  solutif: number;
+  memuliakan: number;
+}
+
+export interface MoralFeedbackRecord {
+  id: string;
+  date: string;
+  schoolName: string;
+  schoolNpsn?: string;
+  senderRole: 'Guru' | 'Kepala Sekolah' | 'Komunitas Belajar';
+  isAnonymous: boolean;
+  senderName: string;
+  senderSubjectOrTitle?: string;
+  sourceChannel: MoralFeedbackSource;
+  category: MoralFeedbackCategory;
+  barometer: MoralBarometerScores;
+  averageScore: number;
+  message: string;
+  specificMoment?: string;
+  supervisorName: string;
+  supervisorNip: string;
+  supervisorReflection?: string;
+  supervisorCommitment?: string;
+  reflectedAt?: string;
+  status: MoralFeedbackStatus;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface MoralAISynthesis {
+  generatedAt: string;
+  overallTone: string;
+  keyStrengthsToKeep: string[];
+  blindSpotsToWatch: string[];
+  personalCommitments: string[];
+  closingReflection: string;
+}
+
+export const MORAL_CATEGORY_LABELS: Record<
+  MoralFeedbackCategory,
+  { label: string; shortLabel: string; description: string; badgeColor: string }
+> = {
+  apresiasi_penguat: {
+    label: 'Apresiasi & Penguat Jiwa',
+    shortLabel: 'Apresiasi',
+    description: 'Hal baik dari cara pendampingan pengawas yang menyentuh hati dan patut dijaga.',
+    badgeColor: 'bg-emerald-50 text-emerald-800 border-emerald-200'
+  },
+  nasihat_pengingat: {
+    label: 'Nasihat & Pengingat Moral',
+    shortLabel: 'Nasihat Moral',
+    description: 'Pengingat halus dan masukan jujur agar pengawas tetap rendah hati, sabar, dan adil.',
+    badgeColor: 'bg-amber-50 text-amber-800 border-amber-200'
+  },
+  suasana_psikologis: {
+    label: 'Kesan Suasana Psikologis',
+    shortLabel: 'Iklim Psikologis',
+    description: 'Kesan batin guru & kepala sekolah terkait rasa aman, nyaman, atau ketegangan saat supervisi.',
+    badgeColor: 'bg-sky-50 text-sky-800 border-sky-200'
+  },
+  harapan_doa: {
+    label: 'Harapan & Doa Pendidikan',
+    shortLabel: 'Harapan & Doa',
+    description: 'Harapan tulus dan doa pendidik untuk arah pembinaan sekolah binaan ke depan.',
+    badgeColor: 'bg-indigo-50 text-indigo-800 border-indigo-200'
+  }
+};
+
+export const MORAL_SOURCE_LABELS: Record<
+  MoralFeedbackSource,
+  { label: string; shortLabel: string; badgeColor: string }
+> = {
+  mandiri_guru: {
+    label: 'Pintu 1: Kiriman Mandiri Guru (Tanpa Login / Kiosk)',
+    shortLabel: 'Kiriman Guru',
+    badgeColor: 'bg-teal-50 text-teal-800 border-teal-200'
+  },
+  mandiri_kepsek: {
+    label: 'Pintu 2: Kiriman Mandiri Kepala Sekolah (Akun Binaan)',
+    shortLabel: 'Kiriman Kepsek',
+    badgeColor: 'bg-blue-50 text-blue-800 border-blue-200'
+  },
+  catatan_lapangan: {
+    label: 'Pintu 3: Catatan Lapangan / Lisan oleh Pengawas',
+    shortLabel: 'Catatan Lapangan',
+    badgeColor: 'bg-slate-100 text-slate-700 border-slate-300'
+  }
+};

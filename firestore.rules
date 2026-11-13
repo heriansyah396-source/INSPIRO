@@ -80,6 +80,25 @@ service cloud.firestore {
       allow write: if isValidId(evalId);
     }
 
+    // 360° Moral Feedback & Supervisor Self-Reflection
+    match /moral_feedbacks/{feedbackId} {
+      allow read: if true;
+      allow create, update: if isValidId(feedbackId)
+        && request.resource.data.keys().hasAll([
+          'id', 'date', 'schoolName', 'senderRole', 'isAnonymous',
+          'senderName', 'sourceChannel', 'category', 'barometer',
+          'averageScore', 'message', 'status', 'createdAt', 'updatedAt'
+        ])
+        && request.resource.data.message is string
+        && request.resource.data.message.size() > 0
+        && request.resource.data.message.size() <= 4000
+        && request.resource.data.schoolName is string
+        && request.resource.data.schoolName.size() <= 200
+        && request.resource.data.senderName is string
+        && request.resource.data.senderName.size() <= 150;
+      allow delete: if isValidId(feedbackId);
+    }
+
     // Default deny catch-all for any other path
     match /{document=**} {
       allow read, write: if false;

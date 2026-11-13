@@ -29,7 +29,8 @@ import {
   Handshake,
   Target,
   Scale,
-  Workflow
+  Workflow,
+  MessageSquareHeart
 } from 'lucide-react';
 import { SupervisionRecord, PMReport } from '../types/inspiro';
 import { RadarChartWidget } from './RadarChartWidget';
@@ -57,6 +58,7 @@ export type NavTab =
   | 'swot-tows'
   | 'quality-map'
   | 'growth-tracker'
+  | 'moral-feedback'
   | 'settings';
 
 interface SidebarProps {
@@ -227,6 +229,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
       label: 'Growth Tracker Siklus',
       icon: TrendingUp,
       badge: 'Siklus I & II'
+    },
+    {
+      id: 'moral-feedback' as NavTab,
+      label: 'Refleksi 360° & Pesan Moral',
+      icon: MessageSquareHeart,
+      badge: 'Suara Hati'
     },
     {
       id: 'settings' as NavTab,
